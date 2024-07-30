@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="DeployToBHS2" default="Deploy" xmlns="http://nant.sf.net/release/0.85-rc4/nant.xsd" basedir=".">
+    <loadtasks assembly="D:\Utilities\Nantcontrib\bin\NAnt.Contrib.Tasks.dll" />
+    <echo message="Using '${nant.settings.currentframework}' framework on '${platform::get-name()}' platform." />
+
+    <property name="Target.BaseDir"       value="\\BHS2\D$\Applications" />
+    <property name="Target.SQLCLR"        value="${Target.BaseDir}\SQLCLR" />
+    <property name="Target.ComponentsDir" value="${Target.BaseDir}" />
+
+    <property name="Source.BaseDir"       value="D:\Applications\Build\Latest" />
+    <property name="Source.SQLCLR"        value="${Source.BaseDir}\SQLCLR" />
+    <property name="Source.ComponentsDir" value="${Source.BaseDir}\BBS Components" />
+
+
+    <property name="project.name"           value="DeployToBHS2" />
+
+
+    <!--
+         Defines many helper function required for
+         the deployment.
+    -->
+    <include buildfile="Deploy.include" />
+
+
+
+    <!-- Deploy -->
+    <target name="Deploy" depends="PreDeploy, DeployBBSMonitor, DeployBBSUtils, DeploySQLCLR">
+    
+    </target>
+
+
+
+
+    <!-- DeployBBSMonitor -->
+    <target name="DeployBBSMonitor" depends="PreDeploy">
+
+        <property name="Target.Dir" value="${Target.BaseDir}\BBSMonitor" />
+        <property name="Source.Dir" value="${Source.ComponentsDir}\BBSMonitor" />
+
+        <!-- Copy files -->
+        <echo message="Copy BBSMonitor from ${Source.Dir} to ${Target.Dir}" />
+
+        <property name="Config.File" value="${Target.Dir}/BBSMonitor.exe.config" />
+        <copy file="${Config.File}" tofile="${Config.File}.bak" overwrite="true" failonerror="false" />
+
+        <copy todir="${Target.Dir}" overwrite="true">
+            <fileset basedir="${Source.Dir}">
+                <include name="*" />
+                <exclude name="Properties/**" />
+                <exclude name="**/*.cs" />
+                <exclude name="**/*.csproj*" />
+                <exclude name="**/*.scc" />
+                <exclude name="**/vssver.scc" />
+                <exclude name="**/*Error.txt" />
+                <exclude name="**/*Trace.txt" />
+                <exclude name="**/*.pdb" />
+                <exclude name="*.config" />
+          </fileset>
+        </copy>
+    </target>
+
+
+
+
+    <!-- BBOSUtils -->
+    <target name="DeployBBSUtils" depends="PreDeploy">
+
+        <property name="Target.Dir" value="${Target.BaseDir}\BBSUtils" />
+        <property name="Source.Dir" value="${Source.ComponentsDir}\BBSUtils" />
+
+        <!-- Copy files -->
+        <echo message="Copy BBSUtils from ${Source.Dir} to ${Target.Dir}" />
+
+        <property name="ConfigFile" value="${Target.Dir}/Web.config" />
+        <copy file="${ConfigFile}" tofile="${ConfigFile}.bak" overwrite="true" failonerror="false" />
+
+        <copy todir="${Target.Dir}" overwrite="true">
+            <fileset basedir="${Source.Dir}">
+                <include name="**" />
+                <exclude name="Email/**" />
+                <exclude name="Properties/**" />
+                <exclude name="**/*.cs" />
+                <exclude name="**/*.designer.cs" />
+                <exclude name="**/*.csproj*" />
+                <exclude name="**/*.scc" />
+                <exclude name="**/*.config" />
+                <exclude name="**/vssver.scc" />
+                <exclude name="**/trace*.txt" />
+                <exclude name="**/*.pdb" />
+                <exclude name="*.txt" />
+                <exclude name="web.config" />
+          </fileset>
+        </copy>
+    </target>
+
+
+    <!-- SQLCLR -->
+    <target name="DeploySQLCLR" depends="PreDeploy">
+
+        <property name="Target.Dir" value="${Target.SQLCLR}" />
+        <property name="Source.Dir" value="${Source.SQLCLR}" />
+
+        <!-- Copy files -->
+        <echo message="Copy SQLCLR from ${Source.Dir} to ${Target.Dir}" />
+
+
+        <copy todir="${Target.Dir}" overwrite="true">
+            <fileset basedir="${Source.Dir}">
+                <include name="**" />
+                <exclude name="Properties/**" />
+                <exclude name="**/*.cs" />
+                <exclude name="**/*.designer.cs" />
+                <exclude name="**/*.csproj*" />
+                <exclude name="**/*.scc" />
+                <exclude name="**/*.config" />
+                <exclude name="**/vssver.scc" />
+                <exclude name="**/trace*.txt" />
+                <exclude name="**/*.pdb" />
+                <exclude name="*.txt" />
+          </fileset>
+        </copy>
+    </target>
+
+</project>

@@ -1,0 +1,1 @@
+<%@ Page language="c#" Inherits="PRCo.BBS.Utils.GetLogo" CodeBehind="GetLogo.aspx.cs" AutoEventWireup="True" %>

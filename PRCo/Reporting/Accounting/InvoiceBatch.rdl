@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BBS">
+      <DataSourceReference>BBS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>c24e60f7-24a4-4d78-aedb-522556f28871</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="DataSet1">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@BatchNo">
+            <Value>=Parameters!BatchNo.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@BillingException">
+            <Value>=Parameters!BillingException.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT UDF_MASTER_INVOICE
+FROM   MAS_PRC.dbo.vBBSiMasterInvoices
+WHERE  (JournalNoGLBatchNo = @BatchNo)
+  AND UDF_MASTER_INVOICE IS NOT NULL
+  AND UDF_MASTER_INVOICE &lt;&gt; ''
+  AND ISNULL(prci2_BillingException, 'N') =  CASE @BillingException 
+         WHEN '1' THEN ISNULL(prci2_BillingException, 'N')
+         WHEN '2' THEN 'Y'
+         WHEN '3' THEN 'N' END
+ORDER BY UDF_MASTER_INVOICE</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="UDF_MASTER_INVOICE">
+          <DataField>UDF_MASTER_INVOICE</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsBatchNos">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>SELECT TOP(20) JournalNoGLBatchNo, InvoiceDate, JournalNoGLBatchNo + ' (' + CAST(COUNT(DISTINCT UDF_MASTER_INVOICE) As Varchar) + ')' As Label
+  FROM MAS_PRC.dbo.AR_InvoiceHistoryHeader
+GROUP BY JournalNoGLBatchNo, InvoiceDate
+ORDER BY InvoiceDate DESC, JournalNoGLBatchNo DESC</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="JournalNoGLBatchNo">
+          <DataField>JournalNoGLBatchNo</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Label">
+          <DataField>Label</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="InvoiceDate">
+          <DataField>InvoiceDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="Tablix1">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>7.375in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.95833in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Rectangle Name="Rectangle1">
+                          <ReportItems>
+                            <Subreport Name="Subreport1">
+                              <ReportName>Invoice</ReportName>
+                              <Parameters>
+                                <Parameter Name="InvoiceNo">
+                                  <Value>=Fields!UDF_MASTER_INVOICE.Value</Value>
+                                </Parameter>
+                              </Parameters>
+                              <Height>0.95833in</Height>
+                              <Width>7.375in</Width>
+                              <Style>
+                                <Border>
+                                  <Style>None</Style>
+                                </Border>
+                              </Style>
+                            </Subreport>
+                          </ReportItems>
+                          <KeepTogether>true</KeepTogether>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                          </Style>
+                        </Rectangle>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <Group Name="Details">
+                    <PageBreak>
+                      <BreakLocation>Start</BreakLocation>
+                    </PageBreak>
+                  </Group>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>DataSet1</DataSetName>
+            <Height>0.95833in</Height>
+            <Width>7.375in</Width>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Tablix>
+        </ReportItems>
+        <Height>0.95833in</Height>
+        <Style />
+      </Body>
+      <Width>7.375in</Width>
+      <Page>
+        <LeftMargin>0.5in</LeftMargin>
+        <RightMargin>0.5in</RightMargin>
+        <TopMargin>0.5in</TopMargin>
+        <BottomMargin>0.5in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="BatchNo">
+      <DataType>String</DataType>
+      <Prompt>Batch Number</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>dsBatchNos</DataSetName>
+          <ValueField>JournalNoGLBatchNo</ValueField>
+          <LabelField>Label</LabelField>
+        </DataSetReference>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="BillingException">
+      <DataType>String</DataType>
+      <Prompt>Include Billing Exceptions</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>1</Value>
+            <Label>All</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>2</Value>
+            <Label>Billing Exceptions Only</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>3</Value>
+            <Label>Non-Billing Exceptions Only</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>1</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>BatchNo</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>BillingException</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>56581509-0e0d-41c3-8cec-aeb326a851de</rd:ReportID>
+</Report>

@@ -1,0 +1,288 @@
+<project name="BBSBuild" default="BuildAll" xmlns="http://nant.sf.net/release/0.85-rc4/nant.xsd" basedir=".">
+
+<echo message="Using '${nant.settings.currentframework}' framework on '${platform::get-name()}' platform."/>
+
+        <!-- This is the properties file that controls what gets built -->
+        <include buildfile="BBSBuild.Config.include" />
+        
+
+        <!-- 
+                Makes a backup of the "Latest" directory and then recreates
+                it so it we will have a "clean" build.  Labels and Gets all of 
+                our code from VSS.
+        -->
+        <target name="PreBuild" description="Prepares the environment for the build">
+                <tstamp />
+
+
+                <property name="build.name"                    value="DBRestore" />
+                <property name="build.dir"                     value="D:\Applications" />
+
+
+                <property name="build.logdir"                  value="${build.dir}\RestoreDB\RestoreDBLog" />
+
+
+                <mkdir dir="${build.logdir}" />
+                <property name="Build.Success.Log"         value="${build.logdir}\${Build.DateTime}_SuccessfulDBRestoreLog.txt" />
+                <property name="Build.Failure.Log"         value="${build.logdir}\${Build.DateTime}_FailedDBRestoreLog.txt" />
+
+                <!-- Start recording a success and a failure Log file -->
+                <record name="${Build.Success.Log}" level="Info" action="Start" />
+                <record name="${Build.Failure.Log}" level="Verbose" action="Start" />
+        </target>                
+        
+        
+        
+        <!-- 
+                Executes our post build tasks
+        -->
+        <target name="PostBuild" description="Copies the Lastest Build to Versioned Directory">
+ 		<tstamp />
+
+                <!-- Set the sql.dir back to the Core_Scripts directory-->
+       	        <property name="sql.dir" value="${build.dir}\PIKS Database\Core_Scripts" />
+
+                <echo message="Executing SQL file ${sql.dir}\Security.sql ..."/>
+       	        <sql 
+               	         connstring="Provider=SQLOLEDB;Data Source=${DBServer};Initial Catalog=${DBName};User Id=BBSBuild;Password=BBSBuild1901"
+                       	 transaction="false"
+                         delimiter="GO"
+       	                 delimstyle="Line"
+               	         batch="false"
+                       	 source="${sql.dir}\Security.sql" 
+                         output="${build.logdir}\Security.txt">
+       	        </sql>
+        </target>
+
+
+
+        <!-- 
+                Stop recording Logs 
+        -->
+        <target name="CloseLogs" description="Closes log files - do not call independently">
+                <record name="${Build.Success.Log}" action="Close" />
+                <record name="${Build.Failure.Log}" action="Close" />
+        </target>
+
+        
+
+        <!-- 
+                Fired when NAnt determines the build has succeeded.
+                Copies the log files (there were still open) and then 
+                Generates an email to the user.
+        -->   
+        <target name="OnSuccess" depends="CloseLogs" description="Executes the cleanup tasks">
+                <tstamp property="Build.EndDateTime" pattern="MM/dd/yyyy HH:mm" />
+                
+                <!-- Since the script succeeded Delete the Failure Log -->
+                <delete file="${Build.Failure.Log}" />
+
+
+                <property name="EmailSubject" value="${project.name} ${build.name} Success"/>
+                <property name="EmailMessage" value="${project.name} ${build.name} Succeeded.  Start time: ${Build.StartDateTime}.  End time: ${Build.EndDateTime}" />
+                <call target="GenerateEmail"/>
+        </target>
+   
+   
+        <!-- 
+                Fired when NAnt determines the build has failed.
+            Generates an email to the user.
+        -->   
+    <target name="OnFailure" depends="CloseLogs" description="Executes the appropriate tasks when the build fails">
+
+                <tstamp property="Build.EndDateTime" pattern="MM/dd/yyyy HH:mm" />
+                        
+        <!-- Since the script failed Delete the Success Log -->
+        <delete file="${Build.Success.Log}" />
+        
+                <!-- Send an email letting folks know what happened -->
+                <property name="EmailSubject"                 value="${project.name} ${build.name} Failed"/>
+                <property name="EmailMessage"                 value="${project.name} ${build.name} has failed.  Start time: ${Build.StartDateTime}.  End time: ${Build.EndDateTime}" />   
+                
+                
+                <call target="GenerateEmail"/>
+    </target>
+
+
+
+        
+        <!--  
+                Genenerates an email attaching some of the build reports 
+        -->
+    <target name="GenerateEmail" description="Generates an email to the build master with the build results.">
+                <echo message="Generating email..." />
+                <mail from="${EmailFrom}"
+                        tolist="${EmailTo}"
+                        subject="${EmailSubject}"
+                        message="${EmailMessage}"
+                        mailhost="${EmailSMTP}" >
+
+                </mail>                          
+    </target>
+
+
+        <!--
+       Executes SQL Files.  Expects the following properties to be populated:
+           ${sql.sourcefile} - Fully qualified path
+           ${sql.logfile} - Fully qualified path
+           ${sql.dbname} - Database Name
+        -->
+        <target name="ExecuteSQLFile" description="Executes the SQL File in the sql.sourcefile property." >
+                <echo message="Executing SQL file ${sql.sourcefile} ..."/>
+                <sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Initial Catalog=${sql.dbname};User Id=${DBUserID};Password=${DBPassword}"
+                     transaction="true"
+                         delimiter="GO"
+                         delimstyle="Line"
+                         batch="false"
+                             source="${sql.sourcefile}"
+                             output="${sql.logfile}" />
+        </target>
+
+        <!--
+       Executes SQL Files with the folder.  Expects the following properties to be populated:
+           ${sql.dir} - Fully qualified path
+
+           ExecuteSQLFile expects the additions properties to be set:
+           ${sql.logfile} - Fully qualified path
+           ${sql.dbname} - Database Name
+        -->
+        <target name="ExecuteSQLFolder" description="Executes all SQL Files in the sql.dir property folder." >
+                <foreach item="File" property="filename">
+                        <in>
+                                <items>
+                                        <include name="${sql.dir}\*.sql" />
+                                </items>
+                        </in>
+                        <do>
+                                <property name="sql.sourcefile" value="${filename}" />
+                                <call target="ExecuteSQLFile"/>
+                        </do>
+                </foreach>
+        </target>
+
+
+
+        <!-- BUILD TASKS START HERE -->
+        <include buildfile="Utility_Build.include" />
+        <include buildfile="BBSComponents_Build.include" /> 
+
+
+        <!-- 
+                Builds PRCo Systems Solution
+        -->
+        <target name="BuildAll" depends="PreBuild, BuildDatabase">
+                <tstamp />
+
+                <call target="PostBuild"/>
+        </target>
+
+
+        <!--
+                Builds the database
+        -->
+        <target name="BuildDatabase" 
+                depends="PreBuild"  
+                description="Builds the CRM and BBSInterface databases.">
+                
+		<tstamp />
+
+                <property name="sql.dir" value="${build.dir}\PIKS Database" />
+                <property name="sql.dbname" value="${DBName}" />
+
+
+                        <echo message="Build Restore CRM Production Database..."/>
+                        <tstamp />
+
+
+			<if test="${not file::exists(DBBaseLineDataFile)}">
+                                <fail message="Database Restore File Not Found: ${DBBaseLineDataFile}" verbose="true" />
+			</if>
+
+
+                        <property name="sql.sourcefile" value="${build.dir}\RestoreCRMDatabase_Scripts.sql" />
+                        <property name="sql.logfile" value="${build.logdir}\RestoreCRMDatabase_Scripts.txt" />
+                        <property name="sql.dir" value="${build.dir}\PIKS Database\Core_Scripts" />
+
+                           <sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Initial Catalog=Master;User Id=BBSBuild;Password=BBSBuild1901"
+                                transaction="true"
+                                delimiter="GO"
+                                delimstyle="Line"
+                                batch="false"
+                                source="${sql.sourcefile}"
+                                output="${sql.logfile}" 
+                        />
+
+
+                        <sql  connstring="Provider=SQLOLEDB;Data Source=${DBServer};Initial Catalog=Master;User Id=BBSBuild;Password=BBSBuild1901"
+                                  transaction="false"
+                                  delimiter="GO"
+                                  delimstyle="Line"
+                                  output="${build.logdir}\KillProcesses.log">
+                                exec usp_KillDBProcesses CRM;
+                        </sql>
+
+                        <echo message="Restore DB to the baseline..."/>
+                        <sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Initial Catalog=Master;User Id=BBSBuild;Password=BBSBuild1901"
+                                 transaction="false"
+                                 delimiter="GO"
+                                 delimstyle="Line"
+                                 output="${build.logdir}\ResetCRMDatabaseToBaseline.log">
+                                exec usp_ResetCRMDatabaseToBaseline @SourceDataFile='${DBBaseLineDataFile}', @TargetDataFile='${DBDataFile}', @TargetDBName='${DBName}'
+                        </sql>
+
+                        <sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Initial Catalog=${DBName};User Id=BBSBuild;Password=BBSBuild1901"
+                                 transaction="false"
+                                 delimiter="GO"
+                                 delimstyle="Line"
+                                 source="${sql.dir}\CRMRestore_PostExecute.sql" 
+                                 output="${build.logdir}\ResetCRMDatabaseToBaseline.log"/>
+
+
+                        <sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Initial Catalog=${DBName};User Id=BBSBuild;Password=BBSBuild1901"
+                                 transaction="false"
+                                 delimiter="GO"
+                                 delimstyle="Line"
+                                 output="${build.logdir}\ResetCRMDatabaseToBaseline.log">
+                                        EXEC sp_changedbowner 'sa'
+                                        GO
+                        </sql>
+
+
+                        <sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Initial Catalog=${DBName};User Id=BBSBuild;Password=BBSBuild1901"
+                                 transaction="false"
+                                 delimiter="GO"
+                                 delimstyle="Line"
+                                 output="${build.logdir}\ResetCRMDatabaseToBaseline.log">
+                                                        DELETE FROM PRFaxQueue;
+                        </sql>
+
+
+                        <echo message="Build CRM Database..."/>
+                        <tstamp />
+
+   
+
+                        <property name="sql.dir" value="${build.dir}\PIKS Database\Core_Scripts" />
+
+                        <!-- This file deletes all existing dropdown values for PRCo, so it must
+                             run before other release scripts in case they define some custom
+                                 caption values 
+                        -->
+                        <property name="sql.sourcefile" value="${sql.dir}\DropDownValues.sql" />
+                        <call target="ExecuteSQLFile"/>
+
+
+                        <property name="sql.dir" value="${build.dir}\PIKS Database\Core_Scripts" />
+                        <echo message="Executing SQL file ${sql.dir}\Security.sql ..."/>
+                        <sql 
+                                 connstring="Provider=SQLOLEDB;Data Source=${DBServer};Initial Catalog=${DBName};User Id=BBSBuild;Password=BBSBuild1901"
+                                 transaction="false"
+                                 delimiter="GO"
+                                 delimstyle="Line"
+                                 batch="false"
+                                 source="${sql.dir}\Security.sql" 
+                                 output="${sql.logfile}">
+                        </sql>
+        </target>
+        <!-- End BuildDatabase -->
+</project>        

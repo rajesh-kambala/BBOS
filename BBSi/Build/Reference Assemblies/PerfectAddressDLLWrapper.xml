@@ -1,0 +1,1140 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>PerfectAddressDLLWrapper</name>
+    </assembly>
+    <members>
+        <member name="T:PerfectAddressDLLWrapper.PerfectAddressDLL">
+            <summary>
+            Summary description for Class1.
+            </summary>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.#ctor">
+            <summary>
+            Constructor for the Perfect Address DLL
+            </summary>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.Initialize">
+            <summary>
+            This method should be used instead of the Init() or Init_Ex() functions
+            of the PerfectAddressDLL because the intance handle is stored inside of this
+            class.
+            </summary>
+            <returns>true if successful, false if failure</returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.Terminate">
+            <summary>
+            This method should be used instead of the Term() function
+            of the PerfectAddressDLL because the intance handle is stored inside of this
+            class.
+            </summary>
+            <returns>true if successful, false if failure</returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.Error">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.DaysToExpire">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.CheckAddress(System.String,System.String,System.String,System.String)">
+            <summary>
+            This function performs verification and standardization of the address whose components are passed as parameters.
+            The address strings passed to this function are not modified by this function; the resulting standardized address
+            must be obtained by calling other functions, as defined below.
+            Address matching first attempts to identify the city and state, then the street from the list of valid streets for that
+            city, and finally the street number from the range of valid addresses for that street.
+            </summary>
+            <param name="strL1">Firm or high-rise name (optional)</param>
+            <param name="strL2">Puerto Rican urbanization name (optional)</param>
+            <param name="strL3">Street address (e.g. 100 N MAIN ST APT 6)</param>
+            <param name="strL4">City-state-ZIP code</param>
+            <returns>
+            This function returns an integer value indicating the result of the verification effort. The original 
+            input address strings are not modified by this function.
+            The result of an address check can be any one of these four possibilities:
+            a. The address was found with an exact match. No spelling or format changes are needed.
+            b. The address was found, but spelling and/or format changes were necessary to achieve a match.
+            c. The address was not found. No match was possible using USPS address matching rules.
+            d. More than one matching address was found. The SDK cannot decide which one is correct.
+            A result of 0 indicates that the address was fully validated with no changes. A non-zero result indicates that the
+            address was corrected, that the address was uncorrectable, or that an error occurred during the verification
+            process. See Chapter 9 for a full list of possible return codes. Function UNZ_GETADDRESSFLAGS() provides a
+            detailed breakdown of changes applied to a corrected address.
+            If the result indicates that the original address was corrected to achieve a match, you must use other functions to
+            retrieve the corrected address components from the DLL. A reminder: the original input address strings are not
+            modified by this function. To obtain the entire corrected address in a single call, use function UNZ_GETSTDADDRESS(). 
+            You can retrieve
+            corrected address components by calling functions UNZ_GETSTREETPARTS(), UNZ_GETCITYSTZIP(),
+            GETSTREETNUMBER(), UNZ_GETSTREETNAME, or UNZ_GETSECONDARY(). To retrieve the delivery
+            point barcode digits call function UNZ_GETDPBC(). Call function UNZ_GETCONGDIST() to retrieve the
+            congressional district for the address. If an address verification error occurred, the exact error text can be retrieved
+            by calling function UNZ_GETERRORTEXT().
+            </returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.CheckLastLine(System.String)">
+            <summary>
+            This function requests verification and standardization of only the last line (city-state-ZIP) of an address. The
+            primary purpose of this function is to determine the 5-digit ZIP code for a particular city-state when a full 
+            address check fails.
+            </summary>
+            <param name="strL1">City-state-ZIP code string</param>
+            <returns>
+            This function returns an integer value indicating the result of the verification effort. A result of 0 indicates 
+            that the city-state-ZIP was fully validated with no changes. A non-zero result indicates that the city-state-ZIP
+            was corrected, that the city-state-ZIP was uncorrectable, or that an error occurred during the verification 
+            process. See Chapter 9 for a full list of possible return codes. Function UNZ_GETADDRESSFLAGS() provides a detailed
+            breakdown of changes applied to the corrected city-state-ZIP.
+            If the result indicates successful verification or correction, you must use other functions, such as
+            UNZ_GETCITYSTZIP(), to retrieve the standardized city-state-ZIP components from the DLL. The original input
+            address strings are not modified by this function.
+            </returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.CheckZip(System.String@,System.String@)">
+            <summary>
+            This function requests a search of the database based on ZIP code. If the provided ZIP code is a valid 5-digit ZIP
+            code, this request finds the proper state and the city name preferred by the US Postal Service for use on mail
+            associated with that ZIP code. If the provided ZIP code is a valid 9-digit ZIP code, this request finds the proper
+            street address or address range associated with that ZIP code.
+            
+            A 9-digit ZIP code can be passed as one string in the form 84093-1679, or can be provided as separate strings,
+            84093 in szZIP and 1679 in szZIP4. If the string passed in szZIP is a valid 9-digit ZIP code, the parameter szZIP4 is
+            ignored. However, if szZIP is a 5-digit ZIP code and szZIP4 is not used, it must be initialized to 0 (NULL).
+            </summary>
+            <param name="strL1">A 5-digit or 9-digit ZIP code (xxxxx or xxxxx-xxxx) (string)</param>
+            <param name="strL2">The 4-digit add-on value of a 9-digit ZIP code (optional, string)</param>
+            <returns>
+            This function returns an integer value indicating the result of the ZIP code search. A result of 0 indicates that the
+            ZIP code and a matching address were found in the database. A non-zero result indicates that the ZIP code was
+            not found, that the ZIP code applies to an address range, or that an error occurred during the verification process.
+            See Chapter 9 for a full list of possible return codes.
+            If the result indicates successful search for the ZIP code, the city and state and (optionally) the matching address
+            components can be returned to the calling task by calling functions UNZ_GETCITYSTZIP() or
+            UNZ_GETSTDADDRESS(), as defined below. If a ZIP code lookup error occurred, the exact error text can be
+            obtained by calling function UNZ_GETERRORTEXT().
+            </returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStdAddress(System.String@,System.String@,System.String@,System.String@)">
+            <summary>
+            This function returns the four lines of a standardized address. This function should be called only after successfully
+            calling UNZ_CHECKADDRESS() or UNZ_CHECKZIP(). This function copies the requested information from the
+            appropriate fields of a parameter block reserved by the DLL for the calling task into the empty strings pointed to by
+            the parameters.
+            </summary>
+            <param name="strFirmHigh">Pointer to empty string for the firm or high-rise building name</param>
+            <param name="strPRUrb">Pointer to empty string for the Puerto Rican urbanization name</param>
+            <param name="strDelLine">Pointer to empty string for the delivery line (street address)</param>
+            <param name="strLastLine">Pointer to empty string for the last line (city-state-ZIP)</param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetErrorText(System.String@)">
+            <summary>
+            This function returns a text string which explains the results of the last address check or ZIP code check. This
+            function copies the requested information from the appropriate field of a parameter block reserved by the DLL for the
+            calling task into the empty string pointed to by the second parameter. If the last address check or ZIP code check
+            produced no error this function returns an empty string.
+            </summary>
+            <param name="strErrTxt">Pointer to empty string for the error text</param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetAddressFlags(System.String@)">
+            <summary>
+            This function returns a text string containing one or more flag characters detailing the corrections and warnings from
+            the last address check. This function should be called only after successfully calling UNZ_CHECKADDRESS(). This
+            function copies the requested information from the appropriate field of a parameter block reserved by the DLL for the
+            calling task into the empty string pointed to by the second parameter. If the last address check validated the address
+            with no errors or corrections (return code of 0), this function returns a null (empty) string.
+            </summary>
+            <param name="strErrTxt">Pointer to empty string for the error text</param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetAddressType(System.String@)">
+            <summary>
+            This function returns a single-character text string which indicates the type of address record which was matched
+            during the last successful UNZ_CHECKADDRESS() or UNZ_CHECKZIP() function call. This function should be
+            called only after successfully calling UNZ_CHECKADDRESS() or UNZ_CHECKZIP().
+            The single ASCII character which is returned by this function is one of the following:
+            S - Street address
+            P - Post Office Box
+            R - Rural route or Highway Contract
+            H - Highrise apartment/office building
+            F - Firm (business)
+            G - General Delivery
+            </summary>
+            <param name="strAddrType">Pointer to empty string for the address type character</param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetZipType(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strErrTxt"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetCityStZip(System.String@,System.String,System.String)">
+            <summary>
+            
+            </summary>
+            <param name="strCity"></param>
+            <param name="strState"></param>
+            <param name="strZIP"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetCity(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strCity"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetState(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strState"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetZip(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strZIP"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStreetParts(System.String@,System.String@,System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strNumber"></param>
+            <param name="strStreet"></param>
+            <param name="strUnit"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStreetNumber(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strNumber"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStreetName(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strStreet"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetSecondary(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strUnit"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetDPBC(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strDPBC"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetCounty(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strCounty"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetCntyFIPS(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strCntyFIPS"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetAreaCode(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strAreacode"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetTimezone(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strTimezone"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetAddrRange(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strRange"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetCongDist(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strCongDist"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStats(System.String@,System.String@,System.String@,System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strTotal"></param>
+            <param name="strZIP4"></param>
+            <param name="str5Digit"></param>
+            <param name="strCRRT"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetMatchCount">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStreetCount(System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strCitySt"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStreetItem(System.Int32,System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="stnbr"></param>
+            <param name="strStreet"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetMatchAddr(System.Int32,System.String@,System.String@,System.String@,System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="item"></param>
+            <param name="strL1"></param>
+            <param name="strL2"></param>
+            <param name="strL3"></param>
+            <param name="strL4"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetAddrComp(System.String@,System.String@,System.String@,System.String@,System.String@,System.String@,System.String@,System.String@,System.String@,System.String@,System.String@,System.String@,System.String@,System.String@)">
+            <summary>
+            
+            </summary>
+            <param name="strL1"></param>
+            <param name="strL2"></param>
+            <param name="strL3"></param>
+            <param name="strL4"></param>
+            <param name="strL5"></param>
+            <param name="strL6"></param>
+            <param name="strL7"></param>
+            <param name="strL8"></param>
+            <param name="strL9"></param>
+            <param name="strL10"></param>
+            <param name="strL11"></param>
+            <param name="strL12"></param>
+            <param name="strL13"></param>
+            <param name="strL14"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.Init">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.Init_Ex">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.Term(System.IntPtr)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.CheckAddress(System.IntPtr,System.String,System.String,System.String,System.String)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strL1"></param>
+            <param name="strL2"></param>
+            <param name="strL3"></param>
+            <param name="strL4"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.CheckLastLine(System.IntPtr,System.String)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strL1"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.CheckZip(System.IntPtr,System.String,System.String)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strL1"></param>
+            <param name="strL2"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStdAddress(System.IntPtr,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strAddr1"></param>
+            <param name="strAddr2"></param>
+            <param name="strAddr3"></param>
+            <param name="strAddr4"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetErrorText(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strErrTxt"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetAddressFlags(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strErrTxt"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetAddressType(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strErrTxt"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetZipType(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strErrTxt"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetCityStZip(System.IntPtr,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strCity"></param>
+            <param name="strState"></param>
+            <param name="strZIP"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetCity(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strCity"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetState(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strState"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetZip(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strZIP"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStreetParts(System.IntPtr,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strNumber"></param>
+            <param name="strStreet"></param>
+            <param name="strUnit"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStreetNumber(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strNumber"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStreetName(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strStreet"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetSecondary(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strUnit"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetDPBC(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strDPBC"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetCounty(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strCounty"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetCntyFIPS(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strCntyFIPS"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetAreaCode(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strAreacode"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetTimezone(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strTimezone"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetAddrRange(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strRange"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetCongDist(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strCongDist"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStats(System.IntPtr,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strTotal"></param>
+            <param name="strZIP4"></param>
+            <param name="str5Digit"></param>
+            <param name="strCRRT"></param>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.Build3553(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strRFname"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetMatchCount(System.IntPtr)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStreetCount(System.IntPtr,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strCityST"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetStreetItem(System.IntPtr,System.Int32,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="stnbr"></param>
+            <param name="strStreet"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetMatchAddr(System.IntPtr,System.Int32,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="item"></param>
+            <param name="strL1"></param>
+            <param name="strL2"></param>
+            <param name="strL3"></param>
+            <param name="strL4"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PerfectAddressDLLWrapper.PerfectAddressDLL.GetAddrComp(System.IntPtr,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder,System.Text.StringBuilder)">
+            <summary>
+            
+            </summary>
+            <param name="instanceHandle"></param>
+            <param name="strL1"></param>
+            <param name="strL2"></param>
+            <param name="strL3"></param>
+            <param name="strL4"></param>
+            <param name="strL5"></param>
+            <param name="strL6"></param>
+            <param name="strL7"></param>
+            <param name="strL8"></param>
+            <param name="strL9"></param>
+            <param name="strL10"></param>
+            <param name="strL11"></param>
+            <param name="strL12"></param>
+            <param name="strL13"></param>
+            <param name="strL14"></param>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.Initialized">
+            <summary>
+            Read-only property indicating whether the library has been 
+            initialized yet.
+            </summary>
+        </member>
+        <member name="T:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths">
+            <summary>
+            Constant definition of string lengths
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.ADDRLEN">
+            <summary>
+            ADDRLEN
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.NBRLEN">
+            <summary>
+            NBRLEN 
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.STRLEN">
+            <summary>
+            STRLEN 
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.UNITLEN">
+            <summary>
+            UNITLEN
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.RNGLEN">
+            <summary>
+            RNGLEN 
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.CITYLEN">
+            <summary>
+            CITYLEN
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.STATELEN">
+            <summary>
+            STATELEN
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.ZIPLEN">
+            <summary>
+            ZIPLEN 
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.ZIP4LEN">
+            <summary>
+            ZIP4LEN 
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.URBLEN">
+            <summary>
+            URBLEN 
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.FIRMLEN">
+            <summary>
+            FIRMLEN
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.DPBCLEN">
+            <summary>
+            DPBCLEN 
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.CRISLEN">
+            <summary>
+            CRISLEN 
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.CDISTLEN">
+            <summary>
+            CDISTLEN
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.CNAMLEN">
+            <summary>
+            CNAMLEN
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.CADDRLEN">
+            <summary>
+            CADDRLE
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.FNAMLEN">
+            <summary>
+            FNAMLEN
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.CNTYLEN">
+            <summary>
+            CNTYLEN
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.FIPSLEN">
+            <summary>
+            FIPSLEN 
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.ACLEN">
+            <summary>
+            ACLEN   
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.TZLEN">
+            <summary>
+            TZLEN   
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.ERRTXTLE">
+            <summary>
+            ERRTXTL
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.ADDRFLAGS">
+            <summary>
+            ADDRFLAG
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.RNAMLE">
+            <summary>
+            RNAML
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.DIRLEN">
+            <summary>
+            DIRLEN  
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.SUFFIXLEN">
+            <summary>
+            SUFFIXLE
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.RRNBRLEN">
+            <summary>
+            RRNBRLEN
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.POBNBRLE">
+            <summary>
+            POBNBRL
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.SECYTYPEL">
+            <summary>
+            SECYTYPE
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.SECYNBRL">
+            <summary>
+            SECYNBR
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.StringLengths.MATCHMAX">
+            <summary>
+            MATCHMAX
+            </summary>
+        </member>
+        <member name="T:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes">
+            <summary>
+            Constant definition of error codes
+            </summary>
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.ECFATA">
+            Fatal init error (i/o, or mem allocation error)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC00">
+            Address was verified with no corrections
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC01">
+            ZIP code corrected
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC02">
+            state corrected
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC03">
+            city corrected
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC04">
+            total city-state-zip mismatch
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC05">
+            insufficient address data
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC06">
+            non-approved city name corrected to preferred city
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC07">
+            street name corrected
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC08">
+            street not found
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC09">
+            street or box number not found
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC10">
+            apt/ste not found
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC15">
+            address corrected
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC16">
+            city-state missing
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC17">
+            No streets, using Gen Del ZIP+4 3/20/01
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC20">
+            ZIP code format error
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC21">
+            ZIP code not found
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC22">
+            ZIP code applies to address range
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC23">
+            ZIP code applies to unit range
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC24">
+            Verified 5-digit ZIP code
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC30">
+            Firm/Highrise name conflict
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC31">
+            Non-delivery address (no ZIP+4)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC32">
+            Multiple matching records
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC33">
+            Street name changed from alias to preferred
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC98">
+            PR Urb not found in city street list
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.EC99">
+            City has no streets (Unable to load street list)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_GOODADDR">
+            Address was verified with no corrections
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_ZIP">
+            'Z' - ZIP code or ZIP+4 corrected
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_STATE">
+            'S' - state corrected
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_CITY">
+            'C' - city corrected
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_ADDR">
+            'A' - street number and/or predirection corrected
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_STREET">
+            'N' - street name, suffix, and/or postdirection corrected
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_POB">
+            'P' - PO Box address corrected
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_UNIT">
+            '#' - Secondary address (apt/ste) corrected or ignored
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_FIRM">
+            'F' - Firm name not found, ignored
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_URB">
+            'U' - PR Urb name corrected
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_CS">
+            'C','S' - missing city-state corrected to match ZIP
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_NONDEL">
+            'D' - Address verified, but USPS doesn't deliver (no +4)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_EXTRA">
+            'X' - Extraneous characters (ignored)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_GENDEL">
+            'G' - Street address remapped to General Delivery ZIP+4 3/20/01
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_5DIG">
+            'Z' - Verified 5-digit ZIP code (reverse search)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_BADADDR">
+            unable to verify address
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_BADCSZ">
+            total city-state-zip mismatch
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_NODATA">
+            insufficient address data
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_BADSTR">
+            street name not found
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_BADNBR">
+            street number or box number out of range
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_NOSTR">
+            City has no streets (Unable to load street list)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_MULT">
+            Multiple matching records
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_BADURB">
+            PR Urb not found in city street list
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_FHERR">
+            Firm/Highrise name conflict
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.RTE00">
+            invalid or missing parameter block
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.RTE01">
+            invalid handle parameter
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.RTE02">
+            missing function parameter  
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.RTE03">
+            f8.dat file seek error
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.RTE04">
+            f8.dat file read error
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.RTE05">
+            f8.dat record type error
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.RTE06">
+            f8.dat record length error
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.RTE07">
+            f8.dat record format error
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_GOODZIP">
+            Valid ZIP code, single address found
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_ARNG">
+            ZIP code applies to address range
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_URNG">
+            ZIP code applies to unit range
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_BADZIP">
+            ZIP code format error (xxxxx or xxxxx-xxxx)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.XC_ZNF">
+            ZIP code not found
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE00">
+            CASS CD-ROM datebase has expired (obsolete)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE01">
+            Memory (internal buffers) allocation error
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE02">
+            Unable to open f1.dat (citydict)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE03">
+            Unable to read f1.dat  
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE04">
+            Unable to open f2.dat (citylist)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE05">
+            Unable to read f2.dat 
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE06">
+            Unable to open f3.dat (zipdict)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE07">
+            Unable to read f3.dat  
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE08">
+            Unable to open f4.dat (ziplist)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE09">
+            Unable to read f4.dat
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE10">
+            Unable to open f5.dat (state) 
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE11">
+            Unable to read f5.dat  
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE12">
+            Unable to open f6.dat (mflag) 
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE13">
+            Unable to read f6.dat  
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE14">
+            Unable to open f7.dat (mlist) 
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE15">
+            Unable to read f7.dat
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE16">
+            Unable to open f8.dat (strlist)
+        </member>
+        <member name="F:PerfectAddressDLLWrapper.PerfectAddressDLL.ErrorCodes.FE17">
+            f8.dat corrupted (wrong version)
+        </member>
+        <member name="T:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress">
+            <summary>
+            The StandardizedAddress class holds the values of an address that has been standardized
+            by the Perfect Address DLL
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.StreetNumber">
+            <summary>
+            Street number for this address
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.StreetPreDirection">
+            <summary>
+            Predirection for this address. For example: in Seattle streets that run north/south have a
+            predirection (e.g. NW First) while streets that run east / west have a postdirection 
+            (e.g. First NW).
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.StreetName">
+            <summary>
+            The name of the street
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.StreetSuffix">
+            <summary>
+            This is the street suffix. (I *believe*, but am not sure, this will be something like Lane, Street or Drive)
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.StreetPostDirection">
+            <summary>
+            Postdirection for this address. For example: in Seattle streets that run north/south have a
+            predirection (e.g. NW First) while streets that run east / west have a postdirection 
+            (e.g. First NW).
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.SecondaryAddressType">
+            <summary>
+            This is the street address type
+            (this is somethine like BOX, STE, or APT)
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.SecondaryAddressNumber">
+            <summary>
+            Unit number for the secondary address
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.SecondaryAddress">
+            <summary>
+            Composite of secondary type and number
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.POBox">
+            <summary>
+            Post Office Box
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.RuralRouteNumber">
+            <summary>
+            Rural Route Number
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.HighwayContractorNumber">
+            <summary>
+            Highway Contractor Number
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.City">
+            <summary>
+            City
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.State">
+            <summary>
+            State
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.ZipCode">
+            <summary>
+            Zipcode
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.Zip4">
+            <summary>
+            The four digits appended to the zipcode for a zip+4 zipcode
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.County">
+            <summary>
+            The county this address resides in
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.Country">
+            <summary>
+            The country this address resides in
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.AreaCode">
+            <summary>
+            The area code for this address
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.TimeZone">
+            <summary>
+            The timezone this address resides in
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.DeliveryPointBarCode">
+            <summary>
+            These are the three digits which must be appended to the Zip+4 to create a valid 
+            delivery point bar code (DPBC)
+            
+            Note: to obtain the full 12-digit DPBC, you must append the
+            three digits returned by this function to the nine digits
+            of the ZIP+4.
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.CongressionalDistrict">
+            <summary>
+            The two character congressional district code for the standardized address.
+            </summary>
+        </member>
+        <member name="P:PerfectAddressDLLWrapper.PerfectAddressDLL.StandardizedAddress.FIPS">
+            <summary>
+            a three-digit numeric ASCII string containing the Federal Information Processing Standard
+            (FIPS) number for the county in which the standardized address resides.
+            </summary>
+        </member>
+    </members>
+</doc>

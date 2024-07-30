@@ -1,0 +1,794 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BBS">
+      <DataSourceReference>BBS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>1cd1f4b5-f75a-4008-aacf-de7c0b450450</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="dsMetrics">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@StartDate">
+            <Value>=Parameters!StartDate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@EndDate">
+            <Value>=Parameters!EndDate.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>DECLARE @ComputedEndDate datetime;
+SET @ComputedEndDate = DATEADD(d, 1, @EndDate)
+
+DECLARE @MyTable table (
+	Metric varchar(200),
+	Value int)
+
+
+--
+-- Rating Changes
+-- 
+
+DECLARE @Ratings Table
+	(RatingID  int Primary Key,
+	 BBID  int,
+	[Date]  datetime,
+	[Year]  int,
+	[Month]  int,
+	[Quarter]  int,
+	[Name]  nvarchar(300),
+	[CWE]  nvarchar(30),
+	[Int]  nvarchar(30),
+	[Pay]  nvarchar(30),
+	[CWEWeight]  int,
+	[IntWeight]  int,
+	[PayWeight]  int,
+	[RatingLine]  nvarchar(100),
+	
+	[Numerals] nvarchar(100),
+	[Prev RatingID]  int,
+	[Change Type] nvarchar(100),
+	[Rule] int,
+	
+	[Num62]  nvarchar(5),
+	[Num68]  nvarchar(5),
+	[Num81]  nvarchar(5),
+	[Num82]  nvarchar(5),
+	[Num83]  nvarchar(5),
+	[Num84]  nvarchar(5),
+	[Num86]  nvarchar(5),
+	[Num142]  nvarchar(5),
+	[Num145]  nvarchar(5),
+	[Num146]  nvarchar(5),
+	[Num147]  nvarchar(5),
+	[Num148]  nvarchar(5),
+	[Num149]  nvarchar(5),
+	[Num154]  nvarchar(5),
+
+	[Analyst] nvarchar (10),
+	[Region]  nvarchar (50)
+	)
+
+--We're only interested in Ratings after our Start Date, so I identify the earliest rating set before or on our Start date.
+--Then, I use the earliest rating date per company to find all valid ratings.
+
+Declare @EarliestRatings table 	
+	(CompanyID int
+	, RatingDate datetime)
+
+INSERT INTO @EarliestRatings
+	SELECT prra_CompanyID, min(prra_Date)
+--	, case when @Startdate is null then min(prra_Date) else max(prra_Date) end
+	FROM PRRating with (nolock)
+   WHERE prra_Date &gt;= @StartDate
+     AND prra_Date &lt;= @ComputedEndDate
+	GROUP BY prra_CompanyID
+
+
+
+--We're only interested in Rating assignments and removals, not interim or informational rating line changes.
+--We do a little song and dance here to find the eligible rating records, and rank them by company and date.
+--I use the rank column later to determine each rating record's previous rating.
+--This gets downright strange with the "OR" in the where clause of the subquery.  But, the first group of where conditions
+--pertains to rating removals.  The second group of where conditions return the rating assignment records we're interested in.
+
+Declare @ValidRatings Table 
+	(RID int Primary Key, 
+	CompID int, 
+	RDate datetime, 
+	Rnk int, 
+	unique clustered (CompID, Rnk))
+
+Insert into @ValidRatings
+Select
+	RID
+	, prra_CompanyID
+	, prra_Date
+	, RANK() OVER (PARTITION BY prra_CompanyID ORDER BY prra_Date) --Yeah, I know this is weird.
+From
+	(SELECT 
+		max(prra_RatingID) as RID --This is weird too, but I only want one rating per day.
+		, prra_CompanyID
+		, prra_Date 
+	FROM PRRating with (nolock)
+	left outer join PRRatingNumeralAssigned on prra_RatingID = pran_RatingID
+		and pran_RatingNumeralID in (82,83,	84, 86, 146,147,148,149)
+	WHERE 
+	--Company is Unrated
+		((prra_CreditWorthID is null or prra_CreditWorthID = 9)
+		and prra_PayRatingID is null
+		and prra_IntegrityID is null
+		and prra_RatingID not in
+			(Select pran_RatingID
+			from PRRatingNumeralAssigned 
+			inner join PRRatingNumeral  on prrn_RatingNumeralID = pran_RatingNumeralID
+				and prrn_Type != 'A')) --An unrated company cannot have any numerals, other than affiliations.
+	OR
+	--Company is Rated
+		((prra_CreditWorthID is not null and prra_CreditWorthID not in (3, 4, 6, 7, 9))
+			or prra_PayRatingID is not null
+			or prra_IntegrityID is not null
+			or pran_RatingNumeralID is not null)
+	GROUP BY prra_CompanyID, prra_Date)TableA
+Inner Join @EarliestRatings on prra_CompanyID = CompanyID
+	and prra_Date &gt;= RatingDate
+
+--Select * from @ValidRatings
+--Inner Join @EarliestRatings on compID = CompanyID
+--order by compID,Rnk
+
+Insert into @Ratings
+SELECT 
+	RatingID  =  prra_RatingID,
+	BBID  =  prra_CompanyID,
+	[Date]  =  prra_Date,
+	[Year]  =  year(prra_Date),
+	[Month]  =  month(prra_Date),
+	[Quarter]  =  datepart(qq, prra_Date),
+	[Name]  =  v.comp_Name ,
+	[CWE]  =  isnull(prcw_Name,''),
+	[Int]  =  isnull(prin_Name,''),
+	[Pay]  =  isnull(prpy_Name,''),
+	[CWEWeight]  =  CASE 
+		when prcw_Name like '(%' then ''
+		when prcw_Name is null then ''
+		else dbo.getloweralpha(left(prcw_Name,len(prcw_Name)-1))
+		end,
+	[IntWeight]  =  isnull(prra_IntegrityID,''),
+	[PayWeight]  =  isnull(prpy_Weight,''),
+	[RatingLine]  =  prra_RatingLine,
+	[Numerals] = '',
+	[Prev RatingID] = p.RID,
+	[Change Type] = '', 
+	[Rule] = 0,
+	--I haven't tried joining to the rating numeral assigned table to see if there's a performance
+	--improvement vs. this case stuff.
+	[Num62]  = CASE when prra_RatingLine like '%(62)%' then 'Y' else '' end, 
+	[Num68]  = CASE when prra_RatingLine like '%(68)%' then 'Y' else '' end,
+	[Num81]  = CASE when prra_RatingLine like '%(81)%' then 'Y' else '' end,
+	[Num82]  = CASE when prra_RatingLine like '%(82)%' then 'Y' else '' end,
+	[Num83]  = CASE when prra_RatingLine like '%(83)%' then 'Y' else '' end,
+	[Num84]  = CASE when prra_RatingLine like '%(84)%' then 'Y' else '' end,
+	[Num86]  = CASE when prra_RatingLine like '%(86)%' then 'Y' else '' end,
+	[Num142]  = CASE when prra_RatingLine like '%(142)%' then 'Y' else '' end,
+	[Num145]  = CASE when prra_RatingLine like '%(145)%' then 'Y' else '' end,
+	[Num146]  = CASE when prra_RatingLine like '%(146)%' then 'Y' else '' end,
+	[Num147]  = CASE when prra_RatingLine like '%(147)%' then 'Y' else '' end,
+	[Num148]  = CASE when prra_RatingLine like '%(148)%' then 'Y' else '' end,
+	[Num149]  = CASE when prra_RatingLine like '%(149)%' then 'Y' else '' end,
+	[Num154]  = CASE when prra_RatingLine like '%(154)%' then 'Y' else '' end,
+	[Analyst] = rtrim(user_logon),
+	[Region] = null
+FROM vPRCompanyRating v with (nolock)
+inner join Company with (nolock) on comp_CompanyID = prra_CompanyID
+	and comp_PRIndustryType != 'L'
+	and comp_CompanyID != 100001
+Inner Join @ValidRatings c on c.RID = prra_RatingID --for current rating record.
+Left outer join @ValidRatings p on p.CompID = c.CompID --for previous rating record.
+	and p.Rnk = (c.Rnk - 1)
+Left outer join Users with (nolock) on user_UserID = prra_CreatedBy
+ORDER BY BBID, [Date]
+
+
+
+Update @Ratings
+Set Numerals = 'Y'
+where 
+[Num62]  = 'Y' OR
+[Num68]  = 'Y' OR
+[Num142]  = 'Y' OR
+[Num145]  = 'Y' OR
+[Num154]  = 'Y' OR
+[Num82]  = 'Y' OR
+[Num83]  = 'Y' OR
+[Num84]  = 'Y' OR
+[Num86]  = 'Y' OR
+[Num146]  = 'Y' OR
+[Num147]  = 'Y' OR
+[Num148]  = 'Y' OR
+[Num149]  = 'Y' OR
+[Num81]  = 'Y'
+
+
+
+-- 1.  Flag first ratings: no prev rating
+
+Update @Ratings
+Set [Change Type] = 'Established'
+	,[Rule] = 1
+where [Prev RatingID] is null
+
+
+-- Special Rule for (86) to (83)
+Update @Ratings 
+Set [Change Type] = 'Upgrade'
+	,[Rule] = 2
+where 
+	[Change Type] = ''
+	AND RatingID in 
+		(Select cur.RatingID
+		From @Ratings cur
+		inner join @Ratings prev on prev.RatingID = cur.[Prev RatingID]
+		where 
+			cur.Num83 = 'Y' and cur.Num86 = ''
+			and prev.Num86 = 'Y')
+
+-- Special Rule for (149) to (81)
+Update @Ratings 
+Set [Change Type] = 'Upgrade'
+	,[Rule] = 3
+where 
+	[Change Type] = ''
+	AND RatingID in 
+		(Select cur.RatingID
+		From @Ratings cur
+		inner join @Ratings prev on prev.RatingID = cur.[Prev RatingID]
+		where 
+			cur.Num81 = 'Y' and cur.Num149 = ''
+			and prev.Num149 = 'Y')
+
+--Special Rule for F to (149) or (81)
+Update @Ratings 
+Set [Change Type] = 'Upgrade'
+	,[Rule] = 4
+where 
+	[Change Type] = ''
+	AND RatingID in 
+		(Select cur.RatingID
+		From @Ratings cur
+		inner join @Ratings prev on prev.RatingID = cur.[Prev RatingID]
+		where 
+			prev.PayWeight = 1 and 
+			(cur.Num149 = 'Y' or cur.Num81 = 'Y'))
+			
+--Special Rule for (154) X F
+Update @Ratings 
+Set [Change Type] = 'Downgrade'
+	,[Rule] = 5
+where 
+	[Change Type] = ''
+	AND Num154 = 'Y' 
+	AND IntWeight = 1
+	and PayWeight = 1
+
+--Flag Unchanged:  No change in CWE, Pay, Int, or Numeral status
+Update @Ratings 
+Set [Change Type] = 'Unchanged'
+	,[Rule] = 6
+where 
+	[Change Type] = ''
+	AND RatingID in 
+		(Select cur.RatingID
+		From @Ratings cur
+		inner join @Ratings prev on prev.RatingID = cur.[Prev RatingID]
+		where 
+			cur.Numerals = prev.Numerals 
+			and cur.CWEWeight = prev.CWEWeight
+			and cur.IntWeight = prev.IntWeight
+			and cur.PayWeight = prev.PayWeight)
+
+
+-- Flag removed ratings: No CWE, Pay, Int, or Numerals
+
+Update @Ratings
+Set [Change Type] = 'Removed'
+	,[Rule] = 7
+where 
+	[Change Type] = ''
+	and CWEWeight = 0
+	and IntWeight = 0
+	and PayWeight = 0
+	and Numerals = ''
+
+--Re-established Rating:  CWE, Pay, or Int assigned without numerals, where prev rating was "removed".
+Update @Ratings
+Set [Change Type] = 'Established'
+	,[Rule] = 8
+where 
+	[Change Type] = ''
+	and Numerals = '' 
+	and [Prev RatingID] in (Select RatingID from @Ratings where [Change Type] = 'Removed')
+	and(CWEWeight &gt; 0
+	or IntWeight &gt; 0
+	or PayWeight &gt; 0)
+
+-- Numeral Downgrade:  Prev rating has no numerals, but numerals are now assigned
+
+Update @Ratings
+Set [Change Type] = 'Downgrade'	
+	,[Rule] = 9
+where 
+	[Change Type] = ''
+	and Numerals = 'Y'
+	and [Prev RatingID] in (Select RatingID from @Ratings where [Numerals] = '')
+
+
+-- Numeral Upgrade:  Prev Rating has numerals, current rating does not
+Update @Ratings
+Set [Change Type] = 'Upgrade'
+	,[Rule] = 10
+where 
+	[Change Type] = ''
+	and Numerals = ''
+	and [Prev RatingID] in (Select RatingID from @Ratings where [Numerals] = 'Y')
+
+
+-- Downgrade:  CWE, Int, or Pay drop
+Update @Ratings 
+Set [Change Type] = 'Downgrade'
+	,[Rule] = 11
+where 
+	[Change Type] = ''
+	AND RatingID in 
+		(Select cur.RatingID
+		From @Ratings cur
+		inner join @Ratings prev on prev.RatingID = cur.[Prev RatingID]
+		where 
+			cur.CWEWeight &lt; prev.CWEWeight
+			or cur.IntWeight &lt; prev.IntWeight
+			or cur.PayWeight &lt; prev.PayWeight)
+
+
+-- Upgrade:  CWE, Int, or Pay Increase
+Update @Ratings 
+Set [Change Type] = 'Upgrade'
+	,[Rule] = 12
+where 
+	[Change Type] = ''
+	AND RatingID in 
+		(Select cur.RatingID
+		From @Ratings cur
+		inner join @Ratings prev on prev.RatingID = cur.[Prev RatingID]
+		where 
+			cur.CWEWeight &gt; prev.CWEWeight
+			or cur.IntWeight &gt; prev.IntWeight
+			or cur.PayWeight &gt; prev.PayWeight)
+
+
+INSERT INTO @MyTable
+SELECT 'Rating Changes', (ISNULL(pvt.Established, 0) + ISNULL(pvt.Upgrade, 0) + ISNULL(pvt.Downgrade, 0) + ISNULL(pvt.Removed, 0)) -- as [Rating Changes]--,
+       --pvt.Established as [New Listings],
+       --pvt.Removed as [Companies Closed]
+  FROM ( 
+		SELECT [Change Type], COUNT(1) as CNT
+		  FROM @Ratings
+		 WHERE [date] &gt;= @StartDate
+		   AND [date] &lt;= @ComputedEndDate
+		   AND [change type] != 'Unchanged'
+		GROUP BY [Change Type]
+		) T1
+ PIVOT (MAX(Cnt)
+        for [Change Type] IN (Established, Upgrade, Downgrade, Removed)
+	   ) pvt
+
+
+
+--
+-- Phone Number Changes
+--
+INSERT INTO @MyTable
+SELECT 'Phone Number Changes', COUNT(1)  -- as [Phone Number Changes]
+  FROM PRTransaction
+       INNER JOIN PRTransactionDetail on prtx_TransactionID = prtd_TransactionID
+	   INNER JOIN Company ON prtx_CompanyID = comp_CompanyID
+ WHERE prtx_EffectiveDate BETWEEN @StartDate AND @ComputedEndDate
+   AND prtd_EntityName = 'Phone'
+   AND prtx_PersonID IS NULL
+   AND comp_PRIndustryType != 'L'
+   AND comp_PRListingStatus = 'L'
+   AND comp_PRLocalSource IS NULL;
+
+--
+--
+
+DECLARE @MyTable2 table (
+	Metric varchar(50),
+	Cnt int)
+
+
+
+INSERT INTO @MyTable2
+SELECT 'Merger &amp; Acquisition', 
+	   COUNT(DISTINCT prbe_CompanyId)
+  FROM PRBusinessEvent 
+       INNER JOIN Company ON comp_CompanyID = prbe_CompanyId
+ WHERE prbe_BusinessEventTypeId IN (1, 22)
+   AND prbe_EffectiveDate BETWEEN @StartDate AND @ComputedEndDate
+   AND comp_PRIndustryType != 'L'
+   AND comp_PRLocalSource IS NULL
+
+
+INSERT INTO @MyTable2
+SELECT 'Companies Closed',
+       COUNT(DISTINCT prra_CompanyId)
+  FROM Company
+       INNER JOIN PRRating ON comp_CompanyID = prra_CompanyID
+	   INNER JOIN PRRatingNumeralAssigned ON prra_RatingId = pran_RatingId
+ WHERE prra_Date BETWEEN @StartDate AND @ComputedEndDate
+   AND pran_RatingNumeralId IN (88, 113)
+   AND comp_PRIndustryType != 'L'
+   AND comp_PRLocalSource IS NULL;
+
+INSERT INTO @MyTable
+SELECT 'Closures, Mergers, and Acquisitions', SUM(Cnt)
+  FROM @MyTable2
+
+
+
+--
+-- Email/Web Changes
+--
+INSERT INTO @MyTable
+SELECT 'Email Changes', COUNT(1) -- as [Email Changes]
+  FROM PRTransaction
+       INNER JOIN Company ON prtx_CompanyID = comp_CompanyID
+       INNER JOIN PRTransactionDetail on prtx_TransactionID = prtd_TransactionID
+ WHERE prtx_EffectiveDate BETWEEN @StartDate AND @ComputedEndDate
+   AND prtd_EntityName = 'Email/Web'
+   AND comp_PRIndustryType != 'L'
+   AND comp_PRListingStatus = 'L'
+   AND prtx_PersonID IS NULL
+   AND prtd_ColumnName LIKE 'E-mail Address%'
+   AND comp_PRLocalSource IS NULL;
+
+
+SELECT * FROM @MyTable</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Metric">
+          <DataField>Metric</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Value">
+          <DataField>Value</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="Tablix1">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>3.78125in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Metric</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox3">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Value</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox3</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Metric">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Metric.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Metric</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Value">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Value.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Value</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>dsMetrics</DataSetName>
+            <Height>0.5in</Height>
+            <Width>4.78125in</Width>
+            <Style>
+              <Border>
+                <Style>Solid</Style>
+              </Border>
+              <TopBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </TopBorder>
+              <BottomBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </BottomBorder>
+              <LeftBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </LeftBorder>
+              <RightBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </RightBorder>
+            </Style>
+          </Tablix>
+        </ReportItems>
+        <Height>0.5in</Height>
+        <Style />
+      </Body>
+      <Width>4.78125in</Width>
+      <Page>
+        <LeftMargin>1in</LeftMargin>
+        <RightMargin>1in</RightMargin>
+        <TopMargin>1in</TopMargin>
+        <BottomMargin>1in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="StartDate">
+      <DataType>DateTime</DataType>
+      <Prompt>Start Date</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="EndDate">
+      <DataType>DateTime</DataType>
+      <Prompt>End Date</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>1</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>StartDate</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>EndDate</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>8336fb12-ecc0-4a93-a7ce-61301bf7b828</rd:ReportID>
+</Report>

@@ -1,0 +1,1021 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BBS">
+      <DataSourceReference>BBS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>1c022b5e-c224-4e26-9200-48de7feac6c4</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="dsCompanyInfo">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@prcca_CompanyId">
+            <Value>=Parameters!prcca_CompanyID.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT comp_PRBookTradestyle, 
+       CityState = prci_City + ', ' + prst_Abbreviation,  
+       IndustryTypeDesc = cast(ind.capt_US as varchar(500)) + ' Listing',
+	   Industry = comp_PRIndustryType,
+       Member = CASE WHEN dbo.ufn_GetPrimaryService(comp_PRHQID) IS NOT NULL then 'Y' ELSE null END
+ FROM Company WITH (NOLOCK)
+      INNER JOIN vPRLocation on comp_prlistingcityid = prci_CityId  
+      INNER JOIN Custom_Captions ind WITH (NOLOCK) ON capt_family = 'comp_PRIndustryType' and capt_code = comp_PRIndustryType  
+WHERE comp_CompanyId = @prcca_CompanyId</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="comp_PRBookTradestyle">
+          <DataField>comp_PRBookTradestyle</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="CityState">
+          <DataField>CityState</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="IndustryTypeDesc">
+          <DataField>IndustryTypeDesc</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Industry">
+          <DataField>Industry</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Member">
+          <DataField>Member</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsGetCommodity_EN">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@prcca_CompanyID">
+            <Value>=Parameters!prcca_CompanyID.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>  SELECT prcx_Description As Description, prcca_PublishedDisplay, prcca_ListingCol1, prcca_ListingCol2, AttributeName, GrowingMethod, prcca_Sequence, 
+                    prcca_CommodityId, prkycc_Commodityid, prkycc_ArticleID, prkycc_PostName
+                FROM vListingPRCompanyCommodity WITH (NOLOCK)
+	            LEFT JOIN PRKYCCommodity WITH(NOLOCK) ON prcca_CommodityId = prkycc_CommodityID 
+		            AND ISNULL(prcca_AttributeID,0) = ISNULL(prkycc_AttributeID,0)
+		            AND ISNULL(prcca_GrowingMethodID,0) = ISNULL(prkycc_GrowingMethodID,0)
+                LEFT JOIN WordPress.dbo.wp_4_posts wpp WITH(NOLOCK) ON 
+                    wpp.ID = prkycc_ArticleID
+                    AND post_type = 'KYC' 
+                    AND post_status='publish' 
+                    AND post_date&lt;GETDATE() WHERE prcca_CompanyID=@prcca_CompanyID ORDER BY Description ASC</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Description">
+          <DataField>Description</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="prcca_PublishedDisplay">
+          <DataField>prcca_PublishedDisplay</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="prcca_ListingCol1">
+          <DataField>prcca_ListingCol1</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="prcca_ListingCol2">
+          <DataField>prcca_ListingCol2</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="AttributeName">
+          <DataField>AttributeName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="GrowingMethod">
+          <DataField>GrowingMethod</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="prcca_Sequence">
+          <DataField>prcca_Sequence</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="prcca_CommodityId">
+          <DataField>prcca_CommodityId</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="prkycc_Commodityid">
+          <DataField>prkycc_Commodityid</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="prkycc_ArticleID">
+          <DataField>prkycc_ArticleID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="prkycc_PostName">
+          <DataField>prkycc_PostName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsGetCommodity_ES">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@prcca_CompanyID">
+            <Value>=Parameters!prcca_CompanyID.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>  SELECT prcx_Description_ES As Description, prcca_PublishedDisplay, prcca_ListingCol1, prcca_ListingCol2, AttributeName, GrowingMethod, prcca_Sequence, 
+                    prcca_CommodityId, prkycc_Commodityid, prkycc_ArticleID, prkycc_PostName
+                FROM vListingPRCompanyCommodity WITH (NOLOCK)
+	            LEFT JOIN PRKYCCommodity WITH(NOLOCK) ON prcca_CommodityId = prkycc_CommodityID 
+		            AND ISNULL(prcca_AttributeID,0) = ISNULL(prkycc_AttributeID,0)
+		            AND ISNULL(prcca_GrowingMethodID,0) = ISNULL(prkycc_GrowingMethodID,0)
+                LEFT JOIN WordPress.dbo.wp_4_posts wpp WITH(NOLOCK) ON 
+                    wpp.ID = prkycc_ArticleID
+                    AND post_type = 'KYC' 
+                    AND post_status='publish' 
+                    AND post_date&lt;GETDATE() WHERE prcca_CompanyID=@prcca_CompanyID ORDER BY Description ASC</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Description">
+          <DataField>Description</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="prcca_PublishedDisplay">
+          <DataField>prcca_PublishedDisplay</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="prcca_ListingCol1">
+          <DataField>prcca_ListingCol1</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="prcca_ListingCol2">
+          <DataField>prcca_ListingCol2</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="AttributeName">
+          <DataField>AttributeName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="GrowingMethod">
+          <DataField>GrowingMethod</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="prcca_Sequence">
+          <DataField>prcca_Sequence</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="prcca_CommodityId">
+          <DataField>prcca_CommodityId</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="prkycc_Commodityid">
+          <DataField>prkycc_Commodityid</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="prkycc_ArticleID">
+          <DataField>prkycc_ArticleID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="prkycc_PostName">
+          <DataField>prkycc_PostName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Image Name="image1">
+            <Source>External</Source>
+            <Value>PRCoLogo.jpg</Value>
+            <Sizing>Fit</Sizing>
+            <Left>5.25in</Left>
+            <Height>1.125in</Height>
+            <Width>1.25in</Width>
+            <Style />
+          </Image>
+          <Textbox Name="txtPage1BlueBookListing">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>COMMODITY LISTING</Value>
+                    <Style>
+                      <FontFamily>Times New Roman</FontFamily>
+                      <FontSize>18pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Center</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Left>1.75in</Left>
+            <Height>0.29167in</Height>
+            <Width>3.38333in</Width>
+            <ZIndex>1</ZIndex>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Line Name="line1">
+            <Top>1.25in</Top>
+            <Height>0in</Height>
+            <Width>6.5in</Width>
+            <ZIndex>2</ZIndex>
+            <Style>
+              <Border>
+                <Style>Solid</Style>
+                <Width>2pt</Width>
+              </Border>
+            </Style>
+          </Line>
+          <Textbox Name="hdnBookTradestyle">
+            <CanGrow>true</CanGrow>
+            <CanShrink>true</CanShrink>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=First(Fields!comp_PRBookTradestyle.Value, "dsCompanyInfo")</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>0.775in</Top>
+            <Left>2in</Left>
+            <Height>0.125in</Height>
+            <Width>2.51042in</Width>
+            <ZIndex>3</ZIndex>
+            <Visibility>
+              <Hidden>true</Hidden>
+            </Visibility>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="hdnCityState">
+            <CanGrow>true</CanGrow>
+            <CanShrink>true</CanShrink>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=First(Fields!CityState.Value, "dsCompanyInfo")</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>0.9in</Top>
+            <Left>2in</Left>
+            <Height>0.125in</Height>
+            <Width>2.5in</Width>
+            <ZIndex>4</ZIndex>
+            <Visibility>
+              <Hidden>true</Hidden>
+            </Visibility>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtReportDateLabel">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>Report Date:</Value>
+                    <Style>
+                      <FontWeight>Bold</FontWeight>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>0.54722in</Top>
+            <Left>2in</Left>
+            <Height>0.2in</Height>
+            <Width>0.96875in</Width>
+            <ZIndex>5</ZIndex>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtReportDate">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=Format(Globals.ExecutionTime, "d")</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>0.54722in</Top>
+            <Left>2.97917in</Left>
+            <Height>0.2in</Height>
+            <Width>0.96875in</Width>
+            <ZIndex>6</ZIndex>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Rectangle Name="rectangle1">
+            <ReportItems>
+              <Textbox Name="txtHeaderPRCo">
+                <CanGrow>true</CanGrow>
+                <KeepTogether>true</KeepTogether>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>BLUE BOOK SERVICES
+845 E. GENEVA ROAD
+CAROL STREAM, IL  60188
+Phone 630 668-3500
+FAX 630 668-0303</Value>
+                        <Style>
+                          <FontSize>9pt</FontSize>
+                        </Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style />
+                  </Paragraph>
+                </Paragraphs>
+                <Height>0.75in</Height>
+                <Width>1.75in</Width>
+                <Style>
+                  <PaddingLeft>2pt</PaddingLeft>
+                  <PaddingRight>1pt</PaddingRight>
+                  <PaddingTop>2pt</PaddingTop>
+                </Style>
+              </Textbox>
+              <Textbox Name="txtHeaderEmail">
+                <CanGrow>true</CanGrow>
+                <KeepTogether>true</KeepTogether>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>info@bluebookservices.com</Value>
+                        <Style>
+                          <FontSize>9pt</FontSize>
+                          <TextDecoration>Underline</TextDecoration>
+                          <Color>Blue</Color>
+                        </Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style />
+                  </Paragraph>
+                </Paragraphs>
+                <ActionInfo>
+                  <Actions>
+                    <Action>
+                      <Hyperlink>mailto:info@bluebookservices.com</Hyperlink>
+                    </Action>
+                  </Actions>
+                </ActionInfo>
+                <Top>0.75in</Top>
+                <Height>0.125in</Height>
+                <Width>1.75in</Width>
+                <ZIndex>1</ZIndex>
+                <Style>
+                  <PaddingLeft>2pt</PaddingLeft>
+                </Style>
+              </Textbox>
+              <Textbox Name="txtHeaderURL">
+                <CanGrow>true</CanGrow>
+                <KeepTogether>true</KeepTogether>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>www.bluebookservices.com</Value>
+                        <Style>
+                          <FontSize>9pt</FontSize>
+                          <TextDecoration>Underline</TextDecoration>
+                          <Color>Blue</Color>
+                        </Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style />
+                  </Paragraph>
+                </Paragraphs>
+                <ActionInfo>
+                  <Actions>
+                    <Action>
+                      <Hyperlink>http://www.bluebookservices.com</Hyperlink>
+                    </Action>
+                  </Actions>
+                </ActionInfo>
+                <Top>0.875in</Top>
+                <Height>0.125in</Height>
+                <Width>1.75in</Width>
+                <ZIndex>2</ZIndex>
+                <Style>
+                  <PaddingLeft>2pt</PaddingLeft>
+                </Style>
+              </Textbox>
+            </ReportItems>
+            <DataElementOutput>ContentsOnly</DataElementOutput>
+            <Height>1in</Height>
+            <Width>1.75in</Width>
+            <ZIndex>7</ZIndex>
+            <Style />
+          </Rectangle>
+          <Textbox Name="txtHdnIndustryType">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=Code.SetIndustryType(First(Fields!Industry.Value, "dsCompanyInfo"))</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>1.05556in</Top>
+            <Height>0.125in</Height>
+            <Width>1in</Width>
+            <ZIndex>8</ZIndex>
+            <Style>
+              <Border />
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtHdnIsMember">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=Code.SetIsMember(First(Fields!Member.Value, "dsCompanyInfo"))</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>1.08333in</Top>
+            <Left>2.09375in</Left>
+            <Height>0.125in</Height>
+            <Width>1in</Width>
+            <ZIndex>9</ZIndex>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtHdnBBID">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=Code.SetBBID(Parameters!prcca_CompanyID.Value)</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>1.06944in</Top>
+            <Left>1.02778in</Left>
+            <Height>0.125in</Height>
+            <Width>1in</Width>
+            <ZIndex>10</ZIndex>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Rectangle Name="Rectangle2">
+            <ReportItems>
+              <Tablix Name="TablixCommodities_EN">
+                <TablixBody>
+                  <TablixColumns>
+                    <TablixColumn>
+                      <Width>2.10903in</Width>
+                    </TablixColumn>
+                  </TablixColumns>
+                  <TablixRows>
+                    <TablixRow>
+                      <Height>0.24972in</Height>
+                      <TablixCells>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="Textbox24">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>=IIF(IsNothing(Fields!Description.Value),"", Fields!Description.Value &amp; "(" &amp; Fields!prcca_PublishedDisplay.Value &amp; ")")</Value>
+                                      <Style />
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style />
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Textbox24</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Style>None</Style>
+                                </Border>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                      </TablixCells>
+                    </TablixRow>
+                  </TablixRows>
+                </TablixBody>
+                <TablixColumnHierarchy>
+                  <TablixMembers>
+                    <TablixMember>
+                      <Group Name="ColumnGroup">
+                        <GroupExpressions>
+                          <GroupExpression>=ceiling(rownumber(nothing) mod 3)</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                    </TablixMember>
+                  </TablixMembers>
+                </TablixColumnHierarchy>
+                <TablixRowHierarchy>
+                  <TablixMembers>
+                    <TablixMember>
+                      <Group Name="RowGroup">
+                        <GroupExpressions>
+                          <GroupExpression>=ceiling(rownumber(nothing)/3)</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                    </TablixMember>
+                  </TablixMembers>
+                </TablixRowHierarchy>
+                <DataSetName>dsGetCommodity_EN</DataSetName>
+                <Top>0.12514in</Top>
+                <Left>0.09722in</Left>
+                <Height>0.24972in</Height>
+                <Width>2.10903in</Width>
+                <Visibility>
+                  <Hidden>=Parameters!Culture.Value &lt;&gt; "en-us"</Hidden>
+                </Visibility>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                </Style>
+              </Tablix>
+              <Tablix Name="TablixCommodities_ES">
+                <TablixBody>
+                  <TablixColumns>
+                    <TablixColumn>
+                      <Width>2.10903in</Width>
+                    </TablixColumn>
+                  </TablixColumns>
+                  <TablixRows>
+                    <TablixRow>
+                      <Height>0.24972in</Height>
+                      <TablixCells>
+                        <TablixCell>
+                          <CellContents>
+                            <Textbox Name="Textbox25">
+                              <CanGrow>true</CanGrow>
+                              <KeepTogether>true</KeepTogether>
+                              <Paragraphs>
+                                <Paragraph>
+                                  <TextRuns>
+                                    <TextRun>
+                                      <Value>=IIF(IsNothing(Fields!Description.Value), "", Fields!Description.Value &amp; "(" &amp; Fields!prcca_PublishedDisplay.Value &amp; ")")</Value>
+                                      <Style />
+                                    </TextRun>
+                                  </TextRuns>
+                                  <Style />
+                                </Paragraph>
+                              </Paragraphs>
+                              <rd:DefaultName>Textbox24</rd:DefaultName>
+                              <Style>
+                                <Border>
+                                  <Style>None</Style>
+                                </Border>
+                                <PaddingLeft>2pt</PaddingLeft>
+                                <PaddingRight>2pt</PaddingRight>
+                                <PaddingTop>2pt</PaddingTop>
+                                <PaddingBottom>2pt</PaddingBottom>
+                              </Style>
+                            </Textbox>
+                          </CellContents>
+                        </TablixCell>
+                      </TablixCells>
+                    </TablixRow>
+                  </TablixRows>
+                </TablixBody>
+                <TablixColumnHierarchy>
+                  <TablixMembers>
+                    <TablixMember>
+                      <Group Name="ColumnGroup2">
+                        <GroupExpressions>
+                          <GroupExpression>=ceiling(rownumber(nothing) mod 3)</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                    </TablixMember>
+                  </TablixMembers>
+                </TablixColumnHierarchy>
+                <TablixRowHierarchy>
+                  <TablixMembers>
+                    <TablixMember>
+                      <Group Name="RowGroup2">
+                        <GroupExpressions>
+                          <GroupExpression>=ceiling(rownumber(nothing)/3)</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                    </TablixMember>
+                  </TablixMembers>
+                </TablixRowHierarchy>
+                <DataSetName>dsGetCommodity_ES</DataSetName>
+                <Top>0.1943in</Top>
+                <Left>0.09722in</Left>
+                <Height>0.24972in</Height>
+                <Width>2.10903in</Width>
+                <ZIndex>1</ZIndex>
+                <Visibility>
+                  <Hidden>=Parameters!Culture.Value &lt;&gt; "es-mx"</Hidden>
+                </Visibility>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                </Style>
+              </Tablix>
+            </ReportItems>
+            <KeepTogether>true</KeepTogether>
+            <Top>1.31944in</Top>
+            <Left>0.02778in</Left>
+            <Height>1.69111in</Height>
+            <Width>6.38472in</Width>
+            <ZIndex>11</ZIndex>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Rectangle>
+          <Textbox Name="txtPage1BlueBookListing2">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=First(Fields!comp_PRBookTradestyle.Value, "dsCompanyInfo")</Value>
+                    <Style>
+                      <FontSize>12pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Center</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Top>0.28166in</Top>
+            <Left>1.75in</Left>
+            <Height>0.23778in</Height>
+            <Width>3.38333in</Width>
+            <ZIndex>12</ZIndex>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+        </ReportItems>
+        <Height>3.08in</Height>
+        <Style />
+      </Body>
+      <Width>6.5in</Width>
+      <Page>
+        <PageHeader>
+          <Height>0.325in</Height>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="txtPage2CompanyName">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>=First(ReportItems!hdnBookTradestyle.Value)</Value>
+                      <Style>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+              </Paragraphs>
+              <Left>0.125in</Left>
+              <Height>0.15625in</Height>
+              <Width>2.625in</Width>
+              <Style />
+            </Textbox>
+            <Textbox Name="txtPage2CityState">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>=First(ReportItems!hdnCityState.Value)</Value>
+                      <Style>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <LineHeight>8pt</LineHeight>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <Top>0.125in</Top>
+              <Left>0.125in</Left>
+              <Height>0.2in</Height>
+              <Width>2.625in</Width>
+              <ZIndex>1</ZIndex>
+              <Style />
+            </Textbox>
+            <Textbox Name="txtPage2Title">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>COMMODITY LISTING</Value>
+                      <Style>
+                        <FontFamily>Times New Roman</FontFamily>
+                        <FontSize>18pt</FontSize>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+              </Paragraphs>
+              <Top>0.001in</Top>
+              <Left>3.5375in</Left>
+              <Height>0.249in</Height>
+              <Width>2.875in</Width>
+              <ZIndex>2</ZIndex>
+              <Style>
+                <Border>
+                  <Style>None</Style>
+                </Border>
+              </Style>
+            </Textbox>
+            <Line Name="lnPage2Header">
+              <Top>0.29167in</Top>
+              <Height>0in</Height>
+              <Width>6.5in</Width>
+              <ZIndex>3</ZIndex>
+              <Style>
+                <Border>
+                  <Style>Solid</Style>
+                  <Width>2pt</Width>
+                </Border>
+              </Style>
+            </Line>
+          </ReportItems>
+          <Style />
+        </PageHeader>
+        <PageFooter>
+          <Height>0.34375in</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="txtFooterURL">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>="Blue Book Services | Phone 630 668-3500 | " &amp; Code.FooterURL</Value>
+                      <Style>
+                        <FontFamily>Calibri</FontFamily>
+                        <Color>DarkGray</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style />
+                </Paragraph>
+              </Paragraphs>
+              <ActionInfo>
+                <Actions>
+                  <Action>
+                    <Hyperlink>="http://" + Code.FooterURL</Hyperlink>
+                  </Action>
+                </Actions>
+              </ActionInfo>
+              <Top>0.06944in</Top>
+              <Height>0.25in</Height>
+              <Width>4.75in</Width>
+              <Style>
+                <PaddingLeft>2pt</PaddingLeft>
+                <PaddingRight>2pt</PaddingRight>
+                <PaddingTop>2pt</PaddingTop>
+                <PaddingBottom>2pt</PaddingBottom>
+              </Style>
+            </Textbox>
+            <Textbox Name="textbox1">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>=Code.IsMember &amp; "-" &amp; Code.IndustryType &amp; "-" &amp; Code.BBID</Value>
+                      <Style>
+                        <FontFamily>Calibri</FontFamily>
+                        <Color>DarkGray</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <rd:DefaultName>textbox1</rd:DefaultName>
+              <Top>0.06944in</Top>
+              <Left>4.86111in</Left>
+              <Height>0.25in</Height>
+              <Width>1.63889in</Width>
+              <ZIndex>1</ZIndex>
+              <Style>
+                <PaddingLeft>2pt</PaddingLeft>
+                <PaddingRight>2pt</PaddingRight>
+                <PaddingTop>2pt</PaddingTop>
+                <PaddingBottom>2pt</PaddingBottom>
+              </Style>
+            </Textbox>
+          </ReportItems>
+          <Style />
+        </PageFooter>
+        <LeftMargin>1in</LeftMargin>
+        <RightMargin>1in</RightMargin>
+        <TopMargin>0.5in</TopMargin>
+        <BottomMargin>0.5in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="prcca_CompanyID">
+      <DataType>String</DataType>
+      <Prompt>prcca Company ID</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="Culture">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>es-mx</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Culture</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>en-us</Value>
+            <Label>English</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>es-mx</Value>
+            <Label>Spanish</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>1</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>prcca_CompanyID</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Culture</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <Code>Public Shared IndustryType as String
+Public Shared IsMember as String
+Public Shared BBID as String
+Public Shared FooterURL as String
+Public Shared FaxNumber as String
+
+Public Function SetIsMember (ByVal var as String)
+	IsMember = var
+	if (IsMember = "Y") then
+		IsMember = "M"
+                   else
+		IsMember = "N"
+	end if
+End Function
+
+Public Function SetBBID (ByVal var as Integer)
+	BBID = CStr(var)
+End Function
+
+Public Function SetIndustryType (ByVal var as String)
+	IndustryType = var
+
+	if (IndustryType = "L") then
+		FooterURL = "www.lumberbluebook.com"
+                                     FaxNumber = "630 344-0365"
+	else
+		FooterURL = "www.producebluebook.com"
+                                     FaxNumber = "630 344-0388"
+	end if	
+	
+	
+End Function</Code>
+  <Language>en-US</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <DataTransform>&lt;xsl:output method="text" encoding="utf-8" media-type="text/plain"/&gt;</DataTransform>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>d65bf685-0ac3-4e3c-8850-3d406136ab98</rd:ReportID>
+</Report>

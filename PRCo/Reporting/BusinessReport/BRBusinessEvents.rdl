@@ -1,0 +1,570 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2008/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Body>
+    <ReportItems>
+      <Textbox Name="txtNameChangeHeader">
+        <KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph>
+            <TextRuns>
+              <TextRun>
+                <Value>Reported Business Name Changes</Value>
+                <Style>
+                  <FontWeight>Bold</FontWeight>
+                  <TextDecoration>Underline</TextDecoration>
+                </Style>
+              </TextRun>
+            </TextRuns>
+            <Style />
+          </Paragraph>
+        </Paragraphs>
+        <Top>1.375in</Top>
+        <Height>0.25in</Height>
+        <Width>2.625in</Width>
+        <Visibility>
+          <Hidden>=IIF( Parameters!ReportType.Value = 1, IIF( Count(Fields!ChangeDate.Value, "BRNameChanges") &gt; 0, false, true),  true)</Hidden>
+        </Visibility>
+        <DataElementOutput>NoOutput</DataElementOutput>
+        <Style>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+      </Textbox>
+      <Textbox Name="txtHeader">
+        <CanGrow>true</CanGrow>
+        <CanShrink>true</CanShrink>
+        <KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph>
+            <TextRuns>
+              <TextRun>
+                <Value>=IIF( Parameters!ReportType.Value = 0, "RECENT DEVELOPMENTS", IIF( Parameters!ReportType.Value = 1, "BUSINESS BACKGROUND", "BANKRUPTCY EVENTS"))</Value>
+                <Style>
+                  <FontFamily>Times New Roman</FontFamily>
+                  <FontSize>16pt</FontSize>
+                </Style>
+              </TextRun>
+            </TextRuns>
+            <Style>
+              <TextAlign>Center</TextAlign>
+            </Style>
+          </Paragraph>
+        </Paragraphs>
+        <Height>0.3in</Height>
+        <Width>7.5in</Width>
+        <ZIndex>1</ZIndex>
+        <DocumentMapLabel>=IIF( Parameters!ReportType.Value = 0, "RECENT DEVELOPMENTS", IIF( Parameters!ReportType.Value = 1, "BUSINESS BACKGROUND", "BANKRUPTCY EVENTS"))</DocumentMapLabel>
+        <Style>
+          <TopBorder>
+            <Style>Solid</Style>
+          </TopBorder>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+      </Textbox>
+      <Tablix Name="tblBusinessEvents">
+        <TablixBody>
+          <TablixColumns>
+            <TablixColumn>
+              <Width>1.25in</Width>
+            </TablixColumn>
+            <TablixColumn>
+              <Width>6.25in</Width>
+            </TablixColumn>
+          </TablixColumns>
+          <TablixRows>
+            <TablixRow>
+              <Height>0.25in</Height>
+              <TablixCells>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="txtBusinessEventYear">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!EventDisplayDate.Value</Value>
+                              <Style>
+                                <FontWeight>Bold</FontWeight>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <ZIndex>1</ZIndex>
+                      <Style>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="txtBusinessEventVerbiage">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!Verbiage.Value</Value>
+                              <Style />
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Left</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <Style>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+              </TablixCells>
+            </TablixRow>
+          </TablixRows>
+        </TablixBody>
+        <TablixColumnHierarchy>
+          <TablixMembers>
+            <TablixMember />
+            <TablixMember />
+          </TablixMembers>
+        </TablixColumnHierarchy>
+        <TablixRowHierarchy>
+          <TablixMembers>
+            <TablixMember>
+              <Group Name="tblBusinessEvents_Details_Group">
+                <DataElementName>Detail</DataElementName>
+              </Group>
+              <TablixMembers>
+                <TablixMember>
+                  <Visibility>
+                    <Hidden>=IIF(Len(ReportItems!txtBusinessEventVerbiage.value) = 0, true, false)</Hidden>
+                  </Visibility>
+                </TablixMember>
+              </TablixMembers>
+              <DataElementName>Detail_Collection</DataElementName>
+              <DataElementOutput>Output</DataElementOutput>
+              <KeepTogether>true</KeepTogether>
+            </TablixMember>
+          </TablixMembers>
+        </TablixRowHierarchy>
+        <DataSetName>BRBusinessEvents</DataSetName>
+        <Top>0.625in</Top>
+        <Height>0.25in</Height>
+        <Width>7.5in</Width>
+        <ZIndex>2</ZIndex>
+        <Style />
+      </Tablix>
+      <Textbox Name="txtBusinessEventsHeader">
+        <KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph>
+            <TextRuns>
+              <TextRun>
+                <Value>Business Events</Value>
+                <Style>
+                  <FontWeight>Bold</FontWeight>
+                  <TextDecoration>Underline</TextDecoration>
+                </Style>
+              </TextRun>
+            </TextRuns>
+            <Style />
+          </Paragraph>
+        </Paragraphs>
+        <Top>0.375in</Top>
+        <Height>0.25in</Height>
+        <Width>2.625in</Width>
+        <ZIndex>3</ZIndex>
+        <Visibility>
+          <Hidden>=IIF( Parameters!ReportType.Value = 1, false, true)</Hidden>
+        </Visibility>
+        <DataElementOutput>NoOutput</DataElementOutput>
+        <Style>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+      </Textbox>
+      <Tablix Name="listNameChanges">
+        <TablixBody>
+          <TablixColumns>
+            <TablixColumn>
+              <Width>7.5in</Width>
+            </TablixColumn>
+          </TablixColumns>
+          <TablixRows>
+            <TablixRow>
+              <Height>0.125in</Height>
+              <TablixCells>
+                <TablixCell>
+                  <CellContents>
+                    <Rectangle Name="listNameChanges_Contents">
+                      <ReportItems>
+                        <Textbox Name="txtNameChangeDate">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format( Fields!ChangeDate.Value, "yyyy")</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Height>0.125in</Height>
+                          <Width>0.75in</Width>
+                          <Style>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <Textbox Name="txtNameChange">
+                          <CanGrow>true</CanGrow>
+                          <CanShrink>true</CanShrink>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!OldName.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <Left>0.75in</Left>
+                          <Height>0.125in</Height>
+                          <Width>6.75in</Width>
+                          <ZIndex>1</ZIndex>
+                          <Style>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </ReportItems>
+                      <KeepTogether>true</KeepTogether>
+                      <Style />
+                    </Rectangle>
+                  </CellContents>
+                </TablixCell>
+              </TablixCells>
+            </TablixRow>
+          </TablixRows>
+        </TablixBody>
+        <TablixColumnHierarchy>
+          <TablixMembers>
+            <TablixMember />
+          </TablixMembers>
+        </TablixColumnHierarchy>
+        <TablixRowHierarchy>
+          <TablixMembers>
+            <TablixMember>
+              <Group Name="listNameChanges_Details_Group">
+                <DataElementName>Item</DataElementName>
+              </Group>
+              <Visibility>
+                <Hidden>=IIF( Parameters!ReportType.Value = 1, false, true)</Hidden>
+              </Visibility>
+              <DataElementName>Item_Collection</DataElementName>
+              <DataElementOutput>Output</DataElementOutput>
+              <KeepTogether>true</KeepTogether>
+            </TablixMember>
+          </TablixMembers>
+        </TablixRowHierarchy>
+        <DataSetName>BRNameChanges</DataSetName>
+        <Top>1.625in</Top>
+        <Height>0.125in</Height>
+        <Width>7.5in</Width>
+        <ZIndex>4</ZIndex>
+        <DataElementOutput>NoOutput</DataElementOutput>
+        <Style />
+      </Tablix>
+      <Textbox Name="txtOriginalBusinessNameLabel">
+        <KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph>
+            <TextRuns>
+              <TextRun>
+                <Value>Original Business Name:</Value>
+                <Style>
+                  <FontWeight>Bold</FontWeight>
+                  <TextDecoration>Underline</TextDecoration>
+                </Style>
+              </TextRun>
+            </TextRuns>
+            <Style />
+          </Paragraph>
+        </Paragraphs>
+        <Top>1in</Top>
+        <Height>0.25in</Height>
+        <Width>1.875in</Width>
+        <ZIndex>5</ZIndex>
+        <Visibility>
+          <Hidden>=IIF( Parameters!ReportType.Value = 1, IIF( Count(Fields!ChangeDate.Value, "BRNameChanges") &gt; 0, false, true),  true)</Hidden>
+        </Visibility>
+        <DataElementOutput>NoOutput</DataElementOutput>
+        <Style>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+      </Textbox>
+      <Textbox Name="txtOriginalName">
+        <CanGrow>true</CanGrow>
+        <CanShrink>true</CanShrink>
+        <KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph>
+            <TextRuns>
+              <TextRun>
+                <Value>= First(Fields!OriginalName.Value, "BRNameChanges")</Value>
+                <Style />
+              </TextRun>
+            </TextRuns>
+            <Style />
+          </Paragraph>
+        </Paragraphs>
+        <Top>1in</Top>
+        <Left>1.875in</Left>
+        <Height>0.25in</Height>
+        <Width>5.625in</Width>
+        <ZIndex>6</ZIndex>
+        <Visibility>
+          <Hidden>=IIF( Parameters!ReportType.Value = 1, false, true)</Hidden>
+        </Visibility>
+        <DataElementOutput>NoOutput</DataElementOutput>
+        <Style>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+      </Textbox>
+      <Textbox Name="txtDisplayToggle">
+        <CanGrow>true</CanGrow>
+        <CanShrink>true</CanShrink>
+        <KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph>
+            <TextRuns>
+              <TextRun>
+                <Value>= First(Fields!Display.Value, "BRDisplayToggle")</Value>
+                <Style />
+              </TextRun>
+            </TextRuns>
+            <Style />
+          </Paragraph>
+        </Paragraphs>
+        <Top>1.75in</Top>
+        <Height>0.125in</Height>
+        <Width>1in</Width>
+        <ZIndex>7</ZIndex>
+        <Visibility>
+          <Hidden>true</Hidden>
+        </Visibility>
+        <Style>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+      </Textbox>
+    </ReportItems>
+    <Height>1.875in</Height>
+    <Style />
+  </Body>
+  <Width>7.5in</Width>
+  <Page>
+    <LeftMargin>0.5in</LeftMargin>
+    <RightMargin>0.5in</RightMargin>
+    <TopMargin>1in</TopMargin>
+    <BottomMargin>1in</BottomMargin>
+    <Style />
+  </Page>
+  <Description>Business Report - Business Events Subreport</Description>
+  <Author>Travant Solutions, Inc. - Christopher Walls</Author>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BBS">
+      <DataSourceReference>BBS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>0a30df25-4f21-43cc-9942-dc6396ffdb3d</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="BRBusinessEvents">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyID">
+            <Value>=Parameters!CompanyID.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@DaysOldStart">
+            <Value>=Parameters!DaysOldStart.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@DaysOldEnd">
+            <Value>=Parameters!DaysOldEnd.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ReportType">
+            <Value>=Parameters!ReportType.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>usp_BRBusinessEvents</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="BusinessEventID">
+          <DataField>BusinessEventID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="BusinessEventTypeID">
+          <DataField>BusinessEventTypeID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="EventDate">
+          <DataField>EventDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="EventDisplayDate">
+          <DataField>EventDisplayDate</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Verbiage">
+          <DataField>Verbiage</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="BRNameChanges">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyID">
+            <Value>=Parameters!CompanyID.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ReportType">
+            <Value>=Parameters!ReportType.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>usp_BRBusinessEventsNameChange</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="ChangeDate">
+          <DataField>ChangeDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="OldName">
+          <DataField>OldName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="OriginalName">
+          <DataField>OriginalName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="BRDisplayToggle">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@ReportType">
+            <Value>=Parameters!ReportType.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>usp_BRBusinessEventsDisplayToggle</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Display">
+          <DataField>Display</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportParameters>
+    <ReportParameter Name="CompanyID">
+      <DataType>Integer</DataType>
+      <Prompt>Company ID</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="DaysOldStart">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>0</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Days Old Start</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="DaysOldEnd">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>999999</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Days Old End</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ReportType">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>1</Value>
+        </Values>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Report Type</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>0</Value>
+            <Label>Recent Developments</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>1</Value>
+            <Label>Business Events</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>2</Value>
+            <Label>Bankruptcy</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
+  </ReportParameters>
+  <Language>en-US</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>02621a08-25fd-4845-b57b-7d26ca945121</rd:ReportID>
+</Report>

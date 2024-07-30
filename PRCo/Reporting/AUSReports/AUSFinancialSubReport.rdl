@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2008/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Body>
+    <ReportItems>
+      <Tablix Name="listFinancials">
+        <TablixBody>
+          <TablixColumns>
+            <TablixColumn>
+              <Width>7.125in</Width>
+            </TablixColumn>
+          </TablixColumns>
+          <TablixRows>
+            <TablixRow>
+              <Height>0.25in</Height>
+              <TablixCells>
+                <TablixCell>
+                  <CellContents>
+                    <Rectangle Name="listFinancials_Contents">
+                      <ReportItems>
+                        <Textbox Name="textbox1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=IIF(Fields!prfs_Type.Value = "Y", "A year end", "An interim") + " financial statement dated " &amp; FormatDateTime(Fields!prfs_StatementDate.Value, DateFormat.ShortDate) &amp;  " has been received from this company.  Additional details, including the company’s balance sheet figures and rating trend, are available in the company’s Blue Book Business Report."</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>textbox1</rd:DefaultName>
+                          <Height>0.125in</Height>
+                          <Width>7.125in</Width>
+                          <Visibility>
+                            <Hidden>=IIF(Fields!comp_PRConfidentialFS.Value is nothing, false, true)</Hidden>
+                          </Visibility>
+                          <DataElementOutput>NoOutput</DataElementOutput>
+                          <Style>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <Textbox Name="textbox2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=IIF(Fields!prfs_Type.Value = "Y", "A year end", "An interim") + " financial statement dated " &amp; FormatDateTime(Fields!prfs_StatementDate.Value, DateFormat.ShortDate) &amp;  " has been received from this company.  Financial statements from this company are submitted in confidence, to be used for rating purposes only.  Specific figures are not quoted.  Additional details, including the company’s rating trend, are available in the company’s Blue Book Business Report."</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>textbox2</rd:DefaultName>
+                          <Top>0.125in</Top>
+                          <Height>0.125in</Height>
+                          <Width>7.125in</Width>
+                          <ZIndex>1</ZIndex>
+                          <Visibility>
+                            <Hidden>=IIF(Fields!comp_PRConfidentialFS.Value is nothing, true, false)</Hidden>
+                          </Visibility>
+                          <DataElementOutput>NoOutput</DataElementOutput>
+                          <Style>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </ReportItems>
+                      <KeepTogether>true</KeepTogether>
+                      <Style />
+                    </Rectangle>
+                  </CellContents>
+                </TablixCell>
+              </TablixCells>
+            </TablixRow>
+          </TablixRows>
+        </TablixBody>
+        <TablixColumnHierarchy>
+          <TablixMembers>
+            <TablixMember />
+          </TablixMembers>
+        </TablixColumnHierarchy>
+        <TablixRowHierarchy>
+          <TablixMembers>
+            <TablixMember>
+              <Group Name="listFinancials_Details_Group">
+                <DataElementName>Item</DataElementName>
+              </Group>
+              <DataElementName>Item_Collection</DataElementName>
+              <DataElementOutput>Output</DataElementOutput>
+              <KeepTogether>true</KeepTogether>
+            </TablixMember>
+          </TablixMembers>
+        </TablixRowHierarchy>
+        <DataSetName>dsFinancials</DataSetName>
+        <Height>0.25in</Height>
+        <Width>7.125in</Width>
+        <Style />
+      </Tablix>
+    </ReportItems>
+    <Height>0.25in</Height>
+    <Style />
+  </Body>
+  <Width>7.125in</Width>
+  <Page>
+    <LeftMargin>1in</LeftMargin>
+    <RightMargin>1in</RightMargin>
+    <TopMargin>1in</TopMargin>
+    <BottomMargin>1in</BottomMargin>
+    <Style />
+  </Page>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BBS">
+      <DataSourceReference>BBS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>1468ddf4-13ef-4d2f-90bb-f528e13ded15</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="dsFinancials">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyID">
+            <Value>=Parameters!CompanyID.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@StartDate">
+            <Value>=Parameters!StartDate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@EndDate">
+            <Value>=Parameters!EndDate.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT comp_PRConfidentialFS, prfs_StatementDate, prfs_Type, prfs_InterimMonth, a.capt_us,  b.capt_us
+  FROM PRFinancial WITH (NOLOCK)
+       INNER JOIN Company WITH (NOLOCK) ON prfs_CompanyID = comp_CompanyID
+       INNER JOIN custom_captions a on prfs_Type = a.capt_code AND a.capt_family = 'prfs_Type'
+       LEFT OUTER JOIN custom_captions b on prfs_InterimMonth = b.capt_code AND b.capt_family = 'prfs_InterimMonth'
+ WHERE prfs_CompanyID = @CompanyID
+   AND prfs_CreatedDate BETWEEN @StartDate AND @EndDate
+ORDER BY prfs_StatementDate;</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="comp_PRConfidentialFS">
+          <DataField>comp_PRConfidentialFS</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="prfs_StatementDate">
+          <DataField>prfs_StatementDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="prfs_Type">
+          <DataField>prfs_Type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="prfs_InterimMonth">
+          <DataField>prfs_InterimMonth</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="capt_us">
+          <DataField>capt_us</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="capt_us_1">
+          <DataField>capt_us</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportParameters>
+    <ReportParameter Name="StartDate">
+      <DataType>DateTime</DataType>
+      <Prompt>Start Date</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="CompanyID">
+      <DataType>Integer</DataType>
+      <Prompt>Company ID</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="EndDate">
+      <DataType>DateTime</DataType>
+      <Prompt>End Date</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <Language>en-US</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>a8eb9c9b-540a-4db7-865c-1028c559f61f</rd:ReportID>
+</Report>

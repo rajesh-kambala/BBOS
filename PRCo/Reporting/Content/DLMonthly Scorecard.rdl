@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BBS">
+      <DataSourceReference>BBS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>70a2f887-f9d8-4c38-9a3d-97932198b3ff</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="dsResults">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@EndDate">
+            <Value>=Parameters!EndDate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@StartDate">
+            <Value>=Parameters!StartDate.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>DECLARE @ComputedEndDate datetime = DATEADD(minute, -1, DATEADD(day, 1, @EndDate))
+
+DECLARE @Metrics table (
+	RecordID int, 
+	Label varchar(100),
+	Value decimal(24,6))
+
+	--Total number of headquarters in US and Canada
+INSERT INTO @Metrics
+SELECT 10, '# of HQ Listings (U.S./Can.)', count(comp_CompanyID)
+  FROM Company with (NoLock)
+       INNER JOIN vPRLocation ON prci_CityId = comp_PRListingCityId
+ WHERE comp_PRListingStatus in ('L', 'H') 
+   AND comp_PRType='H' 
+   AND comp_PRIndustryType != 'L'
+   AND comp_PRLocalSource IS NULL
+   AND prcn_CountryID &lt; 3;
+
+
+
+--Total number of paid lines in US and Canada
+INSERT INTO @Metrics
+SELECT 20, 'Total # of DL lines (HQ AND Branch)', SUM(dbo.ufn_GetListingDLLineCount(comp_CompanyID))
+  FROM Company WITH (NoLock)
+       INNER JOIN vPRLocation ON prci_CityId = comp_PRListingCityId
+ WHERE comp_PRListingStatus in ('L', 'H') 
+   AND comp_PRIndustryType != 'L'
+   AND comp_PRLocalSource IS NULL
+   AND prcn_CountryID &lt; 3;
+
+
+--Number of HQ with at least one paid line
+INSERT INTO @Metrics
+SELECT 30, 'HQ with at least 1 Line', count(comp_CompanyID)
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation ON prci_CityId = comp_PRListingCityId
+ WHERE comp_PRListingStatus in ('L', 'H') 
+   AND comp_PRType='H' 
+   AND comp_PRIndustryType != 'L'
+   AND prcn_CountryID &lt; 3
+   AND comp_PRLocalSource IS NULL
+   AND dbo.ufn_GetListingDLLineCount(comp_CompanyID) &gt; 0;
+
+--INSERT INTO @Metrics VALUES (35, '[Placeholder]', 0)
+INSERT INTO @Metrics VALUES(35, NULL, NULL)
+
+--Total HQ DL lines
+INSERT INTO @Metrics
+SELECT 40, 'Total HQ Lines', SUM(dbo.ufn_GetListingDLLineCount(comp_CompanyID))
+  FROM Company WITH (NoLock)
+       INNER JOIN vPRLocation ON prci_CityId = comp_PRListingCityId
+ WHERE comp_PRListingStatus in ('L', 'H') 
+   AND comp_PRType='H' 
+   AND comp_PRIndustryType != 'L'
+   AND comp_PRLocalSource IS NULL
+   AND prcn_CountryID &lt; 3;
+
+
+
+
+--Average DL lines per HQ Listing
+INSERT INTO @Metrics
+SELECT 50, 'Average (Mean) # of lines per HQ Listing', Avg(convert(decimal, dbo.ufn_GetListingDLLineCount(comp_CompanyID)))
+  FROM Company WITH (NoLock)
+       INNER JOIN vPRLocation ON prci_CityId = comp_PRListingCityId
+ WHERE comp_PRListingStatus in ('L', 'H') 
+   AND comp_PRType='H' 
+   AND comp_PRIndustryType != 'L'
+   AND comp_PRLocalSource IS NULL
+   AND prcn_CountryID &lt; 3;
+
+--Total number of key accounts in US and Canada
+INSERT INTO @Metrics
+SELECT 60, 'Total Key Accounts', count(comp_CompanyID)
+  FROM Company WITH (NoLock)
+       INNER JOIN vPRLocation ON prci_CityId = comp_PRListingCityId
+ WHERE comp_PRListingStatus in ('L', 'H') 
+   AND comp_PRType='H' 
+   AND comp_PRIndustryType != 'L'
+   AND prcn_CountryID &lt; 3
+   AND comp_PRLocalSource IS NULL
+   AND comp_PRAccountTier='K';
+
+
+--Total Key DL lines
+INSERT INTO @Metrics
+SELECT 70, 'Total Number Key Account Lines', SUM(dbo.ufn_GetListingDLLineCount(comp_CompanyID))
+  FROM Company WITH (NoLock)
+       INNER JOIN vPRLocation ON prci_CityId = comp_PRListingCityId
+ WHERE comp_PRListingStatus in ('L', 'H') 
+   AND comp_PRType='H' 
+   AND comp_PRIndustryType != 'L'
+   AND prcn_CountryID &lt; 3
+   AND comp_PRLocalSource IS NULL
+   AND comp_PRAccountTier='K';
+
+--Number of Key accounts with at least one paid line
+INSERT INTO @Metrics
+SELECT 80, 'Key Accounts with at least 1 Line', count(comp_CompanyID)
+  FROM Company WITH (NoLock)
+       INNER JOIN vPRLocation ON prci_CityId = comp_PRListingCityId
+ WHERE comp_PRListingStatus in ('L', 'H') 
+   AND comp_PRType='H' 
+   AND comp_PRIndustryType != 'L'
+   AND prcn_CountryID &lt; 3
+   AND comp_PRAccountTier='K'
+   AND comp_PRLocalSource IS NULL
+   AND dbo.ufn_GetListingDLLineCount(comp_CompanyID) &gt; 0;
+
+--INSERT INTO @Metrics VALUES(85, '[Placeholder]', 0)
+INSERT INTO @Metrics VALUES(85, NULL, NULL)
+
+--Average DL lines per Key account Listing
+Insert into @Metrics
+SELECT 90, 'Average (Mean) # of lines per HQ Key Acct. Listing', Avg(convert(decimal, dbo.ufn_GetListingDLLineCount(comp_CompanyID)))
+  FROM Company WITH (NoLock)
+       INNER JOIN vPRLocation ON prci_CityId = comp_PRListingCityId
+ WHERE comp_PRListingStatus in ('L', 'H') 
+   AND comp_PRType='H' 
+   AND comp_PRIndustryType != 'L'
+   AND prcn_CountryID &lt; 3
+   AND comp_PRLocalSource IS NULL
+   AND comp_PRAccountTier='K';
+
+--INSERT INTO @Metrics VALUES(100, '[Placeholder]', 0)
+INSERT INTO @Metrics VALUES(100, NULL, NULL)
+
+INSERT INTO @Metrics
+SELECT 110, 'Num New Listings', COUNT(DISTINCT comp_companyID)
+  FROM Company WITH (NoLock)
+       INNER JOIN vPRLocation ON prci_CityId = comp_PRListingCityId
+ WHERE comp_PRListingStatus in ('L', 'H') 
+   AND comp_PRIndustryType != 'L'
+   AND prcn_CountryID &lt; 3
+   AND comp_PRLocalSource IS NULL
+   AND comp_PRListedDate BETWEEN @StartDate AND @ComputedEndDate;
+
+INSERT INTO @Metrics
+SELECT 120, 'Num New Listings with DL', COUNT(DISTINCT prdl_CompanyID)
+  FROM Company WITH (NoLock)
+       INNER JOIN vPRLocation ON prci_CityId = comp_PRListingCityId
+	   INNER JOIN PRDescriptiveLine WITH (NoLock) on prdl_CompanyID = comp_companyID
+ WHERE comp_PRListingStatus in ('L', 'H') 
+   AND comp_PRIndustryType != 'L'
+   AND prcn_CountryID &lt; 3
+   AND comp_PRLocalSource IS NULL
+   AND comp_PRListedDate BETWEEN @StartDate AND @ComputedEndDate;
+
+INSERT INTO @Metrics
+SELECT 130, 'Num Lines DL in New Listings', COUNT(prdl_DescriptiveLineID)
+  FROM Company WITH (NoLock)
+       INNER JOIN vPRLocation ON prci_CityId = comp_PRListingCityId
+	   INNER JOIN PRDescriptiveLine WITH (NoLock) on prdl_CompanyID = comp_companyID
+ WHERE comp_PRListingStatus in ('L', 'H') 
+   AND comp_PRIndustryType != 'L'
+   AND prcn_CountryID &lt; 3
+   AND comp_PRLocalSource IS NULL
+   AND comp_PRListedDate BETWEEN @StartDate AND @ComputedEndDate;
+
+
+SELECT * 
+  FROM @Metrics
+ORDER BY RecordID;</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="RecordID">
+          <DataField>RecordID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Label">
+          <DataField>Label</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Value">
+          <DataField>Value</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="Tablix1">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>5.15in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.35in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox3">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format(Today(), "M/d/yyyy")</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox3</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Label">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Label.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Label</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Value">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Value.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Value</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>dsResults</DataSetName>
+            <Top>0.62167in</Top>
+            <Height>0.5in</Height>
+            <Width>6.5in</Width>
+            <Style>
+              <Border>
+                <Style>Solid</Style>
+              </Border>
+              <TopBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </TopBorder>
+              <BottomBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </BottomBorder>
+              <LeftBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </LeftBorder>
+              <RightBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </RightBorder>
+            </Style>
+          </Tablix>
+          <Textbox Name="Textbox2">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>DL Monthly Scorecard</Value>
+                    <Style>
+                      <FontSize>12pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Center</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <rd:DefaultName>Textbox2</rd:DefaultName>
+            <Height>0.25in</Height>
+            <Width>6.5in</Width>
+            <ZIndex>1</ZIndex>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="Textbox8">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=Format(Parameters!StartDate.Value, "MMMM yyyy")</Value>
+                    <Style>
+                      <FontWeight>Bold</FontWeight>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Center</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <rd:DefaultName>Textbox8</rd:DefaultName>
+            <Top>0.25in</Top>
+            <Height>0.25in</Height>
+            <Width>6.5in</Width>
+            <ZIndex>2</ZIndex>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+        </ReportItems>
+        <Height>1.12167in</Height>
+        <Style />
+      </Body>
+      <Width>6.5in</Width>
+      <Page>
+        <LeftMargin>1in</LeftMargin>
+        <RightMargin>1in</RightMargin>
+        <TopMargin>1in</TopMargin>
+        <BottomMargin>1in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="StartDate">
+      <DataType>DateTime</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>=DateAdd("M", -1,DateValue(CStr(Month(Now)) &amp; "/1/" &amp; CStr(Year(Now))))</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Start Date</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="EndDate">
+      <DataType>DateTime</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>=DateAdd("d", -1, DateValue(CStr(Month(Now)) &amp; "/1/" &amp; CStr(Year(Now))))</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>End Date</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>1</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>StartDate</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>EndDate</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>e8c00e23-040e-4242-b7a0-acf4ca7d0c9e</rd:ReportID>
+</Report>

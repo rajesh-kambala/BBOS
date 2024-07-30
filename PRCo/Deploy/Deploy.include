@@ -1,0 +1,81 @@
+<project name="Utility" default="" xmlns="http://nant.sf.net/release/0.85-rc4/nant.xsd" basedir=".">
+
+    <!-- Use TStamp to set a property to the the current datetime defining the format -->
+    <tstamp verbose="false">
+        <formatter property="Deploy.DateTimeUnformatted" pattern="yyyyMMddHHmm" />
+        <formatter property="Deploy.DateTime" pattern="yyyy-MM-dd.HHmm" />
+        <formatter property="Deploy.StartDateTime" pattern="MM/dd/yyyy HH:mm" />
+        <formatter property="Deploy.StartDate" pattern="yyyy-MM-dd" />
+    </tstamp>
+
+
+
+
+    <!-- CloseLogs -->
+    <target name="CloseLogs" description="Closes log files - do not call independently">
+        <record name="${Deploy.Success.Log}" action="Close" />
+        <record name="${Deploy.Failure.Log}" action="Close" />
+    </target>
+
+
+    <!-- 
+        Fired when NAnt determines the build has succeeded.
+        Copies the log files (there were still open) and then 
+    -->
+    <!-- OnSuccess -->
+    <target name="OnSuccess" depends="CloseLogs" description="Executes the cleanup tasks">
+        <tstamp property="Deploy.EndDateTime" pattern="MM/dd/yyyy HH:mm" verbose="true" />
+
+        <!-- Since the script succeeded Delete the Failure Log -->
+        <delete file="${Deploy.Failure.Log}" />
+
+    </target>
+
+
+
+    <!-- 
+        Fired when NAnt determines the build has failed.
+    -->
+    <!-- OnFailure -->
+    <target name="OnFailure" depends="CloseLogs" description="Executes the appropriate tasks when the build fails">
+        <tstamp property="Deploy.EndDateTime" pattern="MM/dd/yyyy HH:mm" verbose="true" />
+
+        <!-- Since the script failed Delete the Success Log -->
+        <delete file="${Deploy.Success.Log}" />
+
+    </target>
+
+    <property name="nant.onfailure" value="OnFailure" />
+    <property name="nant.onsuccess" value="OnSuccess" />
+
+
+
+    <!-- PreDeploy -->
+    <target name="PreDeploy" description="Prepares the environment for the build">
+        <property name="deploy.name" value="Deploy ${Deploy.StartDate}" />
+        <property name="base.dir" value="${project::get-base-directory()}" />
+        <property name="deploy.logdir" value="${base.dir}\DeployLog_${Deploy.StartDate}" />
+
+        <!-- Make sure we start with a clean file structure -->
+        <mkdir dir="${deploy.logdir}" />
+        <property name="Deploy.Success.Log" value="${deploy.logdir}\${Deploy.DateTime}_${project.name}_Successful_Log.txt" />
+        <property name="Deploy.Failure.Log" value="${deploy.logdir}\${Deploy.DateTime}_${project.name}_Failed_Log.txt" />
+
+        <!-- Start recording a success and a failure Log file -->
+        <record name="${Deploy.Success.Log}" level="Info" action="Start" />
+        <record name="${Deploy.Failure.Log}" level="Verbose" action="Start" />
+
+        <!-- Get the appropriate version number based upon the 
+             BuildNumber.txt file that was part of the last build. 
+             This will be set as the build number in the deployed release.
+        -->
+
+        <attrib file="..\Build\BuildNumber.txt" readonly="false" verbose="false" />
+        <version buildtype="NoIncrement" revisiontype="Automatic" path="..\Build\BuildNumber.txt" />
+        <attrib file="..\Build\BuildNumber.txt" readonly="true" verbose="false" />
+
+        <property name="ReleaseName" value="${buildnumber.major}.${buildnumber.minor}" />
+
+	<echo message="Deploying ${ReleaseName}"/>
+    </target>
+</project>

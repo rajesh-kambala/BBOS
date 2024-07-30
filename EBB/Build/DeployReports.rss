@@ -1,0 +1,69 @@
+Dim definition As [Byte]() = Nothing
+Dim warnings As Warning() = Nothing
+Dim parentPath as string
+
+Public Sub Main()
+
+    try
+    rs.PreAuthenticate = True
+    rs.Credentials = System.Net.CredentialCache.DefaultCredentials
+
+    parentPath = "/" + reportfolder
+
+
+    ' Create a reference to the reports directory.
+    Dim di As New DirectoryInfo(filePath)
+    
+    ' Create an array representing the files in the reports directory.
+    Dim fi As FileInfo() = di.GetFiles()
+
+    ' Iterate through the reports directory publishing all rdl files. 
+    Dim fiTemp As FileInfo
+    Dim extension As string
+    For Each fiTemp In fi
+		extension = Path.GetExtension(fiTemp.Name) 
+        If (extension = ".rdl" ) Then
+	        Publish(fiTemp.Name, 0)
+		Else  if (extension = ".gif" OR extension = ".jpg") Then
+	        Publish(fiTemp.Name, 1)
+		End If
+    Next fiTemp
+
+    Catch e As Exception
+        Console.WriteLine("Main: " + e.Message)
+    End Try
+End Sub 
+
+
+Public Sub Publish(ByVal reportName As String, iType as integer)
+
+    Dim sType as string
+    Try
+        Dim stream As FileStream = File.OpenRead(filePath + "\" + reportName)
+        definition = New [Byte](stream.Length) {}
+        stream.Read(definition, 0, CInt(stream.Length))
+        stream.Close()
+
+
+        If (iType = 0) Then
+ 		sType = "Report"
+		warnings = rs.CreateReport(Path.GetFileNameWithoutExtension(reportName), parentPath, True, definition, Nothing)
+	Else
+		sType = "Image"
+		rs.CreateResource(reportName, parentPath, True, definition, "image/jpeg", Nothing)
+	End If
+        
+	If Not (warnings Is Nothing) Then
+            Dim warning As Warning
+            For Each warning In warnings
+                Console.WriteLine("CreateReport/resource Warning: "+ warning.Message)
+            Next warning
+
+        Else
+            Console.WriteLine("{0} {1} published successfully with no warnings", sType, parentPath + "/" + reportName)
+        End If
+
+    Catch e As Exception
+        Console.WriteLine("{0} {1}: {2}", sType, parentPath + "/" + reportName, e.Message)
+    End Try
+End Sub

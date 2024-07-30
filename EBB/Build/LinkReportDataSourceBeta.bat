@@ -1,0 +1,4 @@
+"D:\Program Files\Microsoft SQL Server\90\Tools\Binn\rs.exe" -i d:\\applications\LinkDataSources.rss -s http://BHS1/ReportServer -b -t -v reportfolder="BBOSBeta/BBOSUsageReports"  -v filepath="D:\Applications\Reporting\BBOSUsageReports"  -v dsName="Data Sources/BBOSBeta"
+"D:\Program Files\Microsoft SQL Server\90\Tools\Binn\rs.exe" -i d:\\applications\LinkDataSources.rss -s http://BHS1/ReportServer -b -t -v reportfolder="BBOSBeta/BBOSMemberReports" -v filepath="D:\Applications\Reporting\BBOSMemberReports" -v dsName="Data Sources/BBOSBeta"
+"D:\Program Files\Microsoft SQL Server\90\Tools\Binn\rs.exe" -i d:\\applications\LinkDataSources.rss -s http://BHS1/ReportServer -b -t -v reportfolder="BBOSBeta/BusinessReport"    -v filepath="D:\Applications\Reporting\BusinessReport"    -v dsName="Data Sources/BBOSBeta"
+pause

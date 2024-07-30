@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="DeployDatabase" default="DeployAll" xmlns="http://nant.sf.net/release/0.85-rc4/nant.xsd" basedir=".">
+
+    <property name="DBServer"               value="BHS2" />
+    <property name="DBUserID_Test"               value="BBSBuild" />
+    <property name="DBPassword_Test"             value="BBSBuild1901" />
+    <property name="DBUserID"          value="BBSDeploy" />  
+    <property name="DBPassword"        value="Deploy_2011" /> 
+
+    <property name="CRMDBName"              value="CRM" />
+    <property name="BBSInterfaceDBName"     value="BBSInterface" />
+
+    <property name="SQL.BaseDir"            value="D:\Applications\PIKS Database" />
+
+    <property name="project.name"           value="DeployDatabase" />
+
+
+
+    <!-- Deploy -->
+    <target name="DeployAll" depends="PreDeploy, DeployCRMDataModel, SetSecurity">
+    </target>
+
+
+
+    <!--
+         Defines many helper function required for
+         the deployment.
+    -->
+    <include buildfile="Deploy.include" />
+
+
+
+
+    <!--
+        Executes SQL Files.  Expects the following properties to be populated:
+           ${sql.sourcefile} - Fully qualified path
+           ${sql.logfile} - Fully qualified path
+           ${sql.dbname} - Database Name
+    -->
+    <target name="ExecuteSQLFile" description="Executes the SQL File in the sql.sourcefile property." >
+        <echo message="Executing SQL file ${sql.sourcefile} ..."/>
+        <sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Initial Catalog=${sql.dbname};User Id=${DBUserID};Password=${DBPassword}"
+             transaction="false"
+             delimiter="GO"
+             delimstyle="Line"
+             batch="false"
+             source="${sql.sourcefile}"
+             output="${sql.logfile}" />
+    </target>
+
+
+
+    <!--
+       Executes SQL Files with the folder.  Expects the following properties to be populated:
+           ${sql.dir} - Fully qualified path
+
+           ExecuteSQLFile expects the additions properties to be set:
+           ${sql.logfile} - Fully qualified path
+           ${sql.dbname} - Database Name
+    -->
+    <target name="ExecuteSQLFolder" description="Executes all SQL Files in the sql.dir property folder." >
+        <foreach item="File" property="filename">
+            <in>
+                <items>
+                    <include name="${sql.dir}\*.sql" />
+                </items>
+            </in>
+            <do>
+                <property name="sql.sourcefile" value="${filename}" />
+                <call target="ExecuteSQLFile"/>
+            </do>
+        </foreach>
+    </target>
+
+
+
+    <!--
+        Applies the Data Model Changes to the database
+    -->
+    <target name="DeployCRMDataModel" description="" >
+        <property name="sql.logfile" value="${deploy.logdir}\CRMQueries.txt" />
+        <property name="sql.dbname" value="${CRMDBName}" />
+
+        <echo message="Server:  ${DBServer}"/>		
+        <echo message="Database:  ${sql.dbname}"/>		
+
+
+        <!-- Switch sql.dir to the utility_scripts directory -->
+        <property name="sql.dir" value="${SQL.BaseDir}\Utility_Scripts" />
+
+        <property name="sql.sourcefile" value="${sql.dir}\InstallAccpacUninstallScripts.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\InstallAccpacCreationScripts.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\InstallDTSUtilityScripts.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\ESFileEquivalents.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\usp_RefreshAllViews.sql" />
+        <call target="ExecuteSQLFile"/>
+
+
+        <!-- Set the sql.dir back to the Core_Scripts directory-->
+        <property name="sql.dir" value="${SQL.BaseDir}\Core_Scripts" />
+
+
+
+        <!-- structural changes must preceeed any files that could reference new fields -->
+
+        <!-- 
+              Now we can execute the current release script because they contain
+              structure changes.
+         -->
+         <property name="sql.sourcefile" value="${sql.dir}\BBS_${ReleaseName}.sql" />
+         <call target="ExecuteSQLFile"/>
+
+
+
+        <!-- This file deletes all existing dropdown values for PRCo, so it must
+             run before other release scripts in case they define some custom
+             caption values 
+        -->
+        <property name="sql.sourcefile" value="${sql.dir}\DropDownValues.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\User Defined Functions.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\Listing Functions.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\Views.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\Stored Procedures.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\AdvancedSearch.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\TransactionTriggers_Autogenerated.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\TransactionTriggers_Custom.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\Triggers.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\Indexes.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\FullTextIndexes.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.sourcefile" value="${sql.dir}\BBS_${ReleaseName}_DataCorrections.sql" />
+        <call target="ExecuteSQLFile"/>
+                        
+
+        <sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Initial Catalog=${sql.dbname};User Id=${DBUserID};Password=${DBPassword}"
+             transaction="false"
+             delimiter="GO"
+             delimstyle="Line"
+             output="${sql.logfile}">
+                UPDATE Custom_Captions SET Capt_US='${buildnumber.version}' WHERE capt_family = 'CRMBuildNumber';
+                DELETE FROM Custom_Captions WHERE capt_family in ('EmailOverride', 'FaxOverride', 'BBSInterfaceOverride');
+                UPDATE Custom_Captions SET Capt_US = 'http://apps.bluebookservices.com/bbos' WHERE Capt_Family = 'BBOS' And Capt_Code = 'URL';
+                UPDATE Custom_Captions SET Capt_US = 'http://www.bluebookservices.com' WHERE Capt_Family = 'WebSite' And Capt_Code = 'URL';
+                UPDATE Custom_Captions SET Capt_US = 'http://www.lumberbluebook.com' WHERE Capt_Family = 'LumberWebSite' And Capt_Code = 'URL';
+                UPDATE Custom_Captions SET Capt_US = 'http://www.producebluebook.com' WHERE Capt_Family = 'ProduceWebSite' And Capt_Code = 'URL';
+                UPDATE Custom_Captions SET Capt_US = 'http://apps.bluebookservices.com/BBSUtils/GetLogo.aspx?LogoFile=' WHERE Capt_Family = 'PIKSUtils' And Capt_Code = 'LogoURL';
+                UPDATE Custom_Captions SET Capt_US = '\\BHS2\TempReports' WHERE Capt_Family = 'TempReports' And Capt_Code = 'Share';
+                UPDATE Custom_Captions SET Capt_US = 'D:\Applications\TempReports' WHERE Capt_Family = 'TempReports' And Capt_Code = 'Local';
+                UPDATE Custom_Captions SET Capt_US = '\\BBOS2\Campaigns' WHERE Capt_Family = 'PRCompanyAdUploadDirectory' And Capt_Code = '/Campaigns';
+                UPDATE Custom_Captions SET Capt_US = '\\BBOS2\LearningCenter' WHERE Capt_Family = 'PRPublicationUploadDirectory' And Capt_Code = '/LearningCenter';
+                UPDATE Custom_Captions SET Capt_US = '0' WHERE Capt_Family = 'EquifaxIntegration' And Capt_Code = 'EquifaxLogEnabled';
+                UPDATE Custom_Captions SET Capt_US = 'dp' WHERE Capt_Family = 'EquifaxIntegration' And Capt_Code = 'ServiceName';
+                UPDATE Custom_Captions SET Capt_US = '307XM04386' WHERE Capt_Family = 'EquifaxIntegration' And Capt_Code = 'CustomerNumber';
+                UPDATE Custom_Captions SET Capt_US = 'http://BHS2/ReportServer?' WHERE Capt_Family = 'SSRS' And Capt_Code = 'URL';
+        </sql>
+
+
+
+        <!-- Set the sql.dir to install the CRM components-->
+        <echo message="Defining Business Report Database Objects..."/>
+        <property name="sql.dir" value="${SQL.BaseDir}\BRDatabase" />
+        <property name="sql.logfile" value="${deploy.logdir}\BRQueries.txt" />
+        <call target="ExecuteSQLFolder" />
+    </target>
+
+
+
+
+
+
+    <!--
+        Applies the appropriate permissions
+    -->
+    <target name="SetSecurity" description="" >
+
+	<property name="sql.logfile" value="${deploy.logdir}\Security.txt" />
+
+        <property name="sql.dbname" value="${CRMDBName}" />
+        <property name="sql.sourcefile" value="${SQL.BaseDir}\SqlCLR\PACAFileAccessAssembly\Test Scripts\Register.sql" />
+        <call target="ExecuteSQLFile"/>
+
+        <property name="sql.dbname" value="${CRMDBName}" />
+        <property name="sql.sourcefile" value="${SQL.BaseDir}\SqlCLR\PIKSFunctions\Register.sql" />
+        <call target="ExecuteSQLFile"/>
+
+
+        <property name="sql.dbname" value="${CRMDBName}" />
+        <property name="sql.sourcefile" value="${SQL.BaseDir}\Core_Scripts\Security.sql" />
+        <call target="ExecuteSQLFile"/>
+
+    </target>
+</project>

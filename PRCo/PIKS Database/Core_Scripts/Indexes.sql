@@ -1,0 +1,2539 @@
+SET ANSI_NULLS ON
+SET ANSI_PADDING ON
+SET ANSI_WARNINGS ON
+SET CONCAT_NULL_YIELDS_NULL ON
+SET NUMERIC_ROUNDABORT OFF
+SET QUOTED_IDENTIFIER ON
+SET ARITHABORT ON
+
+IF  EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[vPRLocation]') AND name = N'ndx_vPRLocation')
+	DROP INDEX [ndx_vPRLocation] ON [dbo].[vPRLocation] WITH ( ONLINE = OFF )
+GO
+--CREATE UNIQUE CLUSTERED INDEX ndx_vPRLocation ON vPRLocation (prci_cityid)
+GO
+
+IF  EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[vPRCompanyLocation]') AND name = N'ndx_vPRCompanyLocation')
+	DROP INDEX [ndx_vPRCompanyLocation] ON [dbo].[vPRCompanyLocation] WITH ( ONLINE = OFF )
+GO
+--CREATE UNIQUE CLUSTERED INDEX ndx_vPRCompanyLocation ON vPRCompanyLocation (comp_companyid)
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Address]') AND name = N'IDX_Addr_Deleted')
+CREATE NONCLUSTERED INDEX [IDX_Addr_Deleted] ON [dbo].[Address] 
+( [Addr_Deleted] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Address]') AND name = N'ndx_addr_PRCityId')
+CREATE NONCLUSTERED INDEX [ndx_addr_PRCityId] ON [dbo].[Address] 
+( [addr_PRCityId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Address_Link]') AND name = N'IDX_AdLi_AddressId')
+CREATE NONCLUSTERED INDEX [IDX_AdLi_AddressId] ON [dbo].[Address_Link] 
+( [AdLi_AddressId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Address_Link]') AND name = N'IDX_AdLi_CompanyId')
+CREATE NONCLUSTERED INDEX [IDX_AdLi_CompanyId] ON [dbo].[Address_Link] 
+( [AdLi_CompanyID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Address_Link]') AND name = N'IDX_AdLi_PersonId')
+CREATE NONCLUSTERED INDEX [IDX_AdLi_PersonId] ON [dbo].[Address_Link] 
+( [AdLi_PersonID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[CaseProgress]') AND name = N'IDX_CaPr_CaseId')
+CREATE NONCLUSTERED INDEX [IDX_CaPr_CaseId] ON [dbo].[CaseProgress] 
+( [Case_CaseId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Cases]') AND name = N'IDX_Case_AssignedUserId')
+CREATE NONCLUSTERED INDEX [IDX_Case_AssignedUserId] ON [dbo].[Cases] 
+( [Case_AssignedUserId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Cases]') AND name = N'IDX_Case_PrimaryCompanyId')
+CREATE NONCLUSTERED INDEX [IDX_Case_PrimaryCompanyId] ON [dbo].[Cases] 
+( [Case_PrimaryCompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Cases]') AND name = N'IDX_Case_PrimaryPersonId')
+CREATE NONCLUSTERED INDEX [IDX_Case_PrimaryPersonId] ON [dbo].[Cases] 
+( [Case_PrimaryPersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Cases]') AND name = N'IDX_Case_Deleted')
+CREATE NONCLUSTERED INDEX [IDX_Case_Deleted] ON [dbo].[Cases] 
+( [Case_Deleted] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Cases]') AND name = N'IDX_Case_Secterr')
+CREATE NONCLUSTERED INDEX [IDX_Case_Secterr] ON [dbo].[Cases] 
+( [Case_SecTerr] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Cases]') AND name = N'IDX_Case_Workflow1')
+CREATE NONCLUSTERED INDEX [IDX_Case_Workflow1] ON [dbo].[Cases] 
+( [Case_NotifyTime] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Channel_Link]') AND name = N'IDX_ChLi_ChannelId_UserId')
+CREATE NONCLUSTERED INDEX [IDX_ChLi_ChannelId_UserId] ON [dbo].[Channel_Link] 
+( [ChLi_Channel_Id] ASC,[ChLi_User_Id] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Comm_Link]') AND name = N'IDX_Comm_Link_Clustered')
+CREATE CLUSTERED INDEX [IDX_Comm_Link_Clustered] ON [dbo].[Comm_Link] 
+( [CmLi_Comm_CommunicationId] ASC,[CmLi_Comm_UserId] ASC,[CmLi_Comm_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Comm_Link]') AND name = N'IDX_CmLi_Comm_UserId')
+CREATE NONCLUSTERED INDEX [IDX_CmLi_Comm_UserId] ON [dbo].[Comm_Link] 
+( [CmLi_Comm_UserId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Comm_Link]') AND name = N'IDX_CmLi_Comm_CommunicationId')
+CREATE NONCLUSTERED INDEX [IDX_CmLi_Comm_CommunicationId] ON [dbo].[Comm_Link] 
+( [CmLi_Comm_CommunicationId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Comm_Link]') AND name = N'IDX_CmLi_Comm_PersonId')
+CREATE NONCLUSTERED INDEX [IDX_CmLi_Comm_PersonId] ON [dbo].[Comm_Link] 
+( [CmLi_Comm_PersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Comm_Link]') AND name = N'IDX_CmLi_Comm_CompanyId')
+CREATE NONCLUSTERED INDEX [IDX_CmLi_Comm_CompanyId] ON [dbo].[Comm_Link] 
+( [CmLi_Comm_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Comm_Link]') AND name = N'IDX_CmLi_Workflow1')
+CREATE NONCLUSTERED INDEX [IDX_CmLi_Workflow1] ON [dbo].[Comm_Link] 
+( [CmLi_Comm_NotifyTime] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'IDX_Comm_Clustered')
+CREATE CLUSTERED INDEX [IDX_Comm_Clustered] ON [dbo].[Communication] 
+( [Comm_Deleted] ASC,[Comm_CommunicationId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'IDX_Comm_CaseId')
+CREATE NONCLUSTERED INDEX [IDX_Comm_CaseId] ON [dbo].[Communication] 
+( [Comm_CaseId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'IDX_Comm_OpportunityId')
+CREATE NONCLUSTERED INDEX [IDX_Comm_OpportunityId] ON [dbo].[Communication] 
+( [Comm_OpportunityId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'IDX_Comm_DateTime')
+CREATE NONCLUSTERED INDEX [IDX_Comm_DateTime] ON [dbo].[Communication] 
+( [Comm_DateTime] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'IDX_Comm_RecurrenceId')
+CREATE NONCLUSTERED INDEX [IDX_Comm_RecurrenceId] ON [dbo].[Communication] 
+( [Comm_RecurrenceId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'IDX_Comm_Deleted')
+CREATE NONCLUSTERED INDEX [IDX_Comm_Deleted] ON [dbo].[Communication] 
+( [Comm_Deleted] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'IDX_Comm_Secterr')
+CREATE NONCLUSTERED INDEX [IDX_Comm_Secterr] ON [dbo].[Communication] 
+( [Comm_SecTerr] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'IDX_Comm_Status')
+CREATE NONCLUSTERED INDEX [IDX_Comm_Status] ON [dbo].[Communication] 
+( [Comm_Status] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'IDX_Comm_Action')
+CREATE NONCLUSTERED INDEX [IDX_Comm_Action] ON [dbo].[Communication] 
+( [Comm_Action] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'IDX_Comm_Workflow1')
+CREATE NONCLUSTERED INDEX [IDX_Comm_Workflow1] ON [dbo].[Communication] 
+( [Comm_Status] ASC,[Comm_NotifyTime] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'IDX_Comm_Workflow2')
+CREATE NONCLUSTERED INDEX [IDX_Comm_Workflow2] ON [dbo].[Communication] 
+( [Comm_SMSNotification] ASC,[Comm_CommunicationId] ASC,[Comm_SecTerr] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'IDX_Comm_Workflow3')
+CREATE NONCLUSTERED INDEX [IDX_Comm_Workflow3] ON [dbo].[Communication] 
+( [Comm_Status] ASC,[Comm_SecTerr] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'ndx_comm_PRBusinessEventId')
+CREATE NONCLUSTERED INDEX [ndx_comm_PRBusinessEventId] ON [dbo].[Communication] 
+( [comm_PRBusinessEventId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'ndx_comm_PRPersonEventId')
+CREATE NONCLUSTERED INDEX [ndx_comm_PRPersonEventId] ON [dbo].[Communication] 
+( [comm_PRPersonEventId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'ndx_comm_PRCreditSheetId')
+CREATE NONCLUSTERED INDEX [ndx_comm_PRCreditSheetId] ON [dbo].[Communication] 
+( [comm_PRCreditSheetId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'ndx_comm_PRFileId')
+CREATE NONCLUSTERED INDEX [ndx_comm_PRFileId] ON [dbo].[Communication] 
+( [comm_PRFileId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'ndx_comm_PRCategory')
+CREATE NONCLUSTERED INDEX [ndx_comm_PRCategory] ON [dbo].[Communication] 
+( [comm_PRCategory] ASC,[comm_PRSubcategory] ASC,[Comm_CreatedDate] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'ndx_comm_ChannelId')
+CREATE NONCLUSTERED INDEX [ndx_comm_ChannelId] ON [dbo].[Communication] 
+( [Comm_ChannelId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+   
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'ndx_comp_IdNameDel')
+CREATE NONCLUSTERED INDEX [ndx_comp_IdNameDel] ON [dbo].[Company] 
+( [Comp_CompanyId] ASC,[Comp_Name] ASC,[Comp_Deleted] ASC,[Comp_PRUnconfirmed] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'IDX_Comp_Deleted')
+CREATE NONCLUSTERED INDEX [IDX_Comp_Deleted] ON [dbo].[Company] 
+( [Comp_Deleted] ASC,[Comp_PRUnconfirmed] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'IDX_Comp_Secterr')
+CREATE NONCLUSTERED INDEX [IDX_Comp_Secterr] ON [dbo].[Company] 
+( [Comp_SecTerr] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'ndx_comp_PRListingCityId')
+CREATE NONCLUSTERED INDEX [ndx_comp_PRListingCityId] ON [dbo].[Company] 
+( [comp_PRListingCityId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'ndx_comp_PRType')
+CREATE NONCLUSTERED INDEX [ndx_comp_PRType] ON [dbo].[Company] 
+( [comp_PRType] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'ndx_comp_PRHQID')
+CREATE NONCLUSTERED INDEX [ndx_comp_PRHQID] ON [dbo].[Company] 
+( [comp_PRHQId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'ndx_comp_PRServicesThroughCompanyId')
+CREATE NONCLUSTERED INDEX [ndx_comp_PRServicesThroughCompanyId] ON [dbo].[Company] 
+( [comp_PRServicesThroughCompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'ndx_comp_PRListingStatus')
+CREATE NONCLUSTERED INDEX [ndx_comp_PRListingStatus] ON [dbo].[Company] 
+( [comp_PRListingStatus] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'ndx_comp_PRJeopardyDate')
+CREATE NONCLUSTERED INDEX [ndx_comp_PRJeopardyDate] ON [dbo].[Company] 
+( [comp_PRJeopardyDate] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'IDX_Comp_Name')
+CREATE NONCLUSTERED INDEX [IDX_Comp_Name] ON [dbo].[Company] 
+( [Comp_Name] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+-- this unique clustered index only needs to be run once.  It replaces a native Sage 
+-- index.  This must be done after the IDX_Comp_Name index is rebuild because this 
+-- used to be the clustered index.  
+-- This is being included in the system as of build 2.3 but should
+-- be commented out once the build is moved to production.  A unique clustered
+-- index should never need to be rebuilt.
+-- IF  EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'IDX_Comp_CompanyId') 
+--     DROP INDEX [IDX_Comp_CompanyId] ON [dbo].[Company] WITH ( ONLINE = OFF ) 
+-- GO 
+-- CREATE UNIQUE CLUSTERED INDEX [IDX_Comp_CompanyId] ON [dbo].[Company] 
+-- ( [Comp_CompanyId] ASC) 
+-- WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+-- GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Custom_Captions]') AND name = N'IDX_Capt_Code')
+CREATE NONCLUSTERED INDEX [IDX_Capt_Code] ON [dbo].[Custom_Captions] 
+( [Capt_Code] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Custom_Captions]') AND name = N'IDX_Capt_Family_Code')
+CREATE NONCLUSTERED INDEX [IDX_Capt_Family_Code] ON [dbo].[Custom_Captions] 
+( [Capt_Family] ASC,[Capt_Code] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Email]') AND name = N'IDX_Emai_CompanyId')
+CREATE NONCLUSTERED INDEX [IDX_Emai_CompanyId] ON [dbo].[Email] 
+( [Emai_CompanyID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Email]') AND name = N'ndx_emai_EmailAddress')
+CREATE NONCLUSTERED INDEX [ndx_emai_EmailAddress] ON [dbo].[Email] 
+( [Emai_EmailAddress] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Lead]') AND name = N'IDX_Lead_AssignedUserId')
+CREATE NONCLUSTERED INDEX [IDX_Lead_AssignedUserId] ON [dbo].[Lead] 
+( [Lead_AssignedUserID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Lead]') AND name = N'IDX_Lead_PrimaryCompanyId')
+CREATE NONCLUSTERED INDEX [IDX_Lead_PrimaryCompanyId] ON [dbo].[Lead] 
+( [Lead_PrimaryCompanyID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Lead]') AND name = N'IDX_Lead_PrimaryPersonId')
+CREATE NONCLUSTERED INDEX [IDX_Lead_PrimaryPersonId] ON [dbo].[Lead] 
+( [Lead_PrimaryPersonID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Lead]') AND name = N'IDX_Lead_SecTerr')
+CREATE NONCLUSTERED INDEX [IDX_Lead_SecTerr] ON [dbo].[Lead] 
+( [Lead_SecTerr] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Lead]') AND name = N'IDX_Lead_DataUpLoadId')
+CREATE NONCLUSTERED INDEX [IDX_Lead_DataUpLoadId] ON [dbo].[Lead] 
+( [Lead_DataUpLoadID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Library]') AND name = N'IDX_Libr_CompanyId')
+CREATE NONCLUSTERED INDEX [IDX_Libr_CompanyId] ON [dbo].[Library] 
+( [Libr_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Library]') AND name = N'IDX_Libr_PersonId')
+CREATE NONCLUSTERED INDEX [IDX_Libr_PersonId] ON [dbo].[Library] 
+( [Libr_PersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[MultipleEntityLink]') AND name = N'IDX_MELi_DestinationTableId')
+CREATE NONCLUSTERED INDEX [IDX_MELi_DestinationTableId] ON [dbo].[MultipleEntityLink] 
+( [MELi_DestinationTableID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[MultipleEntityLink]') AND name = N'IDX_MELi_SourceTableId')
+CREATE NONCLUSTERED INDEX [IDX_MELi_SourceTableId] ON [dbo].[MultipleEntityLink] 
+( [MELi_SourceTableID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Notes]') AND name = N'IDX_Note_ForeignId')
+CREATE NONCLUSTERED INDEX [IDX_Note_ForeignId] ON [dbo].[Notes] 
+( [Note_ForeignId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Notes]') AND name = N'IDX_Note_ForeignTableId')
+CREATE NONCLUSTERED INDEX [IDX_Note_ForeignTableId] ON [dbo].[Notes] 
+( [Note_ForeignTableId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Opportunity]') AND name = N'IDX_Oppo_AssignedUserId')
+CREATE NONCLUSTERED INDEX [IDX_Oppo_AssignedUserId] ON [dbo].[Opportunity] 
+( [Oppo_AssignedUserId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Opportunity]') AND name = N'IDX_Oppo_PrimaryCompanyId')
+CREATE NONCLUSTERED INDEX [IDX_Oppo_PrimaryCompanyId] ON [dbo].[Opportunity] 
+( [Oppo_PrimaryCompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Opportunity]') AND name = N'IDX_Oppo_PrimaryPersonId')
+CREATE NONCLUSTERED INDEX [IDX_Oppo_PrimaryPersonId] ON [dbo].[Opportunity] 
+( [Oppo_PrimaryPersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Opportunity]') AND name = N'IDX_Oppo_Deleted')
+CREATE NONCLUSTERED INDEX [IDX_Oppo_Deleted] ON [dbo].[Opportunity] 
+( [Oppo_Deleted] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Opportunity]') AND name = N'IDX_Oppo_Secterr')
+CREATE NONCLUSTERED INDEX [IDX_Oppo_Secterr] ON [dbo].[Opportunity] 
+( [Oppo_SecTerr] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Opportunity]') AND name = N'IDX_Oppo_Workflow1')
+CREATE NONCLUSTERED INDEX [IDX_Oppo_Workflow1] ON [dbo].[Opportunity] 
+( [Oppo_NotifyTime] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[OpportunityProgress]') AND name = N'IDX_OpPr_OpportunityId')
+CREATE NONCLUSTERED INDEX [IDX_OpPr_OpportunityId] ON [dbo].[OpportunityProgress] 
+( [Oppo_OpportunityId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person]') AND name = N'IDX_Pers_FullName')
+CREATE CLUSTERED INDEX [IDX_Pers_FullName] ON [dbo].[Person] 
+( [Pers_LastName] ASC,[Pers_FirstName] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person]') AND name = N'IDX_Pers_FullName2')
+CREATE NONCLUSTERED INDEX [IDX_Pers_FullName2] ON [dbo].[Person] 
+( [pers_LastNameAlphaOnly] ASC,[pers_FirstNameAlphaOnly] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person]') AND name = N'IDX_Pers_Deleted')
+CREATE NONCLUSTERED INDEX [IDX_Pers_Deleted] ON [dbo].[Person] 
+( [Pers_Deleted] ASC,[pers_PRUnconfirmed] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person]') AND name = N'IDX_Pers_Secterr')
+CREATE NONCLUSTERED INDEX [IDX_Pers_Secterr] ON [dbo].[Person] 
+( [pers_SecTerr] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person]') AND name = N'IDX_Pers_DeletedPerson')
+CREATE NONCLUSTERED INDEX [IDX_Pers_DeletedPerson] ON [dbo].[Person] 
+( [Pers_Deleted] ASC,[pers_PRUnconfirmed] ASC,[Pers_PersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person]') AND name = N'IDX_Pers_PrimaryAddressID')
+CREATE NONCLUSTERED INDEX [IDX_Pers_PrimaryAddressID] ON [dbo].[Person] 
+( [Pers_PrimaryAddressId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person]') AND name = N'ndx_pers_NameId')
+CREATE NONCLUSTERED INDEX [ndx_pers_NameId] ON [dbo].[Person] 
+( [Pers_LastName] ASC,[Pers_FirstName] ASC,[Pers_PersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person_Link]') AND name = N'IDX_PeLi_PersonId')
+CREATE NONCLUSTERED INDEX [IDX_PeLi_PersonId] ON [dbo].[Person_Link] 
+( [PeLi_PersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person_Link]') AND name = N'IDX_PeLi_CompanyId')
+CREATE NONCLUSTERED INDEX [IDX_PeLi_CompanyId] ON [dbo].[Person_Link] 
+( [PeLi_CompanyID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person_Link]') AND name = N'ndx_peli_PRStatus_peli_PRRole')
+CREATE NONCLUSTERED INDEX [ndx_peli_PRStatus_peli_PRRole] ON [dbo].[Person_Link] 
+( [peli_PRStatus] ASC,[peli_PRRole] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person_Link]') AND name = N'ndx_peli_PRStatus_peli_PROwnershipRole')
+CREATE NONCLUSTERED INDEX [ndx_peli_PRStatus_peli_PROwnershipRole] ON [dbo].[Person_Link] 
+( [peli_PRStatus] ASC,[peli_PROwnershipRole] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Phone]') AND name = N'IDX_Phon_CompanyId')
+CREATE NONCLUSTERED INDEX [IDX_Phon_CompanyId] ON [dbo].[Phone] 
+( [Phon_CompanyID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARAging]') AND name = N'ndx_praa_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_praa_CompanyId] ON [dbo].[PRARAging] 
+( [praa_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARAging]') AND name = N'ndx_praa_PersonId')
+CREATE NONCLUSTERED INDEX [ndx_praa_PersonId] ON [dbo].[PRARAging] 
+( [praa_PersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARAgingDetail]') AND name = N'ndx_praad_ARAgingId')
+CREATE CLUSTERED INDEX [ndx_praad_ARAgingId] ON [dbo].[PRARAgingDetail] 
+( [praad_ARAgingId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARAgingDetail]') AND name = N'ndx_praad_ARCustomerId')
+CREATE NONCLUSTERED INDEX [ndx_praad_ARCustomerId] ON [dbo].[PRARAgingDetail] 
+( [praad_ARCustomerId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARAgingDetail]') AND name = N'ndx_praad_ManualCompanyId')
+CREATE NONCLUSTERED INDEX [ndx_praad_ManualCompanyId] ON [dbo].[PRARAgingDetail] 
+( [praad_ManualCompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARTranslation]') AND name = N'ndx_prar_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prar_CompanyId] ON [dbo].[PRARTranslation] 
+( [prar_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARTranslation]') AND name = N'ndx_prar_PRCoCompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prar_PRCoCompanyId] ON [dbo].[PRARTranslation] 
+( [prar_PRCoCompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARTranslation]') AND name = N'ndx_prar_CustomerNumber')
+CREATE NONCLUSTERED INDEX [ndx_prar_CustomerNumber] ON [dbo].[PRARTranslation] 
+( [prar_CustomerNumber] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARAgingDetail]') AND name = N'ndx_PRARAgingDetail_03')
+	CREATE NONCLUSTERED INDEX [ndx_PRARAgingDetail_03] ON [dbo].[PRARAgingDetail]
+	(
+		[praad_SubjectCompanyID] ASC,
+		[praad_ARAgingId] ASC,
+		[praad_ARAgingDetailId] ASC
+	)
+	INCLUDE ( 	[praad_FileStateName],
+		[praad_Exception],
+		[praad_Amount0to29],
+		[praad_Amount30to44],
+		[praad_Amount45to60],
+		[praad_Amount61Plus]) WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+GO
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARAgingDetail]') AND name = N'ndx_PRARAgingDetail_04')
+	CREATE NONCLUSTERED INDEX [ndx_PRARAgingDetail_04] ON [dbo].[PRARAgingDetail]
+	(
+		[praad_SubjectCompanyID] ASC,
+		[praad_ARAgingId] ASC,
+		[praad_ARAgingDetailId] ASC
+	)
+	INCLUDE ( 	[praad_FileStateName],
+		[praad_Exception],
+		[praad_AmountCurrent],
+		[praad_Amount1to30],
+		[praad_Amount31to60],
+		[praad_Amount61to90],
+		[praad_Amount91Plus]) WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+GO
+
+
+
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRBBScore]') AND name = N'ndx_prbs_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prbs_CompanyId] ON [dbo].[PRBBScore] 
+( [prbs_CompanyId] ASC,[prbs_Current] ASC,[prbs_BBScore] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRBBScore]') AND name = N'ndx_prbs_RunDate')
+	CREATE NONCLUSTERED INDEX [ndx_prbs_RunDate] ON [dbo].[PRBBScore] 
+	( [prbs_RunDate] ASC) 
+	WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRBusinessEvent]') AND name = N'ndx_prbe_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prbe_CompanyId] ON [dbo].[PRBusinessEvent] 
+( [prbe_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRBusinessEvent]') AND name = N'ndx_prbe_BusinessEventTypeId')
+CREATE NONCLUSTERED INDEX [ndx_prbe_BusinessEventTypeId] ON [dbo].[PRBusinessEvent] 
+( [prbe_BusinessEventTypeId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRBusinessEvent]') AND name = N'ndx_prbe_IndividualBuyerId')
+CREATE NONCLUSTERED INDEX [ndx_prbe_IndividualBuyerId] ON [dbo].[PRBusinessEvent] 
+( [prbe_IndividualBuyerId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRBusinessEvent]') AND name = N'ndx_prbe_IndividualSellerId')
+CREATE NONCLUSTERED INDEX [ndx_prbe_IndividualSellerId] ON [dbo].[PRBusinessEvent] 
+( [prbe_IndividualSellerId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRBusinessEvent]') AND name = N'ndx_prbe_RelatedCompany1Id')
+CREATE NONCLUSTERED INDEX [ndx_prbe_RelatedCompany1Id] ON [dbo].[PRBusinessEvent] 
+( [prbe_RelatedCompany1Id] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRBusinessEvent]') AND name = N'ndx_prbe_RelatedCompany2Id')
+CREATE NONCLUSTERED INDEX [ndx_prbe_RelatedCompany2Id] ON [dbo].[PRBusinessEvent] 
+( [prbe_RelatedCompany2Id] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRBusinessEvent]') AND name = N'ndx_prbe_StateId')
+CREATE NONCLUSTERED INDEX [ndx_prbe_StateId] ON [dbo].[PRBusinessEvent] 
+( [prbe_StateId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRBusinessReportRequest]') AND name = N'ndx_prbr_RequestingCompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prbr_RequestingCompanyId] ON [dbo].[PRBusinessReportRequest] 
+( [prbr_RequestingCompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRBusinessReportRequest]') AND name = N'ndx_prbr_RequestingPersonId')
+CREATE NONCLUSTERED INDEX [ndx_prbr_RequestingPersonId] ON [dbo].[PRBusinessReportRequest] 
+( [prbr_RequestingPersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRBusinessReportRequest]') AND name = N'ndx_prbr_RequestedCompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prbr_RequestedCompanyId] ON [dbo].[PRBusinessReportRequest] 
+( [prbr_RequestedCompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCity]') AND name = N'ndx_prci_ListingSpecialistId')
+CREATE NONCLUSTERED INDEX [ndx_prci_ListingSpecialistId] ON [dbo].[PRCity] 
+( [prci_ListingSpecialistId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCity]') AND name = N'ndx_prci_RatingUserId')
+CREATE NONCLUSTERED INDEX [ndx_prci_RatingUserId] ON [dbo].[PRCity] 
+( [prci_RatingUserId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCity]') AND name = N'ndx_prci_CustomerServiceId')
+CREATE NONCLUSTERED INDEX [ndx_prci_CustomerServiceId] ON [dbo].[PRCity] 
+( [prci_CustomerServiceId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCity]') AND name = N'ndx_prci_InsideSalesRepId')
+CREATE NONCLUSTERED INDEX [ndx_prci_InsideSalesRepId] ON [dbo].[PRCity] 
+( [prci_InsideSalesRepId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCity]') AND name = N'ndx_prci_FieldSalesRepId')
+CREATE NONCLUSTERED INDEX [ndx_prci_FieldSalesRepId] ON [dbo].[PRCity] 
+( [prci_FieldSalesRepId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCity]') AND name = N'ndx_prci_StateId')
+CREATE NONCLUSTERED INDEX [ndx_prci_StateId] ON [dbo].[PRCity] 
+( [prci_StateId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCity]') AND name = N'ndx_prci_CityId_prci_StateId')
+CREATE NONCLUSTERED INDEX [ndx_prci_CityId_prci_StateId] ON [dbo].[PRCity] 
+( [prci_City] ASC,[prci_CityId] ASC,[prci_StateId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRClassification]') AND name = N'ndx_prcl_ParentId')
+CREATE NONCLUSTERED INDEX [ndx_prcl_ParentId] ON [dbo].[PRClassification] 
+( [prcl_ParentId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCommodity]') AND name = N'ndx_prcm_ParentId')
+CREATE NONCLUSTERED INDEX [ndx_prcm_ParentId] ON [dbo].[PRCommodity] 
+( [prcm_ParentId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCommodityTranslation]') AND name = N'IDX_prcx_Abbreviation')
+CREATE NONCLUSTERED INDEX [IDX_prcx_Abbreviation] ON [dbo].[PRCommodityTranslation] 
+( [prcx_Abbreviation] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyAlias]') AND name = N'ndx_pral_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_pral_CompanyId] ON [dbo].[PRCompanyAlias] 
+( [pral_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyAlias]') AND name = N'ndx_pral_Alias')
+CREATE NONCLUSTERED INDEX [ndx_pral_Alias] ON [dbo].[PRCompanyAlias] 
+( [pral_Alias] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyAlias]') AND name = N'ndx_pral_NameAlphaOnly')
+CREATE NONCLUSTERED INDEX [ndx_pral_NameAlphaOnly] ON [dbo].[PRCompanyAlias] 
+( [pral_NameAlphaOnly] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyBank]') AND name = N'ndx_prcb_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prcb_CompanyId] ON [dbo].[PRCompanyBank] 
+( [prcb_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyBrand]') AND name = N'ndx_prc3_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prc3_CompanyId] ON [dbo].[PRCompanyBrand] 
+( [prc3_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyBrand]') AND name = N'ndx_prc3_Brand')
+CREATE NONCLUSTERED INDEX [ndx_prc3_Brand] ON [dbo].[PRCompanyBrand] 
+( [prc3_Brand] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyClassification]') AND name = N'ndx_prc2_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prc2_CompanyId] ON [dbo].[PRCompanyClassification] 
+( [prc2_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyClassification]') AND name = N'ndx_prc2_ClassificationId')
+CREATE NONCLUSTERED INDEX [ndx_prc2_ClassificationId] ON [dbo].[PRCompanyClassification] 
+( [prc2_ClassificationId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyCommodityAttribute]') AND name = N'ndx_prcca_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prcca_CompanyId] ON [dbo].[PRCompanyCommodityAttribute] 
+( [prcca_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyCommodityAttribute]') AND name = N'ndx_prcca_CommodityId')
+CREATE NONCLUSTERED INDEX [ndx_prcca_CommodityId] ON [dbo].[PRCompanyCommodityAttribute] 
+( [prcca_CommodityId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyCommodityAttribute]') AND name = N'ndx_prcca_AttributeId')
+CREATE NONCLUSTERED INDEX [ndx_prcca_AttributeId] ON [dbo].[PRCompanyCommodityAttribute] 
+( [prcca_AttributeId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyCommodityAttribute]') AND name = N'ndx_prcca_GrowingMethodID')
+CREATE NONCLUSTERED INDEX ndx_prcca_GrowingMethodID ON [dbo].[PRCompanyCommodityAttribute] 
+([prcca_CommodityId])
+	INCLUDE ([prcca_CompanyId],[prcca_GrowingMethodId])
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyInfoProfile]') AND name = N'ndx_prc5_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prc5_CompanyId] ON [dbo].[PRCompanyInfoProfile] 
+( [prc5_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyInfoProfile]') AND name = N'ndx_prc5_InformationProfileUserId')
+CREATE NONCLUSTERED INDEX [ndx_prc5_InformationProfileUserId] ON [dbo].[PRCompanyInfoProfile] 
+( [prc5_InformationProfileUserId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyLicense]') AND name = N'ndx_prli_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prli_CompanyId] ON [dbo].[PRCompanyLicense] 
+( [prli_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyProfile]') AND name = N'ndx_prcp_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prcp_CompanyId] ON [dbo].[PRCompanyProfile] 
+( [prcp_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyRegion]') AND name = N'ndx_prcd_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prcd_CompanyId] ON [dbo].[PRCompanyRegion] 
+( [prcd_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyRegion]') AND name = N'ndx_prcd_RegionId')
+CREATE NONCLUSTERED INDEX [ndx_prcd_RegionId] ON [dbo].[PRCompanyRegion] 
+( [prcd_RegionId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyRelationship]') AND name = N'ndx_prcr_LeftCompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prcr_LeftCompanyId] ON [dbo].[PRCompanyRelationship] 
+( [prcr_LeftCompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyRelationship]') AND name = N'ndx_prcr_RightCompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prcr_RightCompanyId] ON [dbo].[PRCompanyRelationship] 
+( [prcr_RightCompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyRelationship]') AND name = N'ndx_prcr_Type')
+CREATE NONCLUSTERED INDEX [ndx_prcr_Type] ON [dbo].[PRCompanyRelationship] 
+( [prcr_Type] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyRelationship]') AND name = N'ndx_PRCompanyRelationshipTypeCheck')
+CREATE NONCLUSTERED INDEX [ndx_PRCompanyRelationshipTypeCheck] ON [dbo].[PRCompanyRelationship] 
+( [prcr_RightCompanyId] ASC,[prcr_LeftCompanyId] ASC,[prcr_Type] ASC,[prcr_LastReportedDate] ASC,[prcr_CompanyRelationshipId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyRelationship]') AND name = N'ndx_prcr_LastReportedDate_prcr_Type')
+CREATE NONCLUSTERED INDEX [ndx_prcr_LastReportedDate_prcr_Type] ON [dbo].[PRCompanyRelationship] 
+( [prcr_LastReportedDate] ASC,[prcr_Type] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanySearch]') AND name = N'ndx_prcse_IdFullName')
+CREATE NONCLUSTERED INDEX [ndx_prcse_IdFullName] ON [dbo].[PRCompanySearch] 
+( [prcse_FullName] ASC) 
+INCLUDE ( [prcse_CompanyId] )
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanySearch]') AND name = N'ndx_prcse_NameAlphaOnly')
+CREATE NONCLUSTERED INDEX [ndx_prcse_NameAlphaOnly] ON [dbo].[PRCompanySearch] 
+	( [prcse_NameAlphaOnly] ASC) 
+INCLUDE ( [prcse_CompanyId])
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyStockExchange]') AND name = N'ndx_prc4_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prc4_CompanyId] ON [dbo].[PRCompanyStockExchange] 
+( [prc4_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyStockExchange]') AND name = N'ndx_prc4_StockExchangeId')
+CREATE NONCLUSTERED INDEX [ndx_prc4_StockExchangeId] ON [dbo].[PRCompanyStockExchange] 
+( [prc4_StockExchangeId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyTerminalMarket]') AND name = N'ndx_prct_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prct_CompanyId] ON [dbo].[PRCompanyTerminalMarket] 
+( [prct_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyTerminalMarket]') AND name = N'ndx_prct_TerminalMarketId')
+CREATE NONCLUSTERED INDEX [ndx_prct_TerminalMarketId] ON [dbo].[PRCompanyTerminalMarket] 
+( [prct_TerminalMarketId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCreditSheet]') AND name = N'ndx_prcs_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prcs_CompanyId] ON [dbo].[PRCreditSheet] 
+( [prcs_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCreditSheet]') AND name = N'ndx_prcs_AuthorId')
+CREATE NONCLUSTERED INDEX [ndx_prcs_AuthorId] ON [dbo].[PRCreditSheet] 
+( [prcs_AuthorId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCreditSheet]') AND name = N'ndx_prcs_ApproverId')
+CREATE NONCLUSTERED INDEX [ndx_prcs_ApproverId] ON [dbo].[PRCreditSheet] 
+( [prcs_ApproverId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRDescriptiveLine]') AND name = N'ndx_prdl_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prdl_CompanyId] ON [dbo].[PRDescriptiveLine] 
+( [prdl_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRDRCLicense]') AND name = N'ndx_prdr_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prdr_CompanyId] ON [dbo].[PRDRCLicense] 
+( [prdr_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRDRCLicense]') AND name = N'ndx_prdr_LicenseNumber')
+CREATE NONCLUSTERED INDEX [ndx_prdr_LicenseNumber] ON [dbo].[PRDRCLicense] 
+( [prdr_LicenseNumber] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRExceptionQueue]') AND name = N'ndx_preq_TradeReportId')
+CREATE NONCLUSTERED INDEX [ndx_preq_TradeReportId] ON [dbo].[PRExceptionQueue] 
+( [preq_TradeReportId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRExceptionQueue]') AND name = N'ndx_preq_ARAgingId')
+CREATE NONCLUSTERED INDEX [ndx_preq_ARAgingId] ON [dbo].[PRExceptionQueue] 
+( [preq_ARAgingId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRExceptionQueue]') AND name = N'ndx_preq_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_preq_CompanyId] ON [dbo].[PRExceptionQueue] 
+( [preq_CompanyId] ASC,[preq_Date] ASC,[preq_Type] ASC,[preq_Status] ASC,[preq_AssignedUserId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRExceptionQueue]') AND name = N'ndx_preq_AssignedUserId')
+CREATE NONCLUSTERED INDEX [ndx_preq_AssignedUserId] ON [dbo].[PRExceptionQueue] 
+( [preq_AssignedUserId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRExceptionQueue]') AND name = N'ndx_preq_ClosedById')
+CREATE NONCLUSTERED INDEX [ndx_preq_ClosedById] ON [dbo].[PRExceptionQueue] 
+( [preq_ClosedById] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRExceptionQueue]') AND name = N'ndx_preq_Date')
+CREATE NONCLUSTERED INDEX [ndx_preq_Date] ON [dbo].[PRExceptionQueue] 
+( [preq_Date] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRExceptionQueue]') AND name = N'ndx_PRExceptionQueue_01')
+CREATE NONCLUSTERED INDEX [ndx_PRExceptionQueue_01] ON [dbo].[PRExceptionQueue] 
+( [preq_Type] ASC) 
+	INCLUDE ( 	[preq_ExceptionQueueId],
+		[preq_CompanyId]) 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRExceptionQueue]') AND name = N'ndx_PRExceptionQueue_02')
+CREATE NONCLUSTERED INDEX [ndx_PRExceptionQueue_02] ON [dbo].[PRExceptionQueue]
+(
+	[preq_CompanyId] ASC,
+	[preq_Status] ASC,
+	[preq_Type] ASC,
+	[preq_ExceptionQueueId] ASC,
+	[preq_AssignedUserId] ASC
+)
+INCLUDE ( 	[preq_Date]) WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRExceptionQueue]') AND name = N'ndx_PRExceptionQueue_03')
+CREATE NONCLUSTERED INDEX [ndx_PRExceptionQueue_03] ON [dbo].[PRExceptionQueue]
+(
+	[preq_CompanyId] ASC,
+	[preq_ExceptionQueueId] DESC,
+	[preq_Type] ASC
+)WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRFinancial]') AND name = N'ndx_prfs_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prfs_CompanyId] ON [dbo].[PRFinancial] 
+( [prfs_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRFinancial]') AND name = N'ndx_prfs_LibraryId')
+CREATE NONCLUSTERED INDEX [ndx_prfs_LibraryId] ON [dbo].[PRFinancial] 
+( [prfs_LibraryId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRFinancial]') AND name = N'ndx_prfs_CreatedDate')
+CREATE NONCLUSTERED INDEX [ndx_prfs_CreatedDate] ON [dbo].[PRFinancial] 
+( [prfs_CreatedDate] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRFinancial]') AND name = N'ndx_prfs_CompanyID_prfs_StatementDate')
+CREATE NONCLUSTERED INDEX [ndx_prfs_CompanyID_prfs_StatementDate] ON [dbo].[PRFinancial] 
+( [prfs_CompanyId] ASC,[prfs_StatementDate] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRFinancialDetail]') AND name = N'ndx_prfd_FinancialId')
+CREATE NONCLUSTERED INDEX [ndx_prfd_FinancialId] ON [dbo].[PRFinancialDetail] 
+( [prfd_FinancialId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Pricing]') AND name = N'ndx_pric_UOMID')
+CREATE NONCLUSTERED INDEX [ndx_pric_UOMID] ON [dbo].[Pricing] 
+( [pric_UOMID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Pricing]') AND name = N'ndx_pric_ProductID')
+CREATE NONCLUSTERED INDEX [ndx_pric_ProductID] ON [dbo].[Pricing] 
+( [pric_ProductID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Pricing]') AND name = N'ndx_pric_price_CID')
+CREATE NONCLUSTERED INDEX [ndx_pric_price_CID] ON [dbo].[Pricing] 
+( [pric_price_CID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Pricing]') AND name = N'ndx_pric_PricingListID')
+CREATE NONCLUSTERED INDEX [ndx_pric_PricingListID] ON [dbo].[Pricing] 
+( [pric_PricingListID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRImportPACAPrincipal]') AND name = N'ndx_prip_ImportPACALicenseId')
+CREATE NONCLUSTERED INDEX [ndx_prip_ImportPACALicenseId] ON [dbo].[PRImportPACAPrincipal] 
+( [prip_ImportPACALicenseId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRImportPACATrade]') AND name = N'ndx_prit_ImportPACALicenseId')
+CREATE NONCLUSTERED INDEX [ndx_prit_ImportPACALicenseId] ON [dbo].[PRImportPACATrade] 
+( [prit_ImportPACALicenseId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Products]') AND name = N'ndx_Prod_ListPrice_CID')
+CREATE NONCLUSTERED INDEX [ndx_Prod_ListPrice_CID] ON [dbo].[Products] 
+( [Prod_ListPrice_CID] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPACALicense]') AND name = N'ndx_prpa_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prpa_CompanyId] ON [dbo].[PRPACALicense] 
+( [prpa_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPACALicense]') AND name = N'ndx_prpa_CompanyName')
+CREATE NONCLUSTERED INDEX [ndx_prpa_CompanyName] ON [dbo].[PRPACALicense] 
+( [prpa_CompanyName] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPACAPrincipal]') AND name = N'ndx_prpp_PACALicenseId')
+CREATE NONCLUSTERED INDEX [ndx_prpp_PACALicenseId] ON [dbo].[PRPACAPrincipal] 
+( [prpp_PACALicenseId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPACATrade]') AND name = N'ndx_ptrd_PACALicenseId')
+CREATE NONCLUSTERED INDEX [ndx_ptrd_PACALicenseId] ON [dbo].[PRPACATrade] 
+( [ptrd_PACALicenseId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPersonBackground]') AND name = N'ndx_prba_PersonId')
+CREATE NONCLUSTERED INDEX [ndx_prba_PersonId] ON [dbo].[PRPersonBackground] 
+( [prba_PersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPersonEvent]') AND name = N'ndx_prpe_PersonId')
+CREATE NONCLUSTERED INDEX [ndx_prpe_PersonId] ON [dbo].[PRPersonEvent] 
+( [prpe_PersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPersonEvent]') AND name = N'ndx_prpe_PersonEventTypeId')
+CREATE NONCLUSTERED INDEX [ndx_prpe_PersonEventTypeId] ON [dbo].[PRPersonEvent] 
+( [prpe_PersonEventTypeId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPersonRelationship]') AND name = N'ndx_prpr_LeftPersonId')
+CREATE NONCLUSTERED INDEX [ndx_prpr_LeftPersonId] ON [dbo].[PRPersonRelationship] 
+( [prpr_LeftPersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPersonRelationship]') AND name = N'ndx_prpr_RightPersonId')
+CREATE NONCLUSTERED INDEX [ndx_prpr_RightPersonId] ON [dbo].[PRPersonRelationship] 
+( [prpr_RightPersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRating]') AND name = N'ndx_prra_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prra_CompanyId] ON [dbo].[PRRating] 
+( [prra_CompanyId] ASC,[prra_Current] ASC,[prra_CreditWorthId] ASC,[prra_IntegrityId] ASC,[prra_PayRatingId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRating]') AND name = N'ndx_prra_CreditWorthId')
+CREATE NONCLUSTERED INDEX [ndx_prra_CreditWorthId] ON [dbo].[PRRating] 
+( [prra_CreditWorthId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRating]') AND name = N'ndx_prra_IntegrityId')
+CREATE NONCLUSTERED INDEX [ndx_prra_IntegrityId] ON [dbo].[PRRating] 
+( [prra_IntegrityId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRating]') AND name = N'ndx_prra_PayRatingId')
+CREATE NONCLUSTERED INDEX [ndx_prra_PayRatingId] ON [dbo].[PRRating] 
+( [prra_PayRatingId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRating]') AND name = N'ndx_prra_Date')
+CREATE NONCLUSTERED INDEX [ndx_prra_Date] ON [dbo].[PRRating] 
+( [prra_Date] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRatingNumeralAssigned]') AND name = N'ndx_pran_RatingId')
+CREATE NONCLUSTERED INDEX [ndx_pran_RatingId] ON [dbo].[PRRatingNumeralAssigned] 
+( [pran_RatingId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRatingNumeralAssigned]') AND name = N'ndx_pran_RatingNumeralId')
+CREATE NONCLUSTERED INDEX [ndx_pran_RatingNumeralId] ON [dbo].[PRRatingNumeralAssigned] 
+( [pran_RatingNumeralId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRegion]') AND name = N'ndx_prd2_ParentId')
+CREATE NONCLUSTERED INDEX [ndx_prd2_ParentId] ON [dbo].[PRRegion] 
+( [prd2_ParentId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRServiceUnitUsage]') AND name = N'ndx_prcr_Type')
+CREATE NONCLUSTERED INDEX [ndx_prcr_Type] ON [dbo].[PRServiceUnitUsage] 
+( [prsuu_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRServiceUnitUsage]') AND name = N'ndx_prsuu_CompanyID')
+CREATE NONCLUSTERED INDEX [ndx_prsuu_CompanyID] ON [dbo].[PRServiceUnitUsage] 
+( [prsuu_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRState]') AND name = N'ndx_prst_CountryId')
+CREATE NONCLUSTERED INDEX [ndx_prst_CountryId] ON [dbo].[PRState] 
+( [prst_CountryId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTESForm]') AND name = N'ndx_prtf_TeleformId')
+CREATE NONCLUSTERED INDEX [ndx_prtf_TeleformId] ON [dbo].[PRTESForm] 
+( [prtf_TeleformId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTESForm]') AND name = N'ndx_prtf_CreatedDate')
+CREATE NONCLUSTERED INDEX [ndx_prtf_CreatedDate] ON [dbo].[PRTESForm] 
+(
+	[prtf_CreatedDate] ASC
+)WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTESForm]') AND name = N'ndx_TESFormID_Company')
+CREATE NONCLUSTERED INDEX [ndx_TESFormID_Company] ON [dbo].[PRTESForm] 
+( [prtf_TESFormBatchId] ASC,[prtf_SerialNumber] ASC,[prtf_FormType] ASC,[prtf_TESFormId] ASC,[prtf_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTESForm]') AND name = N'ndx_prtf_CompanyForm')
+CREATE NONCLUSTERED INDEX [ndx_prtf_CompanyForm] ON [dbo].[PRTESForm] 
+( [prtf_CompanyId] ASC,[prtf_TESFormId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTESForm]') AND name = N'ndx_prtf_SentDateTime')
+CREATE NONCLUSTERED INDEX [ndx_prtf_SentDateTime] ON [dbo].[PRTESForm] 
+( [prtf_SentDateTime] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTradeReport]') AND name = N'ndx_prtr_ResponderId')
+CREATE NONCLUSTERED INDEX [ndx_prtr_ResponderId] ON [dbo].[PRTradeReport] 
+( [prtr_ResponderId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTradeReport]') AND name = N'ndx_prtr_SubjectId')
+CREATE NONCLUSTERED INDEX [ndx_prtr_SubjectId] ON [dbo].[PRTradeReport] 
+( [prtr_SubjectId] ASC, prtr_Date ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTradeReport]') AND name = N'ndx_prtr_IntegrityID')
+CREATE NONCLUSTERED INDEX [ndx_prtr_IntegrityID] ON [dbo].[PRTradeReport] 
+( [prtr_IntegrityId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTradeReport]') AND name = N'ndx_prtr_PayRatingID')
+CREATE NONCLUSTERED INDEX [ndx_prtr_PayRatingID] ON [dbo].[PRTradeReport] 
+( [prtr_PayRatingId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTransaction]') AND name = N'ndx_prtx_CompanyId')
+CREATE NONCLUSTERED INDEX [ndx_prtx_CompanyId] ON [dbo].[PRTransaction] 
+( [prtx_CompanyId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTransaction]') AND name = N'ndx_prtx_PersonId')
+CREATE NONCLUSTERED INDEX [ndx_prtx_PersonId] ON [dbo].[PRTransaction] 
+( [prtx_PersonId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTransaction]') AND name = N'ndx_prtx_BusinessEventId')
+CREATE NONCLUSTERED INDEX [ndx_prtx_BusinessEventId] ON [dbo].[PRTransaction] 
+( [prtx_BusinessEventId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTransaction]') AND name = N'ndx_prtx_PersonEventId')
+CREATE NONCLUSTERED INDEX [ndx_prtx_PersonEventId] ON [dbo].[PRTransaction] 
+( [prtx_PersonEventId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTransaction]') AND name = N'ndx_prtx_AuthorizedById')
+CREATE NONCLUSTERED INDEX [ndx_prtx_AuthorizedById] ON [dbo].[PRTransaction] 
+( [prtx_AuthorizedById] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTransaction]') AND name = N'ndx_prtx_CreditSheetId')
+CREATE NONCLUSTERED INDEX [ndx_prtx_CreditSheetId] ON [dbo].[PRTransaction] 
+( [prtx_CreditSheetId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTransaction]') AND name = N'ndx_prtx_CreatedDate')
+CREATE NONCLUSTERED INDEX [ndx_prtx_CreatedDate] ON [dbo].[PRTransaction] 
+( [prtx_CreatedDate] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTransaction]') AND name = N'ndx_prtx_CreatedBy')
+CREATE NONCLUSTERED INDEX [ndx_prtx_CreatedBy] ON [dbo].[PRTransaction] 
+( [prtx_CreatedBy] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTransactionDetail]') AND name = N'ndx_prtd_TransactionId')
+CREATE NONCLUSTERED INDEX [ndx_prtd_TransactionId] ON [dbo].[PRTransactionDetail] 
+( [prtd_TransactionId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Team]') AND name = N'IDX_Team_ForeignTableId')
+CREATE NONCLUSTERED INDEX [IDX_Team_ForeignTableId] ON [dbo].[Team] 
+( [Team_ForeignTableId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[WorkflowActionLinks]') AND name = N'IDX_AcLi_Deleted')
+CREATE NONCLUSTERED INDEX [IDX_AcLi_Deleted] ON [dbo].[WorkflowActionLinks] 
+( [AcLi_Deleted] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[WorkflowRules]') AND name = N'IDX_WkRl_Deleted')
+CREATE NONCLUSTERED INDEX [IDX_WkRl_Deleted] ON [dbo].[WorkflowRules] 
+( [WkRl_Deleted] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[WorkflowTransition]') AND name = N'IDX_WkTr_Deleted')
+CREATE NONCLUSTERED INDEX [IDX_WkTr_Deleted] ON [dbo].[WorkflowTransition] 
+( [WkTr_RuleId] ASC) 
+WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY] 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPublicationArticle]') AND name = N'IX_PRPublicationArticle')
+CREATE NONCLUSTERED INDEX [IX_PRPublicationArticle] ON [dbo].[PRPublicationArticle] 
+(
+	[prpbar_PublicationEditionID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+Go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPublicationArticle]') AND name = N'IX_PublicationArticleID_Dates') 
+CREATE NONCLUSTERED INDEX [IX_PublicationArticleID_Dates] ON [dbo].[PRPublicationArticle] 
+(
+	[prpbar_PublishDate] ASC,
+	[prpbar_ExpirationDate] ASC,
+    [prpbar_News] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+Go
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Address]') AND name = N'IX_addr_USZipFive') 
+CREATE NONCLUSTERED INDEX [IX_addr_USZipFive] ON [dbo].[Address] 
+(
+	[addr_USZipFive] ASC,
+	[addr_PRPublish] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO
+
+-- INTRODUCED IN BBS 2.6 Release
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAdCampaign]') AND name = N'IX_PRAdCampaignPage_Dates') 
+CREATE NONCLUSTERED INDEX [IX_PRAdCampaignPage_Dates] ON [dbo].[PRAdCampaign] 
+(
+    [pradc_CompanyID] ASC,
+	[pradc_StartDate] ASC,
+    [pradc_EndDate] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPayment]') AND name = N'IX_prpay_RequestID') 
+CREATE NONCLUSTERED INDEX [IX_prpay_RequestID] ON [dbo].[PRPayment] 
+(
+	[prpay_RequestID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPostalCode]') AND name = N'IX_ZipCodes') 
+CREATE UNIQUE NONCLUSTERED INDEX [IX_ZipCodes] ON [dbo].[PRPostalCode] 
+(
+	[prpc_PostalCode] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPostalCode]') AND name = N'IX_ZipCodes_Lat_Long') 
+CREATE NONCLUSTERED INDEX [IX_ZipCodes_Lat_Long] ON [dbo].[PRPostalCode] 
+(
+	[prpc_Latitude] ASC,
+	[prpc_Longitude] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRequest]') AND name = N'IX_prreq_HQID') 
+CREATE NONCLUSTERED INDEX [IX_prreq_HQID] ON [dbo].[PRRequest] 
+(
+	[prreq_HQID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRequestDetail]') AND name = N'IX_prcc_RequestID') 
+CREATE NONCLUSTERED INDEX [IX_prcc_RequestID] ON [dbo].[PRRequestDetail] 
+(
+	[prrc_RequestID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRequestDetail]') AND name = N'IX_prrc_CompanyID') 
+CREATE NONCLUSTERED INDEX [IX_prrc_CompanyID] ON [dbo].[PRRequestDetail] 
+(
+	[prrc_AssociatedID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRShipping]') AND name = N'IX_PRShipping') 
+CREATE NONCLUSTERED INDEX [IX_PRShipping] ON [dbo].[PRShipping] 
+(
+	[prship_CountryID] ASC,
+	[prship_ProductID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserContact]') AND name = N'IX_PRWebUserContact') 
+CREATE NONCLUSTERED INDEX [IX_PRWebUserContact] ON [dbo].[PRWebUserContact] 
+(
+	[prwuc_HQID] ASC,
+	[prwuc_AssociatedCompanyID] ASC,
+	[prwuc_IsPrivate] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserCustomData]') AND name = N'IX_PRWebUserCustomData') 
+CREATE NONCLUSTERED INDEX [IX_PRWebUserCustomData] ON [dbo].[PRWebUserCustomData] 
+(
+	[prwucd_HQID] ASC,
+	[prwucd_AssociatedID] ASC,
+	[prwucd_AssociatedType] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserCustomData]') AND name = N'IX_PRWebUserCustomData_02') 
+CREATE NONCLUSTERED INDEX [IX_PRWebUserCustomData_02] ON [dbo].[PRWebUserCustomData] 
+(
+	[prwucd_AssociatedID] ASC,
+	[prwucd_WebUserCustomFieldID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserList]') AND name = N'IX_PRWebUserList') 
+CREATE NONCLUSTERED INDEX [IX_PRWebUserList] ON [dbo].[PRWebUserList] 
+(
+	[prwucl_WebUserID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserList]') AND name = N'IX_PRWebUserList_1') 
+CREATE NONCLUSTERED INDEX [IX_PRWebUserList_1] ON [dbo].[PRWebUserList] 
+(
+	[prwucl_HQID] ASC,
+	[prwucl_IsPrivate] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO
+
+
+--
+--  Query Tuning Wizard Suggestions to make some basic
+--  BBOS queries faster.
+--
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanySearch]') AND name = N'IX_PRCompanySearch_CompanyID_Name') 
+CREATE NONCLUSTERED INDEX [IX_PRCompanySearch_CompanyID_Name] ON [dbo].[PRCompanySearch] 
+(
+	[prcse_CompanyId] ASC
+)
+INCLUDE ( [prcse_NameAlphaOnly]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanySearch]') AND name = N'IX_PRCompanySearch_CompanyID_Name') 
+CREATE NONCLUSTERED INDEX [IX_PRCompanySearch_CompanyID_Name] ON [dbo].[PRCompanySearch] 
+(
+	[prcse_CompanyId] ASC
+)
+INCLUDE ( [prcse_NameAlphaOnly]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCity]') AND name = N'IX_PRCity_CityID_StateID_City') 
+CREATE NONCLUSTERED INDEX [IX_PRCity_CityID_StateID_City] ON [dbo].[PRCity] 
+(
+	[prci_CityId] ASC,
+	[prci_StateId] ASC,
+	[prci_City] ASC
+)WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+Go
+
+IF  NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCity]') AND name = N'IX_PRCity_CityID') 
+CREATE NONCLUSTERED INDEX [IX_PRCity_CityID] ON [dbo].[PRCity] 
+(
+	[prci_City] ASC
+)WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+Go
+
+-- Normally we are not fans of embedding data in indexes, but we need our basic BBOS
+-- search to be fast and this is what SQL Server recommends.  We will go with this for now.
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'IX_COMPANY_BBOS')
+CREATE NONCLUSTERED INDEX [IX_COMPANY_BBOS] ON [dbo].[Company] 
+(
+	[comp_PRListingCityId] ASC,
+	[comp_PRIndustryType] ASC,
+	[comp_PRListingStatus] ASC,
+	[comp_CompanyId] ASC,
+	[comp_PRBookTradestyle] ASC
+)
+INCLUDE ( [comp_PRHQId],
+[comp_PRType],
+[comp_PRListedDate],
+[comp_PRLastPublishedCSDate]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+--
+--  END
+--  Query Tuning Wizard Suggestions to make some basic
+--  BBOS queries faster.
+--
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserListDetail]') AND name = N'IX_PRWebUserListDetail')
+CREATE NONCLUSTERED INDEX [IX_PRWebUserListDetail] ON [dbo].[PRWebUserListDetail] 
+(
+	[prwuld_WebUserListID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserSearchCriteria]') AND name = N'IX_PRWebUserSearchCriteria')
+CREATE NONCLUSTERED INDEX [IX_PRWebUserSearchCriteria] ON [dbo].[PRWebUserSearchCriteria] 
+(
+	[prsc_CreatedBy] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+
+/****** Object:  Index [IX_PRWebUser_Email]    Script Date: 03/14/2008 14:41:37 ******/
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUser]') AND name = N'IX_PRWebUser_Email')
+CREATE NONCLUSTERED INDEX [IX_PRWebUser_Email] ON [dbo].[PRWebUser] 
+(
+	[prwu_Email] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+GO
+
+/****** Object:  Index [IX_PRWebUser_PersonLinkID]    Script Date: 03/14/2008 14:41:37 ******/
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUser]') AND name = N'IX_PRWebUser_PersonLinkID')
+CREATE NONCLUSTERED INDEX [IX_PRWebUser_PersonLinkID] ON [dbo].[PRWebUser] 
+(
+	[prwu_PersonLinkID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+
+/****** Object:  Index [IX_PRWebAuditTrail]    Script Date: 03/14/2008 14:43:47 ******/
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebAuditTrail]') AND name = N'IX_PRWebAuditTrail')
+CREATE NONCLUSTERED INDEX [IX_PRWebAuditTrail] ON [dbo].[PRWebAuditTrail] 
+(
+	[prwsat_CreatedDate] ASC,
+	[prwsat_WebUserID] ASC,
+	[prwsat_CompanyID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserListDetail]') AND name = N'ndx_PRWebUserListDetail_01')
+CREATE NONCLUSTERED INDEX [ndx_PRWebUserListDetail_01] ON [dbo].[PRWebUserListDetail] 
+(
+	[prwuld_Deleted] ASC,
+	[prwuld_WebUserListID] ASC
+)
+INCLUDE ( [prwuld_WebUserListDetailID]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserList]') AND name = N'ndx_PRWebUserList_01')
+CREATE NONCLUSTERED INDEX [ndx_PRWebUserList_01] ON [dbo].[PRWebUserList] 
+(
+	[prwucl_HQID] ASC,
+	[prwucl_IsPrivate] ASC,
+	[prwucl_WebUserID] ASC,
+	[prwucl_Deleted] ASC,
+	[prwucl_WebUserListID] ASC,
+	[prwucl_Name] ASC
+)
+INCLUDE ( [prwucl_UpdatedDate]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserList]') AND name = N'ndx_PRWebUserList_02')
+CREATE NONCLUSTERED INDEX [ndx_PRWebUserList_02] ON [dbo].[PRWebUserList] 
+(
+	[prwucl_WebUserID] ASC,
+	[prwucl_WebUserListID] ASC,
+	[prwucl_HQID] ASC,
+	[prwucl_IsPrivate] ASC,
+	[prwucl_Deleted] ASC,
+	[prwucl_Name] ASC
+)
+INCLUDE ( [prwucl_UpdatedDate]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserSearchCriteria]') AND name = N'ndx_PRWebUserSearchCriteria_01')
+CREATE NONCLUSTERED INDEX [ndx_PRWebUserSearchCriteria_01] ON [dbo].[PRWebUserSearchCriteria] 
+(
+	[prsc_WebUserID] ASC,
+	[prsc_IsLastUnsavedSearch] ASC,
+	[prsc_SearchType] ASC
+)
+WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserContact]') AND name = N'ndx_PRWebUserContact_02')
+CREATE NONCLUSTERED INDEX [ndx_PRWebUserContact_02] ON [dbo].[PRWebUserContact] 
+(
+	[prwuc_WebUserID] ASC
+)
+WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'ndx_Company_TES_01')
+CREATE NONCLUSTERED INDEX [ndx_Company_TES_01] ON [dbo].[Company] 
+(
+	[comp_PRListingStatus] ASC,
+	[comp_PRReceiveTES] ASC
+)
+INCLUDE ( [Comp_CompanyId]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRequest]') AND name = N'ndx_PRRequest_01')
+CREATE NONCLUSTERED INDEX [ndx_PRRequest_01] ON [dbo].[PRRequest] 
+(
+	[prreq_HQID] ASC,
+    [prreq_RequestTypeCode] ASC,
+    [prreq_CreatedDate] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserNote]') AND name = N'ndx_PRWebUserNote_01')
+CREATE NONCLUSTERED INDEX [ndx_PRWebUserNote_01] ON [dbo].[PRWebUserNote] 
+(
+	[prwun_AssociatedID] ASC,
+    [prwun_AssociatedType] ASC,
+	[prwun_WebUserID] ASC,
+	[prwun_IsPrivate] ASC,
+	[prwun_HQID] ASC,
+	[prwun_WebUserNoteID] ASC
+
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCreditSheet]') AND name = N'ndx_PRCreditSheet_01')
+CREATE NONCLUSTERED INDEX [ndx_PRCreditSheet_01] ON [dbo].[PRCreditSheet] 
+(
+	[prcs_PublishableDate] ASC,
+    [prcs_KeyFlag] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+Go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCreditSheet]') AND name = N'ndx_PRCreditSheet_02')
+CREATE NONCLUSTERED INDEX [ndx_PRCreditSheet_02] ON [dbo].[PRCreditSheet] 
+(
+    [prcs_CompanyID] ASC,
+	[prcs_PublishableDate] ASC,
+    [prcs_KeyFlag] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPublicationArticle]') AND name = N'ndx_PublicationArticle_01')
+CREATE NONCLUSTERED INDEX [ndx_PublicationArticle_01] ON [dbo].[PRPublicationArticle] 
+(
+	[prpbar_PublishDate] ASC,
+	[prpbar_PublicationCode] ASC,
+    [prpbar_FileName] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON)
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPACALicense]') AND name = N'ndx_PRPACALicense_01')
+CREATE NONCLUSTERED INDEX [ndx_PRPACALicense_01] ON [dbo].[PRPACALicense] 
+(
+	[prpa_Current] ASC,
+	[prpa_Publish] ASC,
+	[prpa_LicenseNumber] ASC,
+	[prpa_CompanyId] ASC
+)WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyLicense]') AND name = N'ndx_PRCompanyLicense_01')
+CREATE NONCLUSTERED INDEX [ndx_PRCompanyLicense_01] ON [dbo].[PRCompanyLicense] 
+(
+	[prli_Publish] ASC,
+    [prli_Type] ASC,
+	[prli_Number] ASC,
+	[prli_CompanyId] ASC
+)WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRDRCLicense]') AND name = N'ndx_PRDRCLicense_01')
+CREATE NONCLUSTERED INDEX [ndx_PRDRCLicense_01] ON [dbo].[PRDRCLicense] 
+(
+	[prdr_Publish] ASC,
+	[prdr_LicenseNumber] ASC,
+	[prdr_CompanyId] ASC
+)WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyProductProvided]') AND name = N'ndx_PRCompanyProductProvided_01')
+CREATE NONCLUSTERED INDEX [ndx_PRCompanyProductProvided_01] ON [dbo].[PRCompanyProductProvided] 
+(
+	[prcprpr_CompanyID] ASC
+)WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyServiceProvided]') AND name = N'ndx_PRCompanyServiceProvided_01')
+CREATE NONCLUSTERED INDEX [ndx_PRCompanyServiceProvided_01] ON [dbo].[PRCompanyServiceProvided] 
+(
+	[prcserpr_CompanyID] ASC
+)WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanySpecie]') AND name = N'ndx_PRCompanySpecie_01')
+CREATE NONCLUSTERED INDEX [ndx_PRCompanySpecie_01] ON [dbo].[PRCompanySpecie] 
+(
+	[prcspc_CompanyID] ASC
+)WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTradeReport]') AND name = N'_dta_index_PRTradeReport_6_48719226__K10_K1_K11_12')
+CREATE NONCLUSTERED INDEX [_dta_index_PRTradeReport_6_48719226__K10_K1_K11_12] ON [dbo].[PRTradeReport] 
+(
+	[prtr_ResponderId] ASC,
+	[prtr_TradeReportId] ASC,
+	[prtr_SubjectId] ASC
+)
+INCLUDE ( [prtr_Date]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+/*
+CREATE STATISTICS [_dta_stat_48719226_1_10] ON [dbo].[PRTradeReport]([prtr_TradeReportId], [prtr_ResponderId])
+
+CREATE STATISTICS [_dta_stat_48719226_11_1_10] ON [dbo].[PRTradeReport]([prtr_SubjectId], [prtr_TradeReportId], [prtr_ResponderId])
+*/
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyRelationship]') AND name = N'_dta_index_PRCompanyRelationship_6_324196205__K11_K12_K1_K10_K20_15')
+CREATE NONCLUSTERED INDEX [_dta_index_PRCompanyRelationship_6_324196205__K11_K12_K1_K10_K20_15] ON [dbo].[PRCompanyRelationship] 
+(
+	[prcr_RightCompanyId] ASC,
+	[prcr_Type] ASC,
+	[prcr_CompanyRelationshipId] ASC,
+	[prcr_LeftCompanyId] ASC,
+	[prcr_Active] ASC
+)
+INCLUDE ( [prcr_LastReportedDate]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+/*
+CREATE STATISTICS [_dta_stat_324196205_1_11] ON [dbo].[PRCompanyRelationship]([prcr_CompanyRelationshipId], [prcr_RightCompanyId])
+
+CREATE STATISTICS [_dta_stat_324196205_12_20] ON [dbo].[PRCompanyRelationship]([prcr_Type], [prcr_Active])
+
+CREATE STATISTICS [_dta_stat_324196205_1_10_11] ON [dbo].[PRCompanyRelationship]([prcr_CompanyRelationshipId], [prcr_LeftCompanyId], [prcr_RightCompanyId])
+
+CREATE STATISTICS [_dta_stat_324196205_11_12_20] ON [dbo].[PRCompanyRelationship]([prcr_RightCompanyId], [prcr_Type], [prcr_Active])
+
+CREATE STATISTICS [_dta_stat_324196205_20_1_11] ON [dbo].[PRCompanyRelationship]([prcr_Active], [prcr_CompanyRelationshipId], [prcr_RightCompanyId])
+
+CREATE STATISTICS [_dta_stat_324196205_11_12_1_20] ON [dbo].[PRCompanyRelationship]([prcr_RightCompanyId], [prcr_Type], [prcr_CompanyRelationshipId], [prcr_Active])
+*/
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanySearch]') AND name = N'_dta_index_PRCompanySearch_6_289488160__K10_K1_11')
+CREATE NONCLUSTERED INDEX [_dta_index_PRCompanySearch_6_289488160__K10_K1_11] ON [dbo].[PRCompanySearch] 
+(
+	[prcse_CompanyId] ASC,
+	[prcse_CompanySearchId] ASC
+)
+INCLUDE ( [prcse_FullName]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Phone]') AND name = N'IDX_phon_PhoneMatch')
+CREATE NONCLUSTERED INDEX [IDX_phon_PhoneMatch] ON [dbo].[Phone] ([phon_PhoneMatch]) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRSearchAuditTrailCriteria]') AND name = N'IDX_prsatc_SearchAuditTrailID')
+CREATE NONCLUSTERED INDEX [IDX_prsatc_SearchAuditTrailID] ON [dbo].[PRSearchAuditTrailCriteria] ([prsatc_SearchAuditTrailID]) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRSearchAuditTrail]') AND name = N'IDX_CreatedDate_SearchType')
+CREATE NONCLUSTERED INDEX [IDX_CreatedDate_SearchType] ON [dbo].[PRSearchAuditTrail] ([prsat_CreatedDate], prsat_SearchType) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRSearchAuditTrail]') AND name = N'IDX_prsat_WebUserID')
+CREATE NONCLUSTERED INDEX [IDX_prsat_WebUserID] ON [dbo].[PRSearchAuditTrail] ([prsat_WebUserID]) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRSearchAuditTrail]') AND name = N'IDX_prsat_WebUserID_prsat_ResultCount')
+CREATE NONCLUSTERED INDEX [IDX_prsat_WebUserID_prsat_ResultCount] ON [dbo].[PRSearchAuditTrail] (prsat_WebUserID, prsat_ResultCount) 
+GO 
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRequest]') AND name = N'IDX_prreq_WebUserID')
+CREATE NONCLUSTERED INDEX [IDX_prreq_WebUserID] ON [dbo].[PRRequest] (prreq_WebUserID) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUser]') AND name = N'IDX_AccessLevel_IndustryType')
+	CREATE NONCLUSTERED INDEX [IDX_AccessLevel_IndustryType] ON [dbo].[PRWebUser] (prwu_AccessLevel, prwu_IndustryTypeCode) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAttentionLine]') AND name = N'IDX_CompanyID')
+	CREATE NONCLUSTERED INDEX [IDX_CompanyID] ON [dbo].[PRAttentionLine] (prattn_CompanyID) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAttentionLine]') AND name = N'IDX_PersonID')
+	CREATE NONCLUSTERED INDEX [IDX_PersonID] ON [dbo].[PRAttentionLine] (prattn_PersonID) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAttentionLine]') AND name = N'IDX_ItemCode')
+	CREATE NONCLUSTERED INDEX [IDX_ItemCode] ON [dbo].[PRAttentionLine] (prattn_ItemCode) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAttentionLine]') AND name = N'IDX_EmailID')
+	CREATE NONCLUSTERED INDEX [IDX_EmailID] ON [dbo].[PRAttentionLine] (prattn_EmailID) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAttentionLine]') AND name = N'IDX_AddressID')
+	CREATE NONCLUSTERED INDEX [IDX_AddressID] ON [dbo].[PRAttentionLine] (prattn_AddressID) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAttentionLine]') AND name = N'IDX_PhoneID')
+	CREATE NONCLUSTERED INDEX [IDX_PhoneID] ON [dbo].[PRAttentionLine] (prattn_PhoneID) 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPublicationArticleRead]') AND name = N'IDX_prpar_WebUserID')
+	CREATE NONCLUSTERED INDEX [IDX_prpar_WebUserID] ON [dbo].[PRPublicationArticleRead] (prpar_WebUserID) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPublicationArticleRead]') AND name = N'IDX_prpar_PublicationArticleID')
+	CREATE NONCLUSTERED INDEX [IDX_prpar_PublicationArticleID] ON [dbo].[PRPublicationArticleRead] (prpar_PublicationArticleID) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTESRequest]') AND name = N'IDX_PRTESRequest_01')
+	CREATE NONCLUSTERED INDEX [IDX_PRTESRequest_01] ON [dbo].[PRTESRequest] (prtesr_ResponderCompanyID, prtesr_CreatedDate, prtesr_ReceivedMethod) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTESRequest]') AND name = N'IDX_prtesr_TESFormID')
+	CREATE NONCLUSTERED INDEX [IDX_prtesr_TESFormID] ON [dbo].[PRTESRequest] (prtesr_TESFormID) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTESForm]') AND name = N'IDX_prtf_Key')
+	CREATE NONCLUSTERED INDEX IDX_prtf_Key ON [dbo].[PRTESForm] (prtf_Key) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRVerbalInvestigation]') AND name = N'IDX_prvi_CompanyID')
+	CREATE NONCLUSTERED INDEX IDX_prvi_CompanyID ON [dbo].[PRVerbalInvestigation] (prvi_CompanyID) 
+GO
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRVerbalInvestigationCAVI]') AND name = N'IDX_prvictvi_VerbalInvestigationID')
+	CREATE NONCLUSTERED INDEX IDX_prvictvi_VerbalInvestigationID ON [dbo].[PRVerbalInvestigationCAVI] (prvictvi_VerbalInvestigationID) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRVerbalInvestigationCAVI]') AND name = N'IDX_prvictvi_VerbalInvestigationCAID')
+	CREATE NONCLUSTERED INDEX IDX_prvictvi_VerbalInvestigationCAID ON [dbo].[PRVerbalInvestigationCAVI] (prvictvi_VerbalInvestigationCAID) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRVerbalInvestigationCAVI]') AND name = N'IDX_prvictvi_TESRequestID')
+	CREATE NONCLUSTERED INDEX IDX_prvictvi_TESRequestID ON [dbo].[PRVerbalInvestigationCAVI] (prvictvi_TESRequestID) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTradeReport]') AND name = N'IDX_prtr_TESRequestID')
+	CREATE NONCLUSTERED INDEX IDX_prtr_TESRequestID ON [dbo].[PRTradeReport] (prtr_TESRequestID) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTESRequest]') AND name = N'IDX_prtesr_VerbalInvestigationID')
+	CREATE NONCLUSTERED INDEX IDX_prtesr_VerbalInvestigationID ON [dbo].[PRTESRequest] (prtesr_VerbalInvestigationID) 
+GO
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTESRequest]') AND name = N'IDX_PRTESRequest_prtesr_ProcessedByUserID')
+	CREATE NONCLUSTERED INDEX [IDX_PRTESRequest_prtesr_ProcessedByUserID] ON [dbo].[PRTESRequest] (prtesr_ProcessedByUserID) 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyPayIndicator]') AND name = N'IDX_PRCompanyPayIndicator_01')
+	CREATE NONCLUSTERED INDEX [IDX_PRCompanyPayIndicator_01] ON [dbo].[PRCompanyPayIndicator] (prcpi_CompanyID, prcpi_Current) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyPayIndicator]') AND name = N'IDX_PRCompanyPayIndicator_prcpi_PayIndicator')
+	CREATE NONCLUSTERED INDEX [IDX_PRCompanyPayIndicator_prcpi_PayIndicator] ON [dbo].[PRCompanyPayIndicator] (prcpi_PayIndicator) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRequest]') AND name = N'ndx_PRRequest_04')
+	CREATE NONCLUSTERED INDEX [ndx_PRRequest_04] ON [dbo].[PRRequest] (prreq_SourceID, prreq_SourceEntity) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebAuditTrail]') AND name = N'ndx_PRWebAuditTrail_02')
+	CREATE NONCLUSTERED INDEX [ndx_PRWebAuditTrail_02] ON [dbo].[PRWebAuditTrail] (prwsat_CreatedDate, prwsat_PageName) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebAuditTrail]') AND name = N'ndx_PRWebAuditTrail_03')
+	CREATE NONCLUSTERED INDEX [ndx_PRWebAuditTrail_03] ON [dbo].[PRWebAuditTrail] ([prwsat_PageName], [prwsat_CreatedDate], [prwsat_AssociatedID]) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPublicationArticleCompany]') AND name = N'ndx_PRPublicationArticleCompany_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRPublicationArticleCompany_01] ON [dbo].[PRPublicationArticleCompany] (prpbarc_CompanyID) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPublicationArticleCompany]') AND name = N'ndx_PRPublicationArticleCompany_02')
+	CREATE NONCLUSTERED INDEX [ndx_PRPublicationArticleCompany_02] ON [dbo].[PRPublicationArticleCompany] (prpbarc_PublicationArticleID) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyExternalNews]') AND name = N'ndx_PRCompanyExternalNews_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRCompanyExternalNews_01] ON [dbo].[PRCompanyExternalNews] (prcen_CompanyID, prcen_PrimarySourceCode) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyExternalNews]') AND name = N'ndx_PRCompanyExternalNews_02')
+	CREATE NONCLUSTERED INDEX [ndx_PRCompanyExternalNews_02] ON [dbo].[PRCompanyExternalNews] (prcen_LastRetrievalDateTime, prcen_PrimarySourceCode) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyExternalNews]') AND name = N'ndx_PRCompanyExternalNews_03')
+	CREATE NONCLUSTERED INDEX [ndx_PRCompanyExternalNews_03] ON [dbo].[PRCompanyExternalNews] ([prcen_PrimarySourceCode], [prcen_CompanyID], [prcen_LastLookupDateTime], [prcen_Code]) INCLUDE ([prcen_LookupCount]) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanySearch]') AND name = N'ndx_PRCompanySearch_Match01')
+	CREATE NONCLUSTERED INDEX [ndx_PRCompanySearch_Match01] ON [dbo].[PRCompanySearch] (prcse_NameMatch) 
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanySearch]') AND name = N'ndx_PRCompanySearch_Match02')
+	CREATE NONCLUSTERED INDEX [ndx_PRCompanySearch_Match02] ON [dbo].[PRCompanySearch] (prcse_LegalNameMatch) 
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanySearch]') AND name = N'ndx_PRCompanySearch_Match03')
+	CREATE NONCLUSTERED INDEX [ndx_PRCompanySearch_Match03] ON [dbo].[PRCompanySearch] (prcse_CorrTradestyleMatch) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARAgingDetail]') AND name = N'ndx_PRARAgingDetail_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRARAgingDetail_01] ON [dbo].[PRARAgingDetail] 
+	(
+		[praad_ARAgingId] ASC,
+		[praad_ARAgingDetailId] ASC,
+		[praad_ARCustomerId] ASC
+	)
+	INCLUDE ( [praad_ManualCompanyId],
+	[praad_AmountCurrent],
+	[praad_Amount1to30],
+	[praad_Amount31to60],
+	[praad_Amount61to90],
+	[praad_Amount91Plus]) 
+	go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARAgingDetail]') AND name = N'ndx_PRARAgingDetail_02')
+	CREATE NONCLUSTERED INDEX [ndx_PRARAgingDetail_02] ON [dbo].[PRARAgingDetail] 
+	(
+		[praad_ARAgingId] ASC,
+		[praad_ARCustomerId] ASC,
+		[praad_ManualCompanyId] ASC
+	)WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+	go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARTranslation]') AND name = N'ndx_PRARTranslation_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRARTranslation_01] ON [dbo].[PRARTranslation] 
+	(
+		[prar_CompanyId] ASC
+	)
+	INCLUDE ( [prar_CustomerNumber],
+	[prar_PRCoCompanyId]) 
+	go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRARAging]') AND name = N'ndx_PRARAging_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRARAging_01] ON [dbo].[PRARAging] 
+	(
+		[praa_CompanyId] ASC,
+		[praa_ARAgingId] ASC,
+		[praa_Date] ASC
+	)
+	go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRSocialMedia]') AND name = N'ndx_PRSocialMedia_Company')
+	CREATE NONCLUSTERED INDEX [ndx_PRSocialMedia_Company] ON [dbo].[PRSocialMedia] (prsm_CompanyID) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Email]') AND name = N'ndx_EmailPreferredPublished')
+CREATE NONCLUSTERED INDEX [ndx_EmailPreferredPublished] ON [dbo].[Email] 
+(
+	[Emai_CompanyID] ASC,
+	[emai_PRPreferredPublished] ASC
+)
+INCLUDE ( [Emai_EmailAddress],
+[emai_PRWebAddress]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Email]') AND name = N'ndx_EmailPreferredInternal')
+CREATE NONCLUSTERED INDEX [ndx_EmailPreferredInternal] ON [dbo].[Email] 
+(
+	[Emai_CompanyID] ASC,
+	[emai_PRPreferredInternal] ASC
+)
+INCLUDE ( [Emai_EmailAddress],
+[emai_PRWebAddress]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Phone]') AND name = N'ndx_Phone_01')
+CREATE NONCLUSTERED INDEX [ndx_Phone_01] ON [dbo].[Phone] 
+(
+	[Phon_PhoneID] ASC,
+	[phon_PRIsPhone] ASC,
+	[phon_PRPreferredPublished] ASC,
+	[phon_PRIsFax] ASC,
+	[phon_PRPublish] ASC
+)
+INCLUDE ( [Phon_CountryCode],
+[Phon_AreaCode],
+[Phon_Number],
+[phon_PRExtension]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Phone]') AND name = N'ndx_Phone_02')
+CREATE NONCLUSTERED INDEX [ndx_Phone_02] ON [dbo].[Phone] 
+(
+	[Phon_PhoneID] ASC,
+	[phon_PRIsPhone] ASC,
+	[phon_PRPreferredInternal] ASC,
+	[phon_PRIsFax] ASC,
+	[phon_PRPublish] ASC
+)
+INCLUDE ( [Phon_CountryCode],
+[Phon_AreaCode],
+[Phon_Number],
+[phon_PRExtension]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRRating]') AND name = N'ndx_Rating_01')
+CREATE NONCLUSTERED INDEX [ndx_Rating_01] ON [dbo].[PRRating] 
+(
+	[prra_CompanyId] ASC,
+	[prra_Current] ASC,
+	[prra_Deleted] ASC,
+	[prra_RatingId] ASC,
+	[prra_CreditWorthId] ASC,
+	[prra_IntegrityId] ASC,
+	[prra_PayRatingId] ASC
+)WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyPayIndicator]') AND name = N'ndx_PRCompanyPayIndicator_02')
+CREATE NONCLUSTERED INDEX [ndx_PRCompanyPayIndicator_02] ON [dbo].[PRCompanyPayIndicator] 
+(
+	[prcpi_Current] ASC,
+	[prcpi_CompanyID] ASC,
+	[prcpi_CompanyPayIndicatorID] ASC
+)
+INCLUDE ( [prcpi_PayIndicator]) WITH (SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRListing]') AND name = N'IDX_PRListing_Clustered')
+	CREATE CLUSTERED INDEX [IDX_PRListing_Clustered] ON [dbo].[PRListing] (prlst_CompanyID) 
+GO 
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyTradeShow]') AND name = N'IDX_PRCompanyTradeShow_Clustered')
+	CREATE CLUSTERED INDEX [IDX_PRCompanyTradeShow_Clustered] ON [dbo].[PRCompanyTradeShow] (prcts_CompanyID) 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWidgetKey]') AND name = N'ndx_PRWidgetKey_LicenseKey')
+	CREATE NONCLUSTERED INDEX [ndx_PRWidgetKey_LicenseKey] ON [dbo].[PRWidgetKey] (prwk_LicenseKey) 
+GO
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyExternalNews]') AND name = N'ndx_PRCompanyExternalNews_02')
+	CREATE NONCLUSTERED INDEX [ndx_PRCompanyExternalNews_02] ON [dbo].[PRCompanyExternalNews] (prcen_CompanyID, prcen_Code) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRExternalNews]') AND name = N'ndx_PRExternalNews_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRExternalNews_01] ON [dbo].[PRExternalNews] (pren_SubjectCompanyID, pren_PrimarySourceCode) 
+GO
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCSG]') AND name = N'ndx_PRCSG_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRCSG_01] ON [dbo].[PRCSG] (prcsg_CompanyID) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCSG]') AND name = N'ndx_PRCSG_02')
+	CREATE NONCLUSTERED INDEX [ndx_PRCSG_02] ON [dbo].[PRCSG] (prcsg_CSGCompanyID) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCSGData]') AND name = N'ndx_PRCSGData_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRCSGData_01] ON [dbo].[PRCSGData] (prcsgd_CSGID, prcsgd_TypeCode) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyIndicators]') AND name = N'ndx_PRCompanyIndicators_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRCompanyIndicators_01] ON [dbo].[PRCompanyIndicators] (prci2_CompanyIndicatorID) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTaxRate]') AND name = N'ndx_PRTaxRate_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRTaxRate_01] ON [dbo].[PRTaxRate] (prtax_State) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRTaxRate]') AND name = N'ndx_PRTaxRate_02')
+	CREATE NONCLUSTERED INDEX [ndx_PRTaxRate_02] ON [dbo].[PRTaxRate] (prtax_PostalCode) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRChangeDetection]') AND name = N'ndx_PRChangeDetection_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRChangeDetection_01] ON [dbo].[PRChangeDetection] (prchngd_CompanyID, prchngd_ChangeType) 
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'ndx_HQID_CompanyID')
+	CREATE NONCLUSTERED INDEX [ndx_HQID_CompanyID] ON [dbo].[Company] ([comp_PRHQId] ASC, [Comp_CompanyId] ASC)
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Users]') AND name = N'ndx_User_Logon')
+	CREATE NONCLUSTERED INDEX [ndx_User_Logon] ON [dbo].[Users] ([User_Logon] ASC)
+GO
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Users]') AND name = N'ndx_Users_01')
+CREATE NONCLUSTERED INDEX [ndx_Users_01] ON [dbo].[Users]
+(
+	[User_UserId] ASC
+)
+INCLUDE ( 	[User_Logon]) WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUser]') AND name = N'ndx_PRWebUser_BBID')
+	CREATE NONCLUSTERED INDEX [ndx_PRWebUser_BBID] ON [dbo].[PRWebUser] 
+		([prwu_BBID] ASC)
+GO
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPACALicense]') AND name = N'ndx_PRPACALicense_02')
+	CREATE NONCLUSTERED INDEX [ndx_PRPACALicense_02] ON [dbo].[PRPACALicense] 
+		(prpa_CompanyId,
+		 prpa_CompanyName)
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanySearch]') AND name = N'ndx_PRCompanySearch_Match04')
+	CREATE NONCLUSTERED INDEX [ndx_PRCompanySearch_Match04] ON [dbo].[PRCompanySearch]
+	(
+		[prcse_CompanyId] ASC,
+		[prcse_NameMatch] ASC,
+		[prcse_CorrTradestyleMatch] ASC,
+		[prcse_LegalNameMatch] ASC,
+		[prcse_OriginalNameMatch] ASC,
+		[prcse_OldName1Match] ASC,
+		[prcse_OldName2Match] ASC,
+		[prcse_OldName3Match] ASC
+	)
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Address_Link]') AND name = N'ndx_Address_Link_01')
+	CREATE NONCLUSTERED INDEX [ndx_Address_Link_01] ON [dbo].[Address_Link]
+	(
+		[AdLi_CompanyID] ASC,
+		[AdLi_AddressId] ASC
+	)
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Address]') AND name = N'ndx_Address_01')
+	CREATE NONCLUSTERED INDEX [ndx_Address_01] ON [dbo].[Address]
+	(
+		[Addr_AddressId] ASC,
+		[addr_PRCityId] ASC
+	)
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRConnectionList]') AND name = N'ndx_PRConnectionList_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRConnectionList_01] ON [dbo].[PRConnectionList]
+	(
+		prcl2_CompanyID ASC
+	)
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRConnectionListCompany]') AND name = N'ndx_PRConnectionListCompany_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRConnectionListCompany_01] ON [dbo].[PRConnectionListCompany]
+	(
+		prclc_ConnectionListID ASC,
+		prclc_RelatedCompanyID ASC
+	)
+go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Email]') AND name = N'ndx_Email_01')
+	CREATE NONCLUSTERED INDEX [ndx_Email_01] ON [dbo].[Email]
+	(
+		[emai_PRPreferredInternal] ASC,
+		[Emai_CompanyID] ASC
+	)
+	INCLUDE (
+		[Emai_EmailAddress]) WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Phone]') AND name = N'ndx_Person_03')
+	CREATE NONCLUSTERED INDEX [ndx_Person_03] ON [dbo].[Phone]
+	(
+		[phon_PRIsPhone] ASC,
+		[phon_PRPreferredInternal] ASC
+	)
+	INCLUDE ( 
+		[Phon_CountryCode],
+		[Phon_AreaCode],
+		[Phon_Number],
+		[phon_PRExtension]) WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'ndx_Company_01')
+	CREATE NONCLUSTERED INDEX [ndx_Company_01] ON [dbo].[Company]
+	(
+		[Comp_CompanyId] ASC
+	)
+	INCLUDE ( 	[Comp_Name]) WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person_Link]') AND name = N'ndx_PersonLink_01')
+	CREATE NONCLUSTERED INDEX [ndx_PersonLink_01] ON [dbo].[Person_Link]
+	(
+		[PeLi_PersonId] ASC,
+		[PeLi_CompanyID] ASC
+	)
+	INCLUDE ( 	[peli_PRAUSReceiveMethod],
+		[peli_PRAUSChangePreference],
+		[peli_PRUseServiceUnits]) WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAdCampaignAuditTrail]') AND name = N'ndx_PRAdCampaignAuditTrail_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRAdCampaignAuditTrail_01] ON [dbo].[PRAdCampaignAuditTrail]
+	(
+	    pradcat_CreatedDate ASC,
+		pradcat_PageRequestID ASC
+	)
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAdCampaignAuditTrail]') AND name = N'ndx_PRAdCampaignAuditTrail_02')
+	CREATE NONCLUSTERED INDEX [ndx_PRAdCampaignAuditTrail_02] ON [dbo].[PRAdCampaignAuditTrail] 
+	([pradcat_AdCampaignID])
+	INCLUDE ([pradcat_Rank],[pradcat_Clicked])
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRInvoiceTaxRate]') AND name = N'ndx_PRInvoiceTaxRate_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRInvoiceTaxRate_01] ON [dbo].[PRInvoiceTaxRate]
+	(
+	    pritr_CreatedDate ASC
+	)
+	INCLUDE (pritr_MasterInvoiceNo)
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserCustomField]') AND name = N'ndx_PRWebUserCustomField_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRWebUserCustomField_01] ON [dbo].[PRWebUserCustomField]
+	(
+	    prwucf_CompanyID ASC
+	)
+Go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserCustomFieldLookup]') AND name = N'ndx_PRWebUserCustomFieldLookup_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRWebUserCustomFieldLookup_01] ON [dbo].[PRWebUserCustomFieldLookup]
+	(
+	    prwucfl_WebUserCustomFieldID ASC
+	)
+Go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserNoteReminder]') AND name = N'ndx_PRWebUserNoteReminder_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRWebUserNoteReminder_01] ON [dbo].[PRWebUserNoteReminder]
+	(
+	    prwunr_WebUserNoteID ASC
+	)
+Go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserNoteReminder]') AND name = N'ndx_PRWebUserNoteReminder_02')
+	CREATE NONCLUSTERED INDEX [ndx_PRWebUserNoteReminder_02] ON [dbo].[PRWebUserNoteReminder]
+	(
+	    prwunr_WebUserID ASC
+	)
+Go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserNoteReminder]') AND name = N'ndx_PRWebUserNoteReminder_03')
+	CREATE NONCLUSTERED INDEX [ndx_PRWebUserNoteReminder_03] ON [dbo].[PRWebUserNoteReminder]
+	(
+	    prwunr_WebUserNoteID ASC,
+		prwunr_Type ASC
+	)
+Go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRWebUserNote]') AND name = N'ndx_PRWebUserNote_02')
+	CREATE NONCLUSTERED INDEX [ndx_PRWebUserNote_02] ON [dbo].[PRWebUserNote]
+	(
+	    prwun_DateUTC ASC
+	)
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCommunicationLog]') AND name = N'IDX_PRCommunicationLog_01')
+	CREATE NONCLUSTERED INDEX [IDX_PRCommunicationLog_01] ON [dbo].[PRCommunicationLog] 
+	( 
+		prcoml_CreatedDate DESC,
+		prcoml_Destination ASC,
+		prcoml_Subject ASC
+	) 
+GO 
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyRating]') AND name = N'ndx_PRCompanyRating_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRCompanyRating_01] ON [dbo].[PRCompanyRating]
+	(
+	    prcra_CompanyID ASC
+	)
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCompanyAlias]') AND name = N'ndx_PRCompanyAlias_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRCompanyAlias_01] ON [dbo].[PRCompanyAlias]
+	(
+	    pral_AliasMatch ASC
+	)
+Go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRPACALicense]') AND name = N'ndx_PRPACALicense_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRPACALicense_01] ON [dbo].[PRPACALicense]
+	(
+	    prpa_CompanyNameMatch ASC
+	)
+Go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Company]') AND name = N'ndx_Company_PRLocalSource')
+	CREATE NONCLUSTERED INDEX [ndx_Company_PRLocalSource] ON [dbo].[Company]
+	(
+	    comp_PRLocalSource ASC
+	)
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person]') AND name = N'ndx_Person_PRLocalSource')
+	CREATE NONCLUSTERED INDEX [ndx_Person_PRLocalSource] ON [dbo].[Person]
+	(
+	    pers_PRLocalSource ASC
+	)
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRLocalSource]') AND name = N'ndx_PRLocalSource_CompanyID')
+	CREATE NONCLUSTERED INDEX [ndx_PRLocalSource_CompanyID] ON [dbo].[PRLocalSource]
+	(
+	    prls_CompanyID ASC
+	)
+Go
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRUnloadHours]') AND name = N'ndx_PRUnloadHours_CompanyID')
+	CREATE NONCLUSTERED INDEX [ndx_PRUnloadHours_CompanyID] ON [dbo].[PRUnloadHours]
+	(
+	    pruh_CompanyID ASC
+	)
+Go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRBBScore]') AND name = N'ndx_PRBBScore_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRBBScore_01] ON [dbo].[PRBBScore]
+	(
+		[prbs_Current] ASC,
+		[prbs_BBScore] ASC,
+		[prbs_BBScoreId] ASC,
+		[prbs_PRPublish] ASC
+	)
+	INCLUDE ( 	[prbs_CompanyId]) WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+Go
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRSSFile]') AND name = N'ndx_PRSSFile_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRSSFile_01] ON [dbo].[PRSSFile]
+	(
+		[prss_RespondentCompanyId] ASC
+	)
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRSSFile]') AND name = N'ndx_PRSSFile_02')
+	CREATE NONCLUSTERED INDEX [ndx_PRSSFile_02] ON [dbo].[PRSSFile]
+	(
+		[prss_Status] ASC,
+		[prss_Publish] ASC
+	)
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRSSFile]') AND name = N'ndx_PRSSFile_03')
+	CREATE NONCLUSTERED INDEX [ndx_PRSSFile_03] ON [dbo].[PRSSFile]
+	(
+		[prss_RespondentCompanyId] ASC,
+        [prss_Status] ASC,
+		[prss_Publish] ASC
+	)
+Go
+
+/*
+CREATE STATISTICS [_dta_stat_69575286_10_3_9] ON [dbo].[Comm_Link]([CmLi_Comm_PersonId], [CmLi_Comm_CommunicationId], [CmLi_Deleted])
+CREATE STATISTICS [_dta_stat_661577395_1_31] ON [dbo].[Person]([Pers_PersonId], [Pers_Deleted])
+*/
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Comm_Link]') AND name = N'IDX_Comm_Link_01')
+	CREATE NONCLUSTERED INDEX [IDX_Comm_Link_01] ON [dbo].[Comm_Link]
+	(
+					[CmLi_Deleted] ASC,
+					[CmLi_Comm_CommunicationId] ASC,
+					[CmLi_Comm_PersonId] ASC
+	)
+	INCLUDE (       [CmLi_Comm_UserId],
+					[CmLi_Comm_CompanyId]) WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+
+GO
+
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Communication]') AND name = N'IDX_Communication_01')
+	CREATE NONCLUSTERED INDEX [IDX_Communication_01] ON [dbo].[Communication]
+	(
+					[Comm_Deleted] ASC,
+					[Comm_CommunicationId] ASC
+	)
+	INCLUDE (       [Comm_Action],
+					[Comm_Status],
+					[Comm_DateTime],
+					[Comm_CreatedBy],
+					[Comm_HasAttachments],
+					[comm_PRCategory],
+					[comm_PRSubcategory],
+					[Comm_Subject]) WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person]') AND name = N'IDX_Person_01')
+	CREATE NONCLUSTERED INDEX [IDX_Person_01] ON [dbo].[Person]
+	(
+					[Pers_Deleted] ASC,
+					[Pers_PersonId] ASC
+	)WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRCommodity2]') AND name = N'IDX_PRCommodity2_01')
+	CREATE NONCLUSTERED INDEX [IDX_PRCommodity2_01] ON [dbo].[PRCommodity2]
+	(
+					[prcm_DescriptionMatch] ASC
+	)WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAdCampaignHeader]') AND name = N'IDX_TypeCode_CompanyID')
+	CREATE NONCLUSTERED INDEX [IDX_TypeCode_CompanyID] ON [dbo].[PRAdCampaignHeader] ([pradch_TypeCode])
+	INCLUDE ([pradch_CompanyID])
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAdCampaignAuditTrail]') AND name = N'IDX_Clicked_CreatedDate_AdCampaignID')
+	CREATE NONCLUSTERED INDEX [IDX_Clicked_CreatedDate_AdCampaignID] ON [dbo].[PRAdCampaignAuditTrail] ([pradcat_Clicked],[pradcat_CreatedDate])
+	INCLUDE ([pradcat_AdCampaignID])
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAdCampaignAuditTrail]') AND name = N'IDX_CreatedDate_AdCampaignID')
+	CREATE NONCLUSTERED INDEX [IDX_CreatedDate_AdCampaignID] ON [dbo].[PRAdCampaignAuditTrail] ([pradcat_CreatedDate])
+	INCLUDE ([pradcat_AdCampaignID])
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAdCampaignAuditTrail]') AND name = N'IDX_CreatedDate_Rank')
+	CREATE NONCLUSTERED INDEX [IDX_CreatedDate_Rank] ON [dbo].[PRAdCampaignAuditTrail] ([pradcat_CreatedDate])
+	INCLUDE ([pradcat_AdCampaignID],[pradcat_Rank])
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAdCampaignAuditTrailSummary]') AND name = N'ndx_PRAdCampaignAuditTrailSummary_01')
+	CREATE NONCLUSTERED INDEX [ndx_PRAdCampaignAuditTrailSummary_01] ON [dbo].[PRAdCampaignAuditTrailSummary]
+	(
+	    pradcats_DisplayDate ASC,
+		pradcats_AdCampaignID ASC
+	)
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[PRAdCampaignAuditTrailSummary]') AND name = N'ndx_PRAdCampaignAuditTrailSummary_02')
+	CREATE NONCLUSTERED INDEX [ndx_PRAdCampaignAuditTrailSummary_02] ON [dbo].[PRAdCampaignAuditTrailSummary] 
+	([pradcats_AdCampaignID])
+	INCLUDE ([pradcat_Rank],[pradcat_Clicked])
+Go
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Person]') AND name = N'ndx_Person_PRLocalSource_PersonId')
+	CREATE NONCLUSTERED INDEX [ndx_Person_PRLocalSource_PersonId] ON [dbo].[Person] ([pers_PRLocalSource])
+	INCLUDE ([Pers_PersonId])
+Go

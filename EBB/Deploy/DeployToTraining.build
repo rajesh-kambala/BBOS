@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="DeployToTraining" default="Deploy" xmlns="http://nant.sf.net/release/0.85-rc4/nant.xsd" basedir=".">
+
+
+<!--
+
+  This script deploys the latest build files to the training environment.  It does not
+  update the database because the training database is already updated on a daily basis
+  from the previous production backup.
+
+-->
+    <property name="project.name"           value="DeployToTraining" />
+    <echo message="Using '${nant.settings.currentframework}' framework on '${platform::get-name()}' platform." />
+
+    <property name="Target.BaseDir"       value="\\BHST\D$\Applications" />
+    <property name="Target.AppsDir"       value="${Target.BaseDir}\Apps" />
+    <property name="Target.CRMDir"        value="${Target.BaseDir}\CRM" />
+    <property name="Target.ComponentsDir" value="${Target.BaseDir}" />
+
+    <property name="Source.BaseDir"       value="D:\Applications" />
+    <property name="Source.AppsDir"       value="${Source.BaseDir}\Apps" />
+    <property name="Source.ComponentsDir" value="${Source.BaseDir}\BBS Components" />
+    <property name="Source.CRMDir"        value="${Source.BaseDir}\CRM" />
+
+
+    <!-- SRS SETTINGS -->
+    <property name="Reports.rs.exe"       value="D:\Program Files\Microsoft SQL Server\90\Tools\Binn\rs.exe" />
+    <property name="Reports.DeployScript" value="D:\Applications\Build\DeployReports.rss" />
+    <property name="Reports.BaseDir"      value="D:\Applications\Reporting" />
+
+    <property name="SRS.Server"           value="http://BHST/ReportServer" />
+    <property name="SRS.RootFolder"       value="" />
+
+    <!--
+         Defines many helper function required for
+         the deployment.
+    -->
+    <include buildfile="Deploy.include" />
+
+
+
+
+    <!-- Deploy -->
+    <target name="Deploy" depends="PreDeploy, DeployBBOS, DeployBBOSMobile, DeployBBWebServices, DeployBBSUtils", DeployBBSreportInterface, DeployCRM, DeployReports"> 
+    
+    </target>
+
+
+    <!-- BBOS -->
+    <target name="DeployBBOS">
+
+        <property name="Target.Dir" value="${Target.AppsDir}\BBOS" />
+        <property name="Source.Dir" value="${Source.AppsDir}\BBOS" />
+
+        <!-- Copy files -->
+        <echo message="Copy BBOS from ${Source.Dir} to ${Target.Dir}" />
+
+        <property name="ConfigFile" value="${Target.Dir}/Web.config" />
+        <copy file="${ConfigFile}" tofile="${ConfigFile}.bak" overwrite="true" failonerror="false" />
+
+        <copy todir="${Target.Dir}" overwrite="true">
+            <fileset basedir="${Source.Dir}">
+                <include name="**" />
+                <exclude name="Ads/**" />
+                <exclude name="Campaigns/**" />
+                <exclude name="Downloads/**" />
+                <exclude name="Email/**" />
+                <exclude name="FinanacialStatements/**" />
+                <exclude name="LearningCenter/**" />
+                <exclude name="Reports/**" />
+                <exclude name="RSS/**" />
+                <exclude name="Properties/**" />
+                <exclude name="Uploads/**" />
+                <exclude name="catalog.wci/**" />
+                <exclude name="**/*.cs" />
+                <exclude name="**/*.designer.cs" />
+                <exclude name="**/*.csproj*" />
+                <exclude name="**/*.scc" />
+                <exclude name="**/*.config" />
+                <exclude name="**/vssver.scc" />
+                <exclude name="**/trace*.txt" />
+                <exclude name="**/*.pdb" />
+                <exclude name="*.txt" />
+                <exclude name="web.config" />
+          </fileset>
+        </copy>
+    </target>
+
+
+
+    <!-- BBOSMobile -->
+    <target name="DeployBBOSMobile" depends="PreDeploy">
+
+        <property name="Target.Dir" value="${Target.AppsDir}\BBOSMobile" />
+        <property name="Source.Dir" value="${Source.AppsDir}\BBOSMobile" />
+
+        <!-- Copy files -->
+        <echo message="Copy BBOSMobile from ${Source.Dir} to ${Target.Dir}" />
+
+        <property name="ConfigFile" value="${Target.Dir}/Web.config" />
+        <copy file="${ConfigFile}" tofile="${ConfigFile}.bak" overwrite="true" failonerror="false" />
+
+        <copy todir="${Target.Dir}" overwrite="true">
+            <fileset basedir="${Source.Dir}">
+                <include name="**" />
+                <exclude name="Email/**" />
+                <exclude name="Properties/**" />
+                <exclude name="**/*.cs" />
+                <exclude name="**/*.designer.cs" />
+                <exclude name="**/*.csproj*" />
+                <exclude name="**/*.scc" />
+                <exclude name="**/*.config" />
+                <exclude name="**/vssver.scc" />
+                <exclude name="**/trace*.txt" />
+                <exclude name="**/*.pdb" />
+                <exclude name="*.txt" />
+                <exclude name="web.config" />
+          </fileset>
+        </copy>
+    </target>
+
+
+
+
+    <!-- BBWebServices -->
+    <target name="DeployBBWebServices" depends="PreDeploy">
+
+        <property name="Target.Dir" value="${Target.AppsDir}\BBWebServices" />
+        <property name="Source.Dir" value="${Source.AppsDir}\BBWebServices" />
+
+        <!-- Copy files -->
+        <echo message="Copy BBWebServices from ${Source.Dir} to ${Target.Dir}" />
+
+        <property name="ConfigFile" value="${Target.Dir}/Web.config" />
+        <copy file="${ConfigFile}" tofile="${ConfigFile}.bak" overwrite="true" failonerror="false" />
+
+        <copy todir="${Target.Dir}" overwrite="true">
+            <fileset basedir="${Source.Dir}">
+                <include name="**" />
+                <exclude name="TestFiles/**" />
+                <exclude name="Email/**" />
+                <exclude name="Properties/**" />
+                <exclude name="**/*.cs" />
+                <exclude name="**/*.designer.cs" />
+                <exclude name="**/*.csproj*" />
+                <exclude name="**/*.scc" />
+                <exclude name="**/*.config" />
+                <exclude name="**/vssver.scc" />
+                <exclude name="**/trace*.txt" />
+                <exclude name="**/*.pdb" />
+                <exclude name="**/*.resx" />
+                <exclude name="*.txt" />
+                <exclude name="web.config" />
+          </fileset>
+        </copy>
+    </target>
+
+
+
+    <!-- BBOSUtils -->
+    <target name="DeployBBSUtils" depends="PreDeploy">
+
+        <property name="Target.Dir" value="${Target.AppsDir}\BBSUtils" />
+        <property name="Source.Dir" value="${Source.AppsDir}\BBSUtils" />
+
+        <!-- Copy files -->
+        <echo message="Copy BBSUtils from ${Source.Dir} to ${Target.Dir}" />
+
+        <property name="ConfigFile" value="${Target.Dir}/Web.config" />
+        <copy file="${ConfigFile}" tofile="${ConfigFile}.bak" overwrite="true" failonerror="false" />
+
+        <copy todir="${Target.Dir}" overwrite="true">
+            <fileset basedir="${Source.Dir}">
+                <include name="**" />
+                <exclude name="Email/**" />
+                <exclude name="Properties/**" />
+                <exclude name="**/*.cs" />
+                <exclude name="**/*.designer.cs" />
+                <exclude name="**/*.csproj*" />
+                <exclude name="**/*.scc" />
+                <exclude name="**/*.config" />
+                <exclude name="**/vssver.scc" />
+                <exclude name="**/trace*.txt" />
+                <exclude name="**/*.pdb" />
+                <exclude name="*.txt" />
+                <exclude name="web.config" />
+          </fileset>
+        </copy>
+    </target>
+
+
+    <!-- BBSreportInterface -->
+    <target name="DeployBBSreportInterface" depends="PreDeploy">
+
+        <property name="Target.Dir" value="${Target.ComponentsDir}\BBSReportInterface" />
+        <property name="Source.Dir" value="${Source.ComponentsDir}\BBSReportInterface" />
+
+        <!-- Copy files -->
+        <echo message="Copy BBSreportInterface from ${Source.Dir} to ${Target.Dir}" />
+
+
+        <copy todir="${Target.Dir}" overwrite="true">
+            <fileset basedir="${Source.Dir}">
+                <include name="**" />
+                <exclude name="Properties/**" />
+                <exclude name="**/*.cs" />
+                <exclude name="**/*.csproj*" />
+                <exclude name="**/*.scc" />
+                <exclude name="**/vssver.scc" />
+                <exclude name="**/trace*.txt" />
+                <exclude name="**/*.pdb" />
+                <exclude name="web.config" />
+          </fileset>
+        </copy>
+    </target>
+
+
+
+
+    <!-- CRM -->
+    <target name="DeployCRM" depends="PreDeploy">
+
+        <property name="Target.Dir" value="${Target.CRMDir}" />
+        <property name="Source.Dir" value="${Source.CRMDir}" />
+
+
+        <property name="ConfigFile" value="${Target.Dir}/Web.config" />
+        <copy file="${ConfigFile}" tofile="${ConfigFile}.bak" overwrite="true" failonerror="false" />
+
+        <!-- Copy files -->
+        <echo message="Copy CRM from ${Source.Dir} to ${Target.Dir}" />
+
+        <copy todir="${Target.Dir}" overwrite="true">
+            <fileset basedir="${Source.Dir}">
+                <include name="WWWRoot/index.htm" />
+                <include name="WWWRoot/prco.css" />
+                <include name="WWWRoot/bin/**" />
+                <include name="WWWRoot/CustomPages/**" />
+                <include name="WWWRoot/Img/PRCo/**" />
+                <exclude name="**/*.config" />
+                <exclude name="**/vssver.scc" />
+          </fileset>
+        </copy>
+    </target>
+
+
+
+
+    <target name="DeployReports" depends="PreDeploy" description="Deploys the BBS reports to SSRS">
+
+	<echo message="Deploying Reports" />
+
+        <echo message="Deploying BBOSMemberReports" />
+        <property name="src.reports.dir" value="${Reports.BaseDir}\BBOSMemberReports" />
+        <property name="reports.rs.dir" value="${SRS.RootFolder}BBOSMemberReports" />
+        <property name="reports.rs.ds" value="BBS" />
+        <exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline="-i ${Reports.DeployScript} -s ${SRS.Server} -b -t -v reportfolder=&quot;${reports.rs.dir}&quot; -v dsname=&quot;${reports.rs.ds}&quot; -v filePath=&quot;${src.reports.dir}&quot;" />
+
+        <echo message="Deploying BBScoreReports" />
+        <property name="src.reports.dir" value="${Reports.BaseDir}\BBScoreReports" />
+        <property name="reports.rs.dir" value="${SRS.RootFolder}BBScoreReports" />
+        <property name="reports.rs.ds" value="BBS" />
+        <exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline="-i ${Reports.DeployScript} -s ${SRS.Server} -b -t -v reportfolder=&quot;${reports.rs.dir}&quot; -v dsname=&quot;${reports.rs.ds}&quot; -v filePath=&quot;${src.reports.dir}&quot;" />
+
+        <echo message="Deploying BBSReporting" />
+        <property name="src.reports.dir" value="${Reports.BaseDir}\BBSReporting" />
+        <property name="reports.rs.dir" value="${SRS.RootFolder}BBSReporting" />
+        <property name="reports.rs.ds" value="BBS" />
+        <exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline="-i ${Reports.DeployScript} -s ${SRS.Server} -b -t -v reportfolder=&quot;${reports.rs.dir}&quot; -v dsname=&quot;${reports.rs.ds}&quot; -v filePath=&quot;${src.reports.dir}&quot;" />
+
+        <echo message="Deploying BusinessReport" />
+        <property name="src.reports.dir" value="${Reports.BaseDir}\BusinessReport" />
+        <property name="reports.rs.dir" value="${SRS.RootFolder}BusinessReport" />
+        <property name="reports.rs.ds" value="BBS" />
+        <exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline="-i ${Reports.DeployScript} -s ${SRS.Server} -b -t -v reportfolder=&quot;${reports.rs.dir}&quot; -v dsname=&quot;${reports.rs.ds}&quot; -v filePath=&quot;${src.reports.dir}&quot;" />
+
+        <echo message="Deploying CRMArchive" />
+        <property name="src.reports.dir" value="${Reports.BaseDir}\CRMArchive" />
+        <property name="reports.rs.dir" value="${SRS.RootFolder}CRMArchive" />
+        <property name="reports.rs.ds" value="CRMArchive" />
+        <exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline="-i ${Reports.DeployScript} -s ${SRS.Server} -b -t -v reportfolder=&quot;${reports.rs.dir}&quot; -v dsname=&quot;${reports.rs.ds}&quot; -v filePath=&quot;${src.reports.dir}&quot;" />
+
+    </target>
+</project>

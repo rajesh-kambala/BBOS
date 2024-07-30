@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BBS">
+      <DataSourceReference>BBS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>62631d0d-1730-43d1-a670-0a4d544893f9</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="dsPayIndicator">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyID">
+            <Value>=Parameters!CompanyID.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT prcpi_PayIndicator,
+             dbo.ufn_GetCustomCaptionValue('PayIndicatorDescription', prcpi_PayIndicator, 'en-us') As Description
+ FROM PRCompanyPayIndicator WITH (NOLOCK)
+WHERE prcpi_CompanyID =dbo.ufn_BRGetHQID(@CompanyID)
+     AND prcpi_Current = 'Y'</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="prcpi_PayIndicator">
+          <DataField>prcpi_PayIndicator</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Description">
+          <DataField>Description</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsLastChanged">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyID">
+            <Value>=Parameters!CompanyID.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>DECLARE @PayIndicator varchar(40)
+DECLARE @TempID int
+
+DECLARE @HQID int
+SET @HQID = dbo.ufn_BRGetHQID(@CompanyID)
+
+DECLARE @DateLastChanged datetime
+DECLARE @PreviousPayIndicator varchar(10)
+
+SELECT @PayIndicator = prcpi_PayIndicator
+  FROM PRCompanyPayIndicator WITH (NOLOCK)
+ WHERE prcpi_CompanyID = @HQID
+   AND prcpi_Current = 'Y'
+
+SELECT @TempID = MAX(prcpi_CompanyPayIndicatorID)
+  FROM PRCompanyPayIndicator WITH (NOLOCK)
+ WHERE prcpi_CompanyID = @HQID
+   AND ISNULL(prcpi_PayIndicator, 'x') &lt;&gt; ISNULL(@PayIndicator, 'x');
+
+SELECT @DateLastChanged = MIN(prcpi_CreatedDate)
+  FROM PRCompanyPayIndicator WITH (NOLOCK)
+ WHERE prcpi_CompanyID = @HQID
+   AND prcpi_CompanyPayIndicatorID &gt; @TempID
+   
+IF @DateLastChanged IS NULL BEGIN   
+	SELECT @DateLastChanged = MIN(prcpi_CreatedDate)
+	  FROM PRCompanyPayIndicator WITH (NOLOCK)
+	 WHERE prcpi_CompanyID = @HQID;
+END
+   
+   
+SELECT @PreviousPayIndicator = prcpi_PayIndicator
+  FROM PRCompanyPayIndicator WITH (NOLOCK)
+ WHERE prcpi_CompanyPayIndicatorID = @TempID
+
+SELECT @DateLastChanged As DateLastChanged, 
+            @PreviousPayIndicator as PreviousPayIndicator,
+            dbo.ufn_GetCustomCaptionValue('PayIndicatorDescription', @PreviousPayIndicator, 'en-us') As PreviousPayIndicatorDescription
+</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="DateLastChanged">
+          <DataField>DateLastChanged</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="PreviousPayIndicator">
+          <DataField>PreviousPayIndicator</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="PreviousPayIndicatorDescription">
+          <DataField>PreviousPayIndicatorDescription</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Textbox Name="txtPayIndicatorHeader">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>PAY INDICATOR</Value>
+                    <Style>
+                      <FontFamily>Times New Roman</FontFamily>
+                      <FontSize>16pt</FontSize>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Center</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Height>0.3in</Height>
+            <Width>7.5in</Width>
+            <DocumentMapLabel>PAY INDICATOR</DocumentMapLabel>
+            <Style>
+              <TopBorder>
+                <Style>Solid</Style>
+              </TopBorder>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="textbox1">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>For more information about Pay Indicators, please review the appropriate reference material in the BBOS Learning Center's </Value>
+                    <Style />
+                  </TextRun>
+                  <TextRun>
+                    <Value>Membership Guide</Value>
+                    <ActionInfo>
+                      <Actions>
+                        <Action>
+                          <Hyperlink>https://apps.bluebookservices.com/BBOS/BlueBookServices.aspx</Hyperlink>
+                        </Action>
+                      </Actions>
+                    </ActionInfo>
+                    <Style>
+                      <TextDecoration>Underline</TextDecoration>
+                      <Color>Blue</Color>
+                    </Style>
+                  </TextRun>
+                  <TextRun>
+                    <Value>.</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <rd:DefaultName>textbox1</rd:DefaultName>
+            <Top>0.375in</Top>
+            <Height>0.36458in</Height>
+            <Width>7.5in</Width>
+            <ZIndex>1</ZIndex>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="textbox2">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>Current Pay Indicator:</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <rd:DefaultName>textbox2</rd:DefaultName>
+            <Top>0.80903in</Top>
+            <Left>0.125in</Left>
+            <Height>0.25in</Height>
+            <Width>1.6in</Width>
+            <ZIndex>2</ZIndex>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="textbox4">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=IIF(First(Fields!prcpi_PayIndicator.Value, "dsPayIndicator") is nothing, 
+    "None", 
+     First(Fields!prcpi_PayIndicator.Value, "dsPayIndicator") &amp; " =  " &amp; First(Fields!Description.Value, "dsPayIndicator") &amp; "   Unchanged Since: " &amp; Format(First(Fields!DateLastChanged.Value, "dsLastChanged"), "MM/dd/yyyy")
+     )</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Left</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <rd:DefaultName>textbox4</rd:DefaultName>
+            <Top>0.80903in</Top>
+            <Left>1.725in</Left>
+            <Height>0.25in</Height>
+            <Width>5.36979in</Width>
+            <ZIndex>3</ZIndex>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="textbox6">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>Previous Pay Indicator:</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <rd:DefaultName>textbox3</rd:DefaultName>
+            <Top>1.05903in</Top>
+            <Left>0.125in</Left>
+            <Height>0.25in</Height>
+            <Width>1.6in</Width>
+            <ZIndex>4</ZIndex>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="Textbox7">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=IIF(First(Fields!PreviousPayIndicator.Value, "dsLastChanged") is nothing, 
+"None", 
+First(Fields!PreviousPayIndicator.Value, "dsLastChanged") &amp; " =  " &amp; First(Fields!PreviousPayIndicatorDescription.Value, "dsLastChanged"))</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <rd:DefaultName>Textbox7</rd:DefaultName>
+            <Top>1.05903in</Top>
+            <Left>1.725in</Left>
+            <Height>0.25in</Height>
+            <Width>5.4in</Width>
+            <ZIndex>5</ZIndex>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+        </ReportItems>
+        <Height>1.4184in</Height>
+        <Style />
+      </Body>
+      <Width>7.5in</Width>
+      <Page>
+        <LeftMargin>0.5in</LeftMargin>
+        <RightMargin>0.5in</RightMargin>
+        <TopMargin>1in</TopMargin>
+        <BottomMargin>1in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="CompanyID">
+      <DataType>Integer</DataType>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Company ID</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>1</NumberOfColumns>
+      <NumberOfRows>1</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>CompanyID</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <Language>en-US</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>8b1c2289-bc91-4144-a378-458a902ce835</rd:ReportID>
+</Report>

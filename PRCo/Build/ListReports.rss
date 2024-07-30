@@ -1,0 +1,46 @@
+Public Sub Main()
+    ' This script will list the data source types and the reports associated with them
+    ' with the intention of listing any invalid data sources
+
+    Try
+        rs.PreAuthenticate = True
+        rs.Credentials = System.Net.CredentialCache.DefaultCredentials
+
+        Dim items as CatalogItem()
+        Dim dataSources As DataSource()
+        Dim reportList As System.Collections.Generic.SortedDictionary(Of String, System.Collections.Generic.SortedList(Of String, Object)) = new System.Collections.Generic.SortedDictionary(Of String, System.Collections.Generic.SortedList(Of String, Object))
+        Dim dataSourceType As String
+        Dim dataSourceName As String
+        Dim reportName As String
+
+        ' Get a list of reports and associate them with data source types
+        items = rs.ListChildren("/", True)
+        For i As Integer = items.GetLowerBound(0) To items.GetUpperBound(0)
+            If items(i).Type = ItemTypeEnum.Report Then 
+                dataSources = rs.GetItemDataSources(items(i).Path)
+                For j As Integer = dataSources.GetLowerBound(0) To dataSources.GetUpperBound(0)
+                    dataSourceType =  dataSources(j).Item.GetType().Name
+                    reportName = items(i).Path
+                    dataSourceName = dataSources(j).Name
+                    If Not reportList.ContainsKey(dataSourceType) Then
+                        reportList.Add(dataSourceType, new System.Collections.Generic.SortedList(Of String, Object))
+                    End If
+                    reportList(dataSourceType).Add(reportName & ":" & dataSourceName, Nothing)
+                Next
+            End If
+        Next
+
+        ' print the results
+        For Each dictKvp As System.Collections.Generic.KeyValuePair(Of String, System.Collections.Generic.SortedList(Of String, Object)) In reportList
+            Console.WriteLine()
+            Console.WriteLine(DictKvp.Key & ":")
+            For Each listKvp As System.Collections.Generic.KeyValuePair(Of String, Object) In DictKvp.Value 
+                Console.WriteLine("    " & listKvp.Key)
+            Next
+        Next
+
+    Catch e As Exception
+        Console.WriteLine("Main: " + e.Message)
+    End Try
+End Sub 
+

@@ -1,0 +1,1 @@
+<%@ Page language="c#" Inherits="PRCo.BBS.Utils.GetLibraryDoc" CodeBehind="GetLibraryDoc.aspx.cs" AutoEventWireup="True" %>

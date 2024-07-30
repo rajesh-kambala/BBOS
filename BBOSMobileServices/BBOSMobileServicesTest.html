@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>BBOS Mobile Services</title>
+  <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.0.3.min.js"></script>
+  <style>
+	TH {background-color:gray;}
+	.alternate{background-color:#c0c0c0;}
+  </style>
+</head>
+<body>
+
+    <div>
+        <h2>BBOS Mobile Services Test</h2>
+    </div>
+
+
+    <script>
+
+        //var baseuri = 'http://localhost/BBOSMobileServices/';
+		var baseuri = 'https://qa.mobileservicesbluebook.com/v1/';
+        var service = null;
+        var pageSize = 10;
+        var pageIndex = 0;
+
+        function getWatchdogDetails(watchdogListID) {
+            service = "api/watchdog/getgroup";
+
+            var GetWatchdogGroupCompaniesRequest = {};
+            GetWatchdogGroupCompaniesRequest.UserId = document.getElementById("GUID").value;
+            GetWatchdogGroupCompaniesRequest.WatchdogGroupId = watchdogListID;
+            data = GetWatchdogGroupCompaniesRequest;
+
+            executeWS(service, data);
+        }
+
+        function getCompanyDetails(companyID) {
+            service = "api/company/getcompany";
+
+            var GetCompanyRequest = {};
+            GetCompanyRequest.UserId = document.getElementById("GUID").value;
+            GetCompanyRequest.BBID = companyID;
+            data = GetCompanyRequest;
+
+            executeWS(service, data);
+        }
+
+
+        function execute() {
+
+            service = document.getElementById('service').options[document.getElementById('service').selectedIndex].value;
+            document.getElementById("results").innerHTML = "";
+
+            var data = null;
+            switch (service) {
+                case "api/user/getpassword":
+                    data = document.getElementById('email').value;
+                    break;
+
+                case "api/user/login":
+                    var loginRequest = {};
+                    loginRequest.Email = document.getElementById('email').value;
+                    loginRequest.Password = document.getElementById('password').value;
+                    data = loginRequest;
+                    break;
+
+                case "api/company/quickfind":
+                    var quickfindRequest = {};
+                    quickfindRequest.UserId = document.getElementById("GUID").value;
+                    quickfindRequest.SearchText = document.getElementById('search').value;
+                    quickfindRequest.PageIndex = 0;
+                    quickfindRequest.PageSize = 25;
+                    data = quickfindRequest;
+                    break;
+
+                case "api/watchdog/getgroups":
+                    var request = {};
+                    request.UserId = document.getElementById("GUID").value;
+                    data = request;
+                    break;
+
+                case "api/watchdog/addcompany":
+                    var request = {};
+                    request.UserId = document.getElementById("GUID").value;
+                    request.BBID = 100073;
+                    request.WatchdogID = 48569;
+                    data = request;
+                    break;
+
+                    //json	"{\"WatchdogGroupIds\":[48412,48413],\"BBID\":\"102030\",\"UserId\":\"00000000-0000-0000-0000-000000000000\"}"	string
+                case "api/watchdog/removecompany":
+                    var request = {};
+                    request.UserId = document.getElementById("GUID").value;
+                    request.BBID = 100073;
+                    request.WatchdogID = 48569;
+                    data = request;
+                    break;
+
+                case "api/contact/search":
+                    var personSearchRequest = {};
+                    personSearchRequest.UserId = document.getElementById("GUID").value;
+                    personSearchRequest.LastName = document.getElementById('personsearch').value;
+                    personSearchRequest.PageIndex = 0;
+                    personSearchRequest.PageSize = 25;
+					
+                    data = personSearchRequest;
+                    break;
+					
+				case "api/user/logexception":
+					var LogExceptionRequest = {};
+					LogExceptionRequest.ExceptionDetails = "Log Simple Error";
+					data = LogExceptionRequest
+					break;
+
+				case "api/user/logexceptiondetails":
+					var LogExceptionDetailsRequest = {};
+					LogExceptionDetailsRequest.UserID = "My UserID";
+					LogExceptionDetailsRequest.OSVersion = "My OSVersion";
+					LogExceptionDetailsRequest.AppVersion = "My AppVersion";
+					LogExceptionDetailsRequest.AppIndustryType = "My AppIndustryType";
+					LogExceptionDetailsRequest.ScreenName = "My ScreenName";
+					LogExceptionDetailsRequest.WebMethod = "My WebMethod";
+					LogExceptionDetailsRequest.ExceptionMessage = "My ExceptionMessage";
+					LogExceptionDetailsRequest.AdditionalInfo = "My AdditionalInfo";
+					LogExceptionDetailsRequest.StackTrace = "My StackTrace";
+					data = LogExceptionDetailsRequest
+					break;
+
+
+            }
+
+
+            executeWS(service, data);
+        }
+
+
+        function executeWS(uri, inputData) {
+            var uri = baseuri + uri;
+
+            $(document).ready(function () {
+
+				parmData = JSON.stringify(inputData);
+				//var parmData = "";
+				//if (typeof inputData == "object")
+					//parmData = JSON.stringify(inputData);
+				//else
+					//parmData = "{" + inputData + "}";
+				
+                document.getElementById("URI").innerHTML = uri;
+
+                $.ajax({
+                    type: "POST",
+                    url: uri,
+                    data: parmData,
+                    contentType: 'application/x-www-form-urlencoded',
+                    dataType: 'json',
+                    contentType: "application/json",
+                    success: function (data) {
+
+                        document.getElementById("results2").innerHTML = "";
+                        switch (service) {
+                            case "api/user/HelloWorld":
+                                displayText(data);
+                                break;
+
+                            case "api/user/getpassword":
+                                handleBaseResponse(data);
+                                break;
+
+                            case "api/company/quickfind":
+                                displayCompanyList(data);
+                                break;
+
+                            case "api/user/login":
+                                handleLogin(data);
+                                break;
+
+                            case "api/company/quickfind":
+                                displayCompanyList(data);
+                                break;
+
+                            case "api/watchdog/getgroups":
+                                displayWatchdogList(data);
+                                break;
+
+                            case "api/watchdog/getgroup":
+                                displayWatchdogListDetails(data);
+                                break;
+
+                            case "api/company/getcompany":
+                                displayCompanyDetails(data);
+                                break;
+
+                            case "api/watchdog/addcompany":
+                                handleBaseResponse(data);
+                                break;
+
+                            case "api/watchdog/removecompany":
+                                handleBaseResponse(data);
+                                break;
+	                        case "api/contact/search":
+                                displayContactList(data);
+                                break;							
+								
+                        }
+                    },
+                    error: function (jqXHR, textStatus, err) {
+                        if (err != "")
+							displayText(err);
+						else if (jqXHR!=null)
+							displayText(jqXHR.status + " " + jqXHR.statusText);
+                    }
+                });
+
+
+            });
+        }
+
+        function displayText(text) {
+            document.getElementById("results").innerHTML = text;
+        }
+
+        function handleBaseResponse(responseBase) {
+            displayText(responseBase.ResponseStatus);
+        }
+
+
+        function handleLogin(loginResponse) {
+            //userGUID = loginResponse.UserId;
+            document.getElementById("GUID").value = loginResponse.UserId;
+            document.getElementById("results").innerHTML = loginResponse.UserId;
+			
+			if (loginResponse.CategoryListsItems == null)
+				return;
+			
+			var buffer = "<p><strong>Commodities</strong>";
+			buffer += "<table><tr><th>Abbreviation</th><th>Definition</th></tr>";
+			for (var i = 0; i < loginResponse.CategoryListsItems.CommondityList.length; i++) {			
+				buffer += "<tr><td>" + loginResponse.CategoryListsItems.CommondityList[i].Abbreviation + "</td><td>" + loginResponse.CategoryListsItems.CommondityList[i].Definition + "</td></tr>";
+			}
+			buffer += "</table>";
+
+			buffer += "<p><strong>Classifications</strong>";
+			buffer += "<table><tr><th>Abbreviation</th><th>Description</th><th>Definition</th><th>IndustryType</th></tr>";
+			for (var i = 0; i < loginResponse.CategoryListsItems.ClassificationList.length; i++) {			
+				buffer += "<tr><td>" + loginResponse.CategoryListsItems.ClassificationList[i].Abbreviation + "</td><td>" + loginResponse.CategoryListsItems.ClassificationList[i].Description + "</td><td>" + loginResponse.CategoryListsItems.ClassificationList[i].Definition + "</td><td>" + loginResponse.CategoryListsItems.ClassificationList[i].IndustryType + "</td></tr>";
+			}
+			buffer += "</table>";
+
+
+			
+			document.getElementById("results").innerHTML += buffer;
+        }
+
+
+        function displayCompanyList(companyResult) {
+
+            var buffer = "";
+            var css = "";
+            for (var i = 0; i < companyResult.ResultCount; i++) {
+
+                if (i % 2 == 0) {
+                    css = "";
+                } else {
+                    css = "class=alternate";
+                }
+
+                var row = "<tr " + css + ">";
+                row += "<td>" + companyResult.Companies[i].BBID + "</td>";
+                row += "<td><a href=javascript:getCompanyDetails('" + companyResult.Companies[i].BBID + "')>" + companyResult.Companies[i].Name + "</a></td>";
+                row += "<td>" + companyResult.Companies[i].Location + "</td>";
+                row += "<td>" + companyResult.Companies[i].Industry + "</td>";
+                row += "<td>" + companyResult.Companies[i].Type + "</td>";
+                row += "<td>" + companyResult.Companies[i].Rating + "</td>";
+                row += "<td>" + companyResult.Companies[i].Phone + "</td>";
+                row += "<td>" + companyResult.Companies[i].HasNotes + "</td>";
+                row += "</tr>";
+
+                buffer += row;
+            }
+
+            document.getElementById("results").innerHTML = "<table style='width:100%'><tr><th>BBID</th><th>Name</th><th>Location</th><th>Industry</th><th>Type</th><th>Rating</th><th>Phone</th><th>HasNotes</th></tr>" + buffer + "</table>";
+        }
+
+        function displayWatchdogList(GetWatchdogGroupResponse) {
+
+            var buffer = "";
+            var css = "";
+            for (var i = 0; i < GetWatchdogGroupResponse.ResultCount; i++) {
+
+                if (i % 2 == 0) {
+                    css = "";
+                } else {
+                    css = "class=alternate";
+                }
+
+                var row = "<tr " + css + ">";
+                row += "<td>" + GetWatchdogGroupResponse.WatchdogGroups[i].WatchdogGroupId + "</td>";
+                row += "<td><a href=javascript:getWatchdogDetails('" + GetWatchdogGroupResponse.WatchdogGroups[i].WatchdogGroupId + "')>" + GetWatchdogGroupResponse.WatchdogGroups[i].Name + "</a></td>";
+                row += "<td>" + GetWatchdogGroupResponse.WatchdogGroups[i].IsPrivate + "</td>";
+                row += "<td>" + GetWatchdogGroupResponse.WatchdogGroups[i].Count + "</td>";
+                row += "</tr>";
+
+                buffer += row;
+            }
+
+            document.getElementById("results").innerHTML = "<table style='width:100%'><tr><th>WatchdogGroupId</th><th>Name</th><th>IsPrivate</th><th>Count</th></tr>" + buffer + "</table>";
+        }
+
+
+        function displayWatchdogListDetails(GetWatchdogGroupDetailsResponse) {
+            var watchdogGroup = GetWatchdogGroupDetailsResponse.WatchdogGroup;
+
+            var details = "<table style=margin-top:25px;>"
+            details += "<tr><td>Name:</td><td>" + watchdogGroup.Name + "<td></tr>";
+            details += "<tr><td>Description:</td><td>" + watchdogGroup.Description + "<td></tr>";
+            details += "<tr><td>Created By:</td><td>" + watchdogGroup.CreatedBy + "<td></tr>";
+            details += "<table>";
+
+
+            var companyCount = watchdogGroup.Companies.length;
+
+            var buffer = "";
+            var css = "";
+            for (var i = 0; i < companyCount; i++) {
+
+                if (i % 2 == 0) {
+                    css = "";
+                } else {
+                    css = "class=alternate";
+                }
+
+                var row = "<tr " + css + ">";
+                row += "<td>" + watchdogGroup.Companies[i].BBID + "</td>";
+                row += "<td>" + watchdogGroup.Companies[i].Name + "</td>";
+                row += "<td>" + watchdogGroup.Companies[i].Location + "</td>";
+                row += "<td>" + watchdogGroup.Companies[i].Industry + "</td>";
+                row += "<td>" + watchdogGroup.Companies[i].Type + "</td>";
+                row += "<td>" + watchdogGroup.Companies[i].Rating + "</td>";
+                row += "<td>" + watchdogGroup.Companies[i].Phone + "</td>";
+                row += "<td>" + watchdogGroup.Companies[i].HasNotes + "</td>";
+                row += "</tr>";
+
+                buffer += row;
+            }
+
+            document.getElementById("results2").innerHTML = details + "<table style='width:100%'><tr><th>BBID</th><th>Name</th><th>Location</th><th>Industry</th><th>Type</th><th>Rating</th><th>Phone</th><th>HasNotes</th></tr>" + buffer + "</table>";
+        }
+
+
+
+        function displayCompanyDetails(GetCompanyResponse) {
+            var company = GetCompanyResponse.Company;
+
+            var details = "<table style=margin-top:25px;>"
+            details += "<tr><td>BBID:</td><td>" + company.BBID + "<td></tr>";
+            details += "<tr><td>Name:</td><td>" + company.Name + "<td></tr>";
+            details += "<tr><td>Location:</td><td>" + company.Location + "<td></tr>";
+            details += "<tr><td>Industry:</td><td>" + company.Industry + "<td></tr>";
+            details += "<tr><td>Type:</td><td>" + company.Type + "<td></tr>";
+            details += "<tr><td>Rating:</td><td>" + company.Rating + "<td></tr>";
+            details += "<tr><td>BBScore:</td><td>" + company.BlueBookScore + "<td></tr>";
+            details += "<tr><td>Phone:</td><td>" + company.Phone + "<td></tr>";
+            details += "<tr><td>Fax:</td><td>" + company.Fax + "<td></tr>";
+            details += "<tr><td>Email:</td><td>" + company.Email + "<td></tr>";
+            details += "<tr><td>Web Site:</td><td>" + company.Web + "<td></tr>";
+            details += "<tr><td>Local Source:</td><td>" + company.IsLocalSource + "<td></tr>"
+			details += "<tr><td>Is On Watchdog:</td><td>" + company.IsWatchDog + "<td></tr>"
+            details += "<tr><td>Map Address:</td><td>" + company.MapAddress + "<td></tr>";
+
+            var tmp = "";
+            for (var i = 0; i < company.Classifications.length; i++) {
+                if (tmp.length > 0) {
+                    tmp += ", ";
+                }
+                tmp += company.Classifications[i].Description;
+            }
+            details += "<tr><td style=vertical-align:top;>Classifications:</td><td>" + tmp + "<td></tr>";
+
+            if (company.Commodities != null) {
+                tmp = "";
+                for (var i = 0; i < company.Commodities.length; i++) {
+                    if (tmp.length > 0) {
+                        tmp += ", ";
+                    }
+                    tmp += company.Commodities[i].Definition;
+                }
+                details += "<tr><td style=vertical-align:top;>Commodities:</td><td>" + tmp + "<td></tr>";
+            }
+
+            if (company.Products != null) {
+                tmp = "";
+                for (var i = 0; i < company.Products.length; i++) {
+                    if (tmp.length > 0) {
+                        tmp += ", ";
+                    }
+                    tmp += company.Products[i].Name;
+                }
+                details += "<tr><td style=vertical-align:top;>Products:</td><td>" + tmp + "<td></tr>";
+            }
+
+            if (company.Services != null) {
+                tmp = "";
+                for (var i = 0; i < company.Services.length; i++) {
+                    if (tmp.length > 0) {
+                        tmp += ", ";
+                    }
+                    tmp += company.Services[i].Name;
+                }
+                details += "<tr><td style=vertical-align:top;>Services:</td><td>" + tmp + "<td></tr>";
+            }
+
+
+            if (company.Species != null) {
+                tmp = "";
+                for (var i = 0; i < company.Species.length; i++) {
+                    if (tmp.length > 0) {
+                        tmp += ", ";
+                    }
+                    tmp += company.Species[i].Name;
+                }
+                details += "<tr><td style=vertical-align:top;>Species:</td><td>" + tmp + "<td></tr>";
+            }
+
+
+            details += "<tr><td style=vertical-align:top;>Listing:</td><td>" + company.Listing + "<td></tr>";
+
+            if (company.Contacts != null) {
+                details += "<table style=margin-top:25px;>";
+                details += "<tr><th>Name</th><th>Title</th><th>Phone</th><th>Fax</th><th>Email</th><th>Private Notes</th></tr>";
+
+                for (var i = 0; i < company.Contacts.length; i++) {
+                    details += "<tr><td>" + company.Contacts[i].Name + "</td>";
+                    details += "<td>" + company.Contacts[i].Title + "</td>";
+                    details += "<td>" + company.Contacts[i].Phone + "</td>";
+                    details += "<td>" + company.Contacts[i].Fax + "</td>";
+                    details += "<td>" + company.Contacts[i].Email + "</td>";
+                    details += "<td>" + company.Contacts[i].PrivateNotes + "</td>";
+                    details += "</tr>";
+                }
+
+                details += "<table>";
+            }
+
+
+
+            if (company.Ratings != null) {
+                details += "<table style=margin-top:25px;>";
+                details += "<tr><th>Type</th><th>Rating</th><th>Definition</th></tr>";
+
+                for (var i = 0; i < company.Ratings.length; i++) {
+                    details += "<tr><td>" + company.Ratings[i].Type + "</td>";
+                    details += "<td>" + company.Ratings[i].Score + "</td>";
+                    details += "<td>" + company.Ratings[i].Definition + "</td>";
+                    details += "</tr>";
+                }
+
+                details += "<table>";
+            }
+
+
+            if (company.Notes != null) {
+                details += "<table style=margin-top:25px;>";
+                details += "<tr><th>Last Updated</th><th>Private</th><th>Note</th></tr>";
+
+                for (var i = 0; i < company.Notes.length; i++) {
+                    details += "<tr><td>" + company.Notes[i].LastUpdated + "</td>";
+                    details += "<td>" + company.Notes[i].Private + "</td>";
+                    details += "<td>" + company.Notes[i].NoteText + "</td>";
+                    details += "</tr>";
+                }
+
+                details += "<table>";
+            }
+
+
+            document.getElementById("results2").innerHTML = details;
+        }
+
+		
+        function displayContactList(contactResult) {
+
+            var buffer = "";
+            var css = "";
+            for (var i = 0; i < contactResult.ResultCount; i++) {
+
+                if (i % 2 == 0) {
+                    css = "";
+                } else {
+                    css = "class=alternate";
+                }
+
+                var row = "<tr " + css + ">";
+                row += "<td>" + contactResult.Contacts[i].BBID + "</td>";
+                row += "<td><a href=javascript:getCompanyDetails('" + contactResult.Contacts[i].BBID + "')>" + contactResult.Contacts[i].CompanyName + "</a></td>";
+                row += "<td>" + contactResult.Contacts[i].Name + "</td>";
+                row += "<td>" + contactResult.Contacts[i].Title + "</td>";
+                row += "</tr>";
+
+                buffer += row;
+            }
+
+            document.getElementById("results").innerHTML = "<table style='width:100%'><tr><th>BBID</th><th>Name</th><th>Name</th><th>Title</th></tr>" + buffer + "</table>";
+        }		
+		
+    </script>
+
+    <table>
+		<tr><td>GUID:</td><td><input id="GUID" value=" " type="text" style="width:350px;" /></td></tr>
+        <tr><td>Email:</td><td><input id="email" value="" type="text" style="width:350px;" /></td></tr>
+        <tr><td>Password:</td><td><input id="password" value=" " type="text" style="width:350px;" /></td></tr>
+        <tr><td>Quick Find:</td><td><input id="search" value=" " type="text" style="width:350px;" /></td></tr>
+		<tr><td>Person Last Name:</td><td><input id="personsearch" value="" type="text" style="width:350px;" /></td></tr>
+        <tr>
+            <td>Service:</td>
+            <td>
+                <select id="service" style="width:250px;">
+                    <option value="api/user/login" selected>Login</option>
+                    <option value="api/company/quickfind">QuickFind</option>
+					<option value="api/contact/search">Person Search</option>
+                    <option value="api/watchdog/getgroups">Get WatchdogGroups</option>
+                    <option value="api/watchdog/addcompany">Add To Watchdog</option>
+                    <option value="api/watchdog/removecompany">Remove From Watchdog</option>
+                    <option value="api/user/getpassword">Get Password</option>
+                    <option value="api/user/HelloWorld">Hello World</option>
+					<option value="api/user/logexception">Log Simple Exception</option>
+					<option value="api/user/logexceptiondetails">Log Exception Details</option>
+					
+                </select>
+            </td>
+        </tr>
+
+
+        <tr><td colspan="2"><input type="button" value="Execute" onclick="execute();" /></td></tr>
+    </table>
+
+    <p style="margin-bottom:0px;">
+        URL: <span id="URI"></span><br />
+    </p>
+    <p style="margin-bottom:0px;font-weight:bold;">Results:</p>
+    <div id="results"></div>
+
+    <div id="results2" style="margin-top:25px;"></div>
+
+</body>
+</html>

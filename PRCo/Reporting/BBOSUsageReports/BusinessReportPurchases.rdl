@@ -1,0 +1,625 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2005/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <DataSources>
+    <DataSource Name="BBOS">
+      <rd:DataSourceID>e211a44c-2d66-4ceb-8a9c-0bb2fddb35a0</rd:DataSourceID>
+      <DataSourceReference>BBOS</DataSourceReference>
+    </DataSource>
+  </DataSources>
+  <InteractiveHeight>11in</InteractiveHeight>
+  <ReportParameters>
+    <ReportParameter Name="FromDate">
+      <DataType>DateTime</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>=DateAdd("M", -1,DateValue(CStr(Month(Now)) &amp; "/1/" &amp; CStr(Year(Now))))</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>From Date</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ExcludedCompanies">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>dsExcludedCompanies</DataSetName>
+          <ValueField>Capt_Code</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Excluded Companies</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>dsExcludedCompanies</DataSetName>
+          <ValueField>Capt_Code</ValueField>
+          <LabelField>Capt_US</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="ToDate">
+      <DataType>DateTime</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>=DateAdd("d", -1, DateValue(CStr(Month(Now)) &amp; "/1/" &amp; CStr(Year(Now))))</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>To Date</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <rd:DrawGrid>true</rd:DrawGrid>
+  <InteractiveWidth>8.5in</InteractiveWidth>
+  <rd:SnapToGrid>true</rd:SnapToGrid>
+  <RightMargin>1in</RightMargin>
+  <LeftMargin>1in</LeftMargin>
+  <PageHeader>
+    <ReportItems>
+      <Textbox Name="textbox5">
+        <rd:DefaultName>textbox5</rd:DefaultName>
+        <Width>6.125in</Width>
+        <Style>
+          <FontStyle>Italic</FontStyle>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+        <CanGrow>true</CanGrow>
+        <Value>BBOS Business Report Purchases</Value>
+      </Textbox>
+    </ReportItems>
+    <Height>0.25in</Height>
+    <PrintOnLastPage>true</PrintOnLastPage>
+  </PageHeader>
+  <BottomMargin>1in</BottomMargin>
+  <rd:ReportID>e9c715be-0e49-4be1-a163-116b633bd021</rd:ReportID>
+  <DataSets>
+    <DataSet Name="dsBusinessReports">
+      <Fields>
+        <Field Name="prreq_TriggerPage">
+          <DataField>prreq_TriggerPage</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Count">
+          <DataField>Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>BBOS</DataSourceName>
+        <CommandText>DECLARE @ComputedEndDate datetime
+SET @ComputedEndDate = DATEADD(second, -1, DATEADD(day, 1, @ToDate))
+
+SELECT prreq_TriggerPage,
+            COUNT(1) As Count
+  FROM PRRequest WITH (NOLOCK)
+WHERE prreq_RequestTypeCode LIKE 'BR%'
+   AND prreq_CreatedDate BETWEEN @FromDate AND @ComputedEndDate
+GROUP BY prreq_TriggerPage
+ORDER BY Count DESC</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@ToDate">
+            <Value>=Parameters!ToDate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@FromDate">
+            <Value>=Parameters!FromDate.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+    <DataSet Name="dsExcludedCompanies">
+      <Fields>
+        <Field Name="Capt_Code">
+          <DataField>Capt_Code</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Capt_US">
+          <DataField>Capt_US</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>BBOS</DataSourceName>
+        <CommandText>Select
+    RTrim(Cast(Capt_Code As nvarchar(15))) As Capt_Code,
+    RTrim(Cast(Capt_US As nvarchar(200))) As Capt_US
+From
+    Custom_Captions
+Where
+    Capt_Family = 'InternalHQID'
+
+Union All
+
+Select
+    -1 As Capt_Code,
+    '(Select None)' As Capt_Us
+;</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+    <DataSet Name="dsByNewsArticleCategory">
+      <Fields>
+        <Field Name="Category">
+          <DataField>Category</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Count">
+          <DataField>Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>BBOS</DataSourceName>
+        <CommandText>DECLARE @ComputedEndDate datetime
+SET @ComputedEndDate = DATEADD(second, -1, DATEADD(day, 1, @ToDate))
+
+SELECT dbo.ufn_GetCustomCaptionValue('prpbar_CategoryCode',prpbar_CategoryCode, 'en-us') As Category,
+             COUNT(1) As Count
+  FROM PRRequest WITH (NOLOCK)
+            INNER JOIN PRPublicationArticle WITH (NOLOCK) ON prreq_SourceID = prpbar_PublicationArticleID AND prreq_SourceEntity='PRPublicationArticle'
+WHERE prreq_RequestTypeCode LIKE 'BR%'
+     AND prreq_CreatedDate BETWEEN @FromDate AND @ComputedEndDate
+GROUP BY prpbar_CategoryCode</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@ToDate">
+            <Value>=Parameters!ToDate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@FromDate">
+            <Value>=Parameters!FromDate.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+  </DataSets>
+  <Width>6.5in</Width>
+  <Body>
+    <ReportItems>
+      <Textbox Name="textbox12">
+        <Top>1.625in</Top>
+        <Width>4.875in</Width>
+        <Style>
+          <FontWeight>700</FontWeight>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+        <ZIndex>5</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Height>0.25in</Height>
+        <Value>=Format(Sum(Fields!Count.Value, "dsByNewsArticleCategory"), "###,##0") + " Business Reports Sold via News Articles."</Value>
+      </Textbox>
+      <Table Name="table2">
+        <ZIndex>4</ZIndex>
+        <DataSetName>dsByNewsArticleCategory</DataSetName>
+        <Top>1.875in</Top>
+        <Details>
+          <TableRows>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Category">
+                      <rd:DefaultName>Category</rd:DefaultName>
+                      <Style>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>2</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Category.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Count_1">
+                      <rd:DefaultName>Count_1</rd:DefaultName>
+                      <Style>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>1</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Count.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox14">
+                      <rd:DefaultName>textbox14</rd:DefaultName>
+                      <Style>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <Format>P</Format>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Count.Value / SUM(Fields!Count.Value)</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+          </TableRows>
+        </Details>
+        <Style>
+          <BorderStyle>
+            <Default>Solid</Default>
+          </BorderStyle>
+        </Style>
+        <Header>
+          <TableRows>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox9">
+                      <rd:DefaultName>textbox9</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontWeight>700</FontWeight>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>5</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>News Article Category</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox10">
+                      <rd:DefaultName>textbox10</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>4</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Count</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox11">
+                      <rd:DefaultName>textbox11</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>3</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Percentage</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+          </TableRows>
+          <RepeatOnNewPage>true</RepeatOnNewPage>
+        </Header>
+        <TableColumns>
+          <TableColumn>
+            <Width>4.25in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1.25in</Width>
+          </TableColumn>
+        </TableColumns>
+      </Table>
+      <Textbox Name="textbox8">
+        <rd:DefaultName>textbox8</rd:DefaultName>
+        <Top>0.625in</Top>
+        <Width>4.875in</Width>
+        <Style>
+          <FontWeight>700</FontWeight>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+        <ZIndex>3</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Height>0.25in</Height>
+        <Value>=CStr(Sum(Fields!Count.Value, "dsBusinessReports")) + " Business Reports Sold."</Value>
+      </Textbox>
+      <Textbox Name="textbox7">
+        <rd:DefaultName>textbox7</rd:DefaultName>
+        <Top>0.25in</Top>
+        <Style>
+          <FontSize>11pt</FontSize>
+          <FontWeight>700</FontWeight>
+          <TextAlign>Center</TextAlign>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+        <ZIndex>2</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Height>0.25in</Height>
+        <Value>="From " &amp; Format(CDate(Parameters!FromDate.Value), "MM/dd/yyyy") &amp; " Through " &amp; Format(CDate(Parameters!ToDate.Value), "MM/dd/yyyy")</Value>
+      </Textbox>
+      <Textbox Name="textbox6">
+        <rd:DefaultName>textbox6</rd:DefaultName>
+        <Style>
+          <FontSize>12pt</FontSize>
+          <FontWeight>700</FontWeight>
+          <TextAlign>Center</TextAlign>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+        <ZIndex>1</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Height>0.25in</Height>
+        <Value>BBOS Business Report Purchases</Value>
+      </Textbox>
+      <Table Name="table1">
+        <DataSetName>dsBusinessReports</DataSetName>
+        <Top>0.875in</Top>
+        <Details>
+          <TableRows>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="prreq_TriggerPage">
+                      <rd:DefaultName>prreq_TriggerPage</rd:DefaultName>
+                      <Style>
+                        <BackgroundColor>= iif(RowNumber(Nothing) Mod 2, "White", "Gainsboro")</BackgroundColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>2</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!prreq_TriggerPage.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Count">
+                      <rd:DefaultName>Count</rd:DefaultName>
+                      <Style>
+                        <BackgroundColor>= iif(RowNumber(Nothing) Mod 2, "White", "Gainsboro")</BackgroundColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>1</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Count.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox4">
+                      <rd:DefaultName>textbox4</rd:DefaultName>
+                      <Style>
+                        <BackgroundColor>= iif(RowNumber(Nothing) Mod 2, "White", "Gainsboro")</BackgroundColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <Format>P</Format>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Count.Value / SUM(Fields!Count.Value)</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+          </TableRows>
+        </Details>
+        <Style>
+          <BorderStyle>
+            <Default>Solid</Default>
+          </BorderStyle>
+        </Style>
+        <Header>
+          <TableRows>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox1">
+                      <rd:DefaultName>textbox1</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontWeight>700</FontWeight>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>5</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>BBOS Page</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox2">
+                      <rd:DefaultName>textbox2</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>4</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Count</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox3">
+                      <rd:DefaultName>textbox3</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>3</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Percentage</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+          </TableRows>
+          <RepeatOnNewPage>true</RepeatOnNewPage>
+        </Header>
+        <TableColumns>
+          <TableColumn>
+            <Width>4.25in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1.25in</Width>
+          </TableColumn>
+        </TableColumns>
+        <Height>0.5in</Height>
+      </Table>
+    </ReportItems>
+    <Height>2.375in</Height>
+  </Body>
+  <Language>en-US</Language>
+  <PageFooter>
+    <PrintOnFirstPage>true</PrintOnFirstPage>
+    <ReportItems>
+      <Textbox Name="txtFooterPageNbr">
+        <Style>
+          <BorderStyle>
+            <Top>Solid</Top>
+          </BorderStyle>
+          <FontFamily>Arial Narrow</FontFamily>
+          <FontSize>9pt</FontSize>
+          <TextAlign>Right</TextAlign>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+        </Style>
+        <ZIndex>1</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Left>2.5in</Left>
+        <Value>= Globals!PageNumber &amp; " of " &amp;  Globals!TotalPages</Value>
+      </Textbox>
+      <Textbox Name="txtFooterExecutionDate">
+        <Width>2.5in</Width>
+        <Style>
+          <BorderStyle>
+            <Top>Solid</Top>
+          </BorderStyle>
+          <FontFamily>Arial Narrow</FontFamily>
+          <FontSize>9pt</FontSize>
+          <Format>g</Format>
+          <TextAlign>Left</TextAlign>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+        </Style>
+        <CanGrow>true</CanGrow>
+        <Value>= Globals!ExecutionTime</Value>
+      </Textbox>
+    </ReportItems>
+    <Height>0.25in</Height>
+    <PrintOnLastPage>true</PrintOnLastPage>
+  </PageFooter>
+  <TopMargin>1in</TopMargin>
+</Report>

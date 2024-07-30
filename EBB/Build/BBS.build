@@ -1,0 +1,1977 @@
+<project name="BBSBuild" default="BuildAll" basedir=".">
+
+	<loadtasks assembly="D:\Utilities\Nantcontrib\bin\NAnt.Contrib.Tasks.dll" />
+
+	<property name="nant.settings.currentframework" value="net-4.6.1" />
+	<echo message="Using '${nant.settings.currentframework}' framework on '${platform::get-name()}' platform."/>
+
+	<!-- This is the properties file that controls what gets built -->
+	<include buildfile="BBSBuild.Config.include" />
+        
+	<property name="framework.dir" value="${framework::get-framework-directory('net-4.6.1')}" />
+
+	<!-- 
+		Makes a backup of the "Latest" directory and then recreates
+		it so it we will have a "clean" build.  Labels and Gets all of 
+		our code from SVN.
+	-->
+    <target name="PreBuild" description="Prepares the environment for the build">
+        <tstamp />
+
+        <servicecontroller action="Stop" service="${BBSMonitorServiceName}" machine="AZ-NC-SQL-Q1" timeout="30000" /> 
+        <servicecontroller action="Stop" service="${BBSMonitorServiceName}" machine="AZ-NC-SAGE-Q1" timeout="30000" /> 
+
+        <property name="build.name"         value="Build (Unknown)" />
+		<property name="build.dir"          value="${project::get-base-directory()}\Latest" />
+		<property name="build.brokendir"    value="${project::get-base-directory()}\LatestBroken" />
+		<property name="build.backup" 	    value="${project::get-base-directory()}\LatestBackup" />
+		<property name="build.doc"          value="${project::get-base-directory()}\doc" />
+
+		<!-- Delete any remanents of a failed build  -->
+		<delete dir="${build.brokendir}" failonerror="false" />
+		<delete dir="${build.backup}" failonerror="false" />
+
+		<property name="SourceDir" value="${build.dir}"/>
+		<property name="TargetDir" value="${build.backup}"/>
+		<call target="CopyBuild"/>
+
+
+		<!-- Reset our current build dir -->
+		<delete dir="${build.dir}" failonerror="false" />
+		<mkdir dir="${build.dir}" />
+
+
+		<property name="build.logdir"                  value="${build.dir}\Log" />
+		<property name="build.components"              value="${build.dir}\BBS Components" />
+		<property name="build.testconfigs"             value="${project::get-base-directory()}\Test Configs" />
+		<property name="build.referenceassemblies"     value="${project::get-base-directory()}\Reference Assemblies" />
+		<property name="build.CRM"                     value="${build.dir}\CRM" />
+		<property name="build.BBOSdir"                 value="${build.dir}\BBOS" />
+		<property name="build.BBOSReferenceAssemblies" value="${project::get-base-directory()}\BBOS Reference Assemblies" />
+		<property name="build.SQLCLR"                  value="${build.dir}\SQLCLR\" />
+
+		<property name="build.WebSitesdir"             value="${build.dir}\BBOS" />
+
+		<!-- Make sure we start with a clean file structure -->
+		<delete if="${GetLatestFromVSS}" dir="${build.logdir}"   failonerror="true" />
+
+		<mkdir dir="${build.logdir}" />
+		<property name="Build.Success.Log"         value="${build.logdir}\${Build.DateTime}_SuccessfulBuildLog.txt" />
+		<property name="Build.Failure.Log"         value="${build.logdir}\${Build.DateTime}_FailedBuildLog.txt" />
+
+		<!-- Start recording a success and a failure Log file -->
+		<record name="${Build.Success.Log}" level="Info" action="Start" />
+		<record name="${Build.Failure.Log}" level="Verbose" action="Start" />
+
+
+		<!-- Increment the build # (only for production); revision always gets calculated -->
+		<version
+				if="${ProductionBuild}"        buildtype="Increment"
+				revisiontype="Automatic" path="${BuildNumberFile}"
+		/>
+		<version
+				unless="${ProductionBuild}"        buildtype="NoIncrement"
+				revisiontype="Automatic" path="${BuildNumberFile}"
+		/>
+			
+
+		<!-- Reset our version info now that we have our label -->
+		<property name="build.name"               value="BBSi ${buildnumber.version}" />
+		<property name="build.versiondir"         value="${project::get-base-directory()}\${build.name}" />
+
+		<svn-checkout
+			if="${GetLatestFromVSS}"
+			destination="${build.referenceassemblies}"
+			uri="${sourcecode.url}/PRCo/Build/Reference Assemblies"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>
+			
+		<if test="${GetLatestFromVSS}" >
+			<echo message="Getting BBOS Reference Assemblies From VSS..."/>                                  
+			<svn-checkout
+				destination="${build.BBOSReferenceAssemblies}"
+				uri="${sourcecode.url}/EBB/Build/Reference Assemblies"
+				username="${sourcecode.username}"
+				password="${sourcecode.password}"
+				verbose="true"
+				quiet="false"  
+			/>
+
+			<copy todir="${build.referenceassemblies}">
+				<fileset basedir="${build.BBOSReferenceAssemblies}">
+					<include name="*.*" />
+				</fileset>
+			</copy>							
+						
+						
+			<echo message="Getting BBOS Build Test Configs From VSS..."/>
+			<svn-checkout
+				destination="${build.testconfigs}"
+				uri="${sourcecode.url}/EBB/Build/Test Configs"
+				username="${sourcecode.username}"
+				password="${sourcecode.password}"
+				verbose="true"
+				quiet="false"  
+				/>
+			  />
+		</if>
+	</target>                
+        
+        
+        
+	<!-- 
+		Executes our post build tasks
+	-->
+	<target name="PostBuild" description="Copies the Lastest Build to Versioned Directory">
+		<tstamp />
+
+		<if test="${BuildDatabase}" >
+
+			<!-- Set the sql.dir back to the Core_Scripts directory-->
+			<property name="sql.dir" value="${build.dir}\PIKS Database\Core_Scripts" />
+
+			<echo message="Executing SQL file ${sql.dir}\Security Restore Logins.sql ..."/>
+			<sql 
+					 connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"
+					 transaction="false"
+					 delimiter="GO"
+					 delimstyle="Line"
+					 batch="false"
+					 source="${sql.dir}\Security Restore Logins.sql" 
+					 output="${build.logdir}\Security.txt">
+			</sql>
+
+			<echo message="Executing SQL file ${sql.dir}\Security.sql ..."/>
+			<sql 
+					 connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"
+					 transaction="false"
+					 delimiter="GO"
+					 delimstyle="Line"
+					 batch="false"
+					 source="${sql.dir}\Security.sql" 
+					 output="${build.logdir}\Security.txt">
+			</sql>
+			
+			<echo message="Executing SQL file ${sql.dir}\Create QA BBOS Accounts.sql ..."/>
+			<sql 
+					 connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"
+					 transaction="false"
+					 delimiter="GO"
+					 delimstyle="Line"
+					 batch="false"
+					 source="${sql.dir}\Create QA BBOS Accounts.sql" 
+					 output="${build.logdir}\Create QA BBOS Accounts.sql.txt">
+			</sql>					
+						
+			<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"
+				transaction="false"
+				delimiter="GO"
+				delimstyle="Line">					
+					UPDATE Custom_SysParams SET Parm_Value='AZ-NC-SAGE-Q1;' WHERE Parm_Name='ServerNames'	
+					UPDATE Custom_SysParams SET Parm_Value='02-496-341A-ONMMGOFMJFNBIFMLKNLFCLCOFBONDNJLEJGLLLPPOFKHAOAENCJDLECDLOHGIMBAJPEJKPHIJMPMJBDAANANMJDLJGMLCFNDBIALKJGHLGGHKBFJBNPCFDLLPMPDJCKEPPKIJHBGBHAFOIHHGKPFMBJDPHLEBKPBKHCJBMMMIFBPPLFOIMPGDAGIHCGDNBLPCLIJKBLHNAAPGHBOLNDCAMHLOMHHADHKHKNGNFAJEELOOPOPNONBALMNJCNMOADAHDELOEFMLBJGGLGGIHNAOBFFFEFNDILIBLPOLOFPCOAAFJFPKHLIBCNNDNFMFBBEHOIPKNBPINDEMLCBKNFCLFCBLNEIDEFEJMKLNODMOGOBBCJDBILCGCOPGFCNBLDOHHJMKDCKLGDLDILFNLKCEDJFAIHHHOPCHBPJAHFBBNBNCIFLNEGAHPIKKBPOJLEMLDFFKNPHHIHCLBBPNNKLHMFLIIFBHELNNFIGLCNGOCBAACOK' WHERE Parm_Name='RegisterKeyGen'
+			</sql>			
+			
+			<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${MAS_SYSTEM_Name};Uid=BBSBuild;Password=BBSBuild1901"
+				transaction="false"
+				delimiter="GO"
+				delimstyle="Line">					
+					UPDATE MAS_SYSTEM.dbo.PL_Report SET Directory = REPLACE(Directory, '\\AZ-NC-SAGE-P1\', '\\AZ-NC-SAGE-Q1\')
+					UPDATE MAS_SYSTEM.dbo.PL_JournalRegister SET Directory = REPLACE(Directory, '\\AZ-NC-SAGE-P1\', '\\AZ-NC-SAGE-Q1\')
+					UPDATE MAS_SYSTEM.dbo.PL_PeriodEndReport SET Directory = REPLACE(Directory, '\\AZ-NC-SAGE-P1\', '\\AZ-NC-SAGE-Q1\')
+			</sql>									
+		</if>
+
+		<copy todir="${build.versiondir}">
+			<fileset basedir="${build.dir}">
+				<include name="log\**" />
+			</fileset>
+		</copy>	
+
+
+		<delete dir="${build.backup}" failonerror="false" />
+
+        <delete verbose="true">
+          <fileset basedir="${build.dir}">
+              <include name="**/*.cs" />
+              <include name="**/*.csproj" />
+              <include name="**/*.user" />
+              <include name="**/*.user" />
+              <include name="**/packages.config" />
+              <include name="**/App.config" />
+              <include name="**/Properties" />
+          </fileset>  
+        </delete>		
+
+		<call target="DeployToQA"/>
+			<servicecontroller action="Start" service="${BBSMonitorServiceName}" machine="AZ-NC-SQL-Q1" timeout="30000" />	
+			<servicecontroller action="Start" service="${BBSMonitorServiceName}" machine="AZ-NC-SAGE-Q1" timeout="30000" /> 
+			<servicecontroller action="Start" service="${BBSMonitorServiceName}" machine="AZ-NC-SAGE-Q2" timeout="30000" /> 
+    </target>
+
+
+	<!-- 
+		Stop recording Logs 
+	-->
+	<target name="CloseLogs" description="Closes log files - do not call independently">
+		<record name="${Build.Success.Log}" action="Close" />
+		<record name="${Build.Failure.Log}" action="Close" />
+	</target>
+
+        
+	<!-- 
+		Fired when NAnt determines the build has succeeded.
+		Copies the log files (there were still open) and then 
+		Generates an email to the user.
+	-->   
+	<target name="OnSuccess" depends="CloseLogs" description="Executes the cleanup tasks">
+		<tstamp property="Build.EndDateTime" pattern="MM/dd/yyyy HH:mm" />
+		
+		<!-- Since the script succeeded Delete the Failure Log -->
+		<delete file="${Build.Failure.Log}" />
+		<delete file="${build.versiondir}\log\${Build.DateTime}_FailedBuildLog.txt" />
+
+		<property name="EmailSubject" value="${project.name} ${build.name} Build Success"/>
+		<property name="ResultsMsg" 		value="Succeeded!"/>
+		<call target="SetEmailSuccessMsg"/>
+		
+		<zip zipfile="${build.versiondir}\${build.name} Reports.zip" verbose="true">
+			<fileset basedir="${build.versiondir}\log">
+				<include name="*.*"/>
+				<include name="BBSListingTests\*.*"/>
+			</fileset>
+		</zip>
+		<property name="AttachZip" value="${build.versiondir}\${build.name} Reports.zip"/>
+		
+		<call target="GenerateSlackMsg"/>
+		<call target="GenerateEmail"/>
+	</target>
+   
+   
+	<!-- 
+		Fired when NAnt determines the build has failed.
+		Generates an email to the user.
+	-->   
+    <target name="OnFailure" depends="CloseLogs" description="Executes the appropriate tasks when the build fails">
+
+        <tstamp property="Build.EndDateTime" pattern="MM/dd/yyyy HH:mm" />
+                        
+        <!-- Since the script failed Delete the Success Log -->
+        <delete file="${Build.Success.Log}" />
+        
+        <!-- Send an email letting folks know what happened -->
+		<property name="EmailSubject" 		value="${project.name} ${build.name} Failed"/>
+		<property name="ResultsMsg" 		value="Failed!"/>
+		<call target="SetEmailFailureMsg"/>
+				
+				
+        <zip zipfile="${build.dir}\${build.name} Reports.zip" verbose="true">
+            <fileset basedir="${build.logdir}">
+                <include name="*.*"/>
+                <include name="BBSListingTests\*.*"/>
+                <exclude name="CRMQueries.txt"/>
+            </fileset>
+        </zip>
+        
+        <property name="AttachZip" value="${build.dir}\${build.name} Reports.zip"/>
+                
+		<call target="GenerateSlackMsg"/>
+        <call target="GenerateEmail"/>
+
+		<!-- Move the build to a "Broken" folder -->
+		<mkdir dir="${build.brokendir}" />
+		<property name="SourceDir" value="${build.dir}"/>
+		<property name="TargetDir" value="${build.brokendir}"/>
+		<property name="CopyLogs"  value="true"/>
+		<call target="CopyBuild"/>
+
+
+		<property name="SourceDir" value="${build.backup}"/>
+		<property name="TargetDir" value="${build.dir}"/>
+		<property name="CopyLogs"  value="true"/>
+		<call target="CopyBuild"/>
+    </target>
+
+
+
+        
+	<!--  
+		Genenerates an email attaching some of the build reports 
+	-->
+	<target name="GenerateEmail" description="Generates an email to the build master with the build results.">
+		<mail from="${EmailFrom}"
+			format="Html"
+			tolist="${EmailTo}"
+			subject="${EmailSubject}"
+			message="${EmailMessage}"
+			mailhost="${EmailSMTP}" >
+
+			<!-- Attach the log file to the email -->
+			<attachments>
+				<include name="${AttachZip}" />
+			</attachments>
+		</mail>
+	</target>
+
+	
+	
+
+	<target name="SetEmailSuccessMsg" description="">
+		<script language="C#">
+		<references>
+			<include name="System.dll"/>
+		</references>
+		<code>
+			<![CDATA[
+				public static void ScriptMain(Project project)
+				{
+					string emailBody = "<html><body>";
+					emailBody += "<h3>" + project.Properties["clientName"] + "<br />BBSI Development Project</h3>";
+					emailBody += "<p><strong>" + project.Properties["project.name"] + " Build " + project.Properties["build.name"] + " Succeeded!</strong><br/>";
+					emailBody += "<ul>";
+					emailBody += "<li><a href=\"" + project.Properties["projectSite.url"] + "\">Project Web Site</a></li>";
+					emailBody += "<li><a href=\"" + project.Properties["frameworkAPI.url"] + "\">BBSI Framework API Doc</a></li>";
+					emailBody += "<li><a href=\"" + project.Properties["dbDoc.url"] + "\">BBSI Database Doc</a></li>";
+					emailBody += "</p>";
+					emailBody += "<img src=\"" + project.Properties["clientLogo.url"] + "\" />";
+					emailBody += "<a href=\"http://www.travant.com\"><img src=\"https://www.travant.com/build/TravantLogo - Full.gif\" alt=\"Travant Solutions, Inc.\" border=\"0\" /></a>";
+					emailBody += "</body></html>";
+					project.Properties["EmailMessage"] = emailBody;
+				}
+				]]>
+			</code>
+		</script>
+	</target>	
+
+
+		
+	<target name="SetEmailFailureMsg" description="">
+		<script language="C#">
+		<references>
+			<include name="System.dll"/>
+		</references>
+		<code>
+			<![CDATA[
+				public static void ScriptMain(Project project)
+				{
+					string emailBody = "<html><body>";
+					emailBody += "<h3>" + project.Properties["clientName"] + "<br />BBSI Development Project</h3>";
+					emailBody += "<p><strong style=\"color:red;\">" + project.Properties["project.name"] + " Build " + project.Properties["build.name"] + " has Failed!</strong><br/>";
+					emailBody += "<p>The last build has been restored and this build has been moved to the LatestBroken folder.</p>";
+					emailBody += "</p>";
+					emailBody += "<img src=\"" + project.Properties["clientLogo.url"] + "\" />";
+					emailBody += "<a href=\"http://www.travant.com\"><img src=\"https://www.travant.com/build/TravantLogo - Full.gif\" alt=\"Travant Solutions, Inc.\" border=\"0\" /></a>";
+					emailBody += "</body></html>";
+					project.Properties["EmailMessage"] = emailBody;
+				}
+				]]>
+			</code>
+		</script>
+	</target>	
+	
+	
+	
+	<!--
+		Executes SQL Files.  Expects the following properties to be populated:
+		${sql.sourcefile} - Fully qualified path
+		${sql.logfile} - Fully qualified path
+		${sql.dbname} - Database Name
+	-->
+	<target name="ExecuteSQLFile" description="Executes the SQL File in the sql.sourcefile property." >
+		<echo message="Executing SQL file ${sql.sourcefile} ..."/>
+		<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${sql.dbname};Uid=${DBUserID};Password=${DBPassword};Extended Properties=CharacterSet=65001;"
+			transaction="false"
+			delimiter="GO"
+			delimstyle="Line"
+			batch="false"
+			source="${sql.sourcefile}"
+			output="${sql.logfile}" />
+    </target>
+
+	<!--
+		Executes SQL Files with the folder.  Expects the following properties to be populated:
+		${sql.dir} - Fully qualified path
+		${sql.logfile} - Fully qualified path
+		${sql.dbname} - Database Name
+	-->
+	<target name="ExecuteSQLFolder" description="Executes all SQL Files in the sql.dir property folder." >
+		<foreach item="File" property="filename">
+			<in>
+				<items>
+					<include name="${sql.dir}\*.sql" />
+				</items>
+			</in>
+			<do>
+					<property name="sql.sourcefile" value="${filename}" />
+					<call target="ExecuteSQLFile"/>
+			</do>
+		</foreach>
+	</target>
+
+
+
+	<!-- BUILD TASKS START HERE -->
+	<include buildfile="Utility_Build.include" />
+	<include buildfile="BBSComponents_Build.include" /> 
+
+
+	<!-- 
+		Builds PRCo Systems Solution
+	-->
+	<target name="BuildAll" depends="PreBuild, BuildDatabase, BuildCRM, BuildTravantCRM, BuildSqlCLR, BuildBBOS">
+			<tstamp />
+
+			<call target="ExecuteBBSListingTests"/>
+			<call if="${PerformCountLines}" target="CountLines"/>
+			<call if="${PerformGenerateAPIDoc}" target="GenerateAPIDoc"/>
+			<call if="${PerformGenerateDBDoc}" target="GenerateDBDoc"/>
+
+			<call target="PostBuild"/>
+	</target>
+
+
+	<!--
+		Builds the BBOS Application   
+	-->
+	<target name="BuildBBOS" if="${BuildBBOS}" depends="PreBuild, BuildBBOSWebApp, BuildBBOSBusinessObjects, BuildBBOSWebService, BuildBBOSWidgets, BuildBBOSPublicProfiles">
+		<tstamp />
+	</target>
+
+
+	<!--
+		Builds the BBOS Application   
+	-->
+	<target name="Test" depends="PreBuild">
+		<call target="ExecuteBBSListingTests"/>
+	</target>
+
+        
+	<!--
+		Builds the database
+	-->
+	<target name="BuildDatabase" 
+			if="${BuildDatabase}" 
+			depends="PreBuild"  
+			description="Builds the CRM database.">
+			
+		<tstamp />
+
+		<property name="sql.dir" value="${build.dir}\PIKS Database" />
+		<property name="sql.dbname" value="${DBName}" />
+
+		<!-- Determine if we need to get VSS files or not -->
+		<if test="${GetLatestFromVSS}" >
+			<echo message="Getting 'PIKS Database' Directory From VSS..."/>
+			<svn-checkout
+				destination="${sql.dir}"
+				uri="${sourcecode.url}/PRCo/PIKS Database"
+				username="${sourcecode.username}"
+				password="${sourcecode.password}"
+				verbose="true"
+				quiet="false"  
+			/>
+
+			<delete if="${CleanUpSource}">
+					<fileset basedir="${sql.dir}\Core_Scripts">
+							<exclude name="BBS_${ReleaseName}_DataCorrections.sql"/>
+							<exclude name="BBS_${ReleaseName}.sql"/>
+							<include name="BBS_*.sql"/>
+							<include name="*.xls"/>
+							<include name="Update_*.sql"/>
+							<include name="SwitchToIdentities.sql"/>
+							<include name="PopulatePRServiceArchive.sql"/>
+					</fileset>
+			</delete>
+
+			<delete if="${CleanUpSource}">
+					<fileset basedir="${sql.dir}">
+							<include name="*.dbp"/>
+							<include name="*.sln"/>
+							<include name="**.scc"/>
+					</fileset>
+			</delete>
+        </if>
+
+		<!-- Set the sql.dir to install the CRM components-->
+		<property name="sql.dir" value="${build.dir}\PIKS Database\Core_Scripts" />
+		<!-- do not remove these for non-production builds -->
+		<delete if="${ProductionBuild}">
+			<fileset>
+				<include name="${sql.dir}\Core_Scripts\Remove*.sql"/>
+				<include name="${sql.dir}\Core_Scripts\BBS2TransactionTriggerGenerator.xls"/>
+			</fileset>
+		</delete>
+
+
+		<!-- Optionally restore the DB to the baseline -->
+		<if test="${RestoreDBToBaseline}" >
+
+			<echo message="Build Restore CRM Production Database..."/>
+			<tstamp />
+
+			<if test="${not file::exists(DBBaseLineDataFileUNC)}">
+				<fail message="Database Restore File Not Found: ${DBBaseLineDataFileUNC}" verbose="true" />
+			</if>
+
+			<property name="sql.sourcefile" value="${build.dir}\BuildScripts\RestoreCRMDatabase_Scripts.sql" />
+			<property name="sql.logfile" value="${build.logdir}\RestoreCRMDatabase_Scripts.txt" />
+
+			<echo message="Getting 'RestoreCRMDatabase_Scripts.sql' From VSS..."/>
+			<svn-checkout
+				destination="${build.dir}/BuildScripts"
+				uri="${sourcecode.url}/PRCo/Build"
+				username="${sourcecode.username}"
+				password="${sourcecode.password}"
+				verbose="true"
+				quiet="false"  
+			/>			
+		
+			<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=Master;Uid=BBSBuild;Password=BBSBuild1901"
+					transaction="true"
+					delimiter="GO"
+					delimstyle="Line"
+					batch="false"
+					source="${sql.sourcefile}"
+					output="${sql.logfile}" 
+			/>
+
+
+			<sql  connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=Master;Uid=BBSBuild;Password=BBSBuild1901"
+					  transaction="false"
+					  delimiter="GO"
+					  delimstyle="Line"
+					  output="${build.logdir}\KillProcesses.log">
+					EXEC usp_KillDBProcesses CRM;
+					EXEC usp_KillDBProcesses MAS_PRC;
+					EXEC usp_KillDBProcesses MAS_SYSTEM;
+			</sql>
+
+			<echo message="Restore CRM DB to the baseline..."/>
+			<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=Master;Uid=BBSBuild;Password=BBSBuild1901"
+					 transaction="false"
+					 delimiter="GO"
+					 delimstyle="Line"
+					 output="${build.logdir}\ResetCRMDatabaseToBaseline.log">
+					exec usp_ResetCRMDatabaseToBaseline @SourceDataFile='${DBBaseLineDataFile}', @TargetDataFile='${DBDataFile}', @TargetDBName='${DBName}';
+			</sql>
+
+<!--
+			<echo message="Restore MAS_PRC DB to the baseline..."/>
+			<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=Master;Uid=BBSBuild;Password=BBSBuild1901"
+					 transaction="false"
+					 delimiter="GO"
+					 delimstyle="Line"
+					 output="${build.logdir}\ResetCRMDatabaseToBaseline.log">
+
+					exec usp_ResetCRMDatabaseToBaseline @SourceDataFile='${MAS_PRC_BaseLineDataFile}', @TargetDataFile='${MAS_PRC_DataFile}', @TargetDBName='${MAS_PRC_Name}';
+
+			</sql>
+
+
+			<echo message="Restore MAS_SYSTEM DB to the baseline..."/>
+			<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=Master;Uid=BBSBuild;Password=BBSBuild1901"
+					 transaction="false"
+					 delimiter="GO"
+					 delimstyle="Line"
+					 output="${build.logdir}\ResetCRMDatabaseToBaseline.log">
+					exec usp_ResetCRMDatabaseToBaseline @SourceDataFile='${MAS_SYSTEM_BaseLineDataFile}', @TargetDataFile='${MAS_SYSTEM_DataFile}', @TargetDBName='${MAS_SYSTEM_Name}';
+			</sql>
+-->
+
+			<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"
+					 transaction="false"
+					 delimiter="GO"
+					 delimstyle="Line"
+					 source="${sql.dir}\CRMRestore_PostExecute.sql" 
+					 output="${build.logdir}\ResetCRMDatabaseToBaseline.log"/>
+
+
+			<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"
+					 transaction="false"
+					 delimiter="GO"
+					 delimstyle="Line"
+					 output="${build.logdir}\ResetCRMDatabaseToBaseline.log">
+							EXEC sp_changedbowner 'sa'
+							GO
+			</sql>
+
+
+			<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"
+					 transaction="false"
+					 delimiter="GO"
+					 delimstyle="Line"
+					 output="${build.logdir}\ResetCRMDatabaseToBaseline.log">
+											DELETE FROM PRFaxQueue;
+											--UPDATE PRWebUser SET prwu_Disabled = 'Y' WHERE prwu_HQID NOT IN (100001, 100002, 204482) OR prwu_HQID IS NULL;
+											EXEC sp_UpdateStats;
+			</sql>
+
+
+			<ifnot test="${BuildCRMDatabase}">
+					<echo message="Defining CRM SQL Objects..."/>
+					<property name="sql.logfile"    value="${build.logdir}\CRMQueries.txt" />
+					<property name="sql.dir"        value="${build.dir}\PIKS Database\Core_Scripts" />
+					<property name="sql.sourcefile" value="${sql.dir}\DropDownValues.sql" />
+					<call target="ExecuteSQLFile"/>
+
+					<property name="sql.sourcefile" value="${sql.dir}\Translations_ES.sql" />
+					<call target="ExecuteSQLFile"/>
+
+			</ifnot>
+		</if>
+
+		<if test="${BuildCRMDatabase}">
+			<echo message="Build CRM Database..."/>
+			<tstamp />
+
+			<!-- Now define our SQL objects -->
+			<echo message="Defining CRM SQL Objects..."/>
+			<property name="sql.logfile" value="${build.logdir}\CRMQueries.txt" />
+
+			<!-- Switch sql.dir to the utility_scripts directory -->
+			<property name="sql.dir" value="${build.dir}\PIKS Database\Utility_Scripts" />
+
+			<property name="sql.sourcefile" value="${sql.dir}\InstallAccpacUninstallScripts.sql" />
+			<call target="ExecuteSQLFile"/>
+
+			<property name="sql.sourcefile" value="${sql.dir}\InstallAccpacCreationScripts.sql" />
+			<call target="ExecuteSQLFile"/>
+
+			<property name="sql.sourcefile" value="${sql.dir}\InstallDTSUtilityScripts.sql" />
+			<call target="ExecuteSQLFile"/>
+
+			<property name="sql.sourcefile" value="${sql.dir}\ESFileEquivalents.sql" />
+			<call target="ExecuteSQLFile"/>
+
+			<property name="sql.sourcefile" value="${sql.dir}\usp_RefreshAllViews.sql" />
+			<call target="ExecuteSQLFile"/>
+
+
+			<!-- Set the sql.dir back to the Core_Scripts directory-->
+			<property name="sql.dir" value="${build.dir}\PIKS Database\Core_Scripts" />
+
+
+			<property name="sql.sourcefile" value="${sql.dir}\Backup_Restore_Functions.sql" />
+			<call target="ExecuteSQLFile"/>
+				<!-- structural changes must preceeed any files that could reference new fields -->
+				<!-- 
+						Now we can execute the current release script because they contain
+						structure changes.
+				-->
+
+				<property name="sql.sourcefile" value="${sql.dir}\BBS_${ReleaseName}.sql" />
+				<if test="${file::exists(sql.sourcefile)}">
+					<call target="ExecuteSQLFile"/>
+				</if>
+
+
+				<!-- This file deletes all existing dropdown values for PRCo, so it must
+					 run before other release scripts in case they define some custom
+					 caption values 
+				-->
+				<property name="sql.sourcefile" value="${sql.dir}\DropDownValues.sql" />
+				<call target="ExecuteSQLFile"/>
+
+				<property name="sql.sourcefile" value="${sql.dir}\Translations_ES.sql" />
+				<call target="ExecuteSQLFile"/>
+
+				<property name="sql.sourcefile" value="${sql.dir}\User Defined Functions.sql" />
+				<call target="ExecuteSQLFile"/>
+
+				<property name="sql.sourcefile" value="${sql.dir}\Listing Functions.sql" />
+				<call target="ExecuteSQLFile"/>
+
+				<property name="sql.sourcefile" value="${sql.dir}\Views.sql" />
+				<call target="ExecuteSQLFile"/>
+
+				<property name="sql.sourcefile" value="${sql.dir}\Stored Procedures.sql" />
+				<call target="ExecuteSQLFile"/>
+
+				<property name="sql.sourcefile" value="${sql.dir}\AdvancedSearch.sql" />
+				<call target="ExecuteSQLFile"/>
+
+				<property name="sql.sourcefile" value="${sql.dir}\TransactionTriggers_Autogenerated.sql" />
+				<call target="ExecuteSQLFile"/>
+
+				<property name="sql.sourcefile" value="${sql.dir}\TransactionTriggers_Custom.sql" />
+				<call target="ExecuteSQLFile"/>
+
+				<property name="sql.sourcefile" value="${sql.dir}\Triggers.sql" />
+				<call target="ExecuteSQLFile"/>
+
+				<property name="sql.sourcefile" value="${sql.dir}\Indexes.sql" />
+				<call target="ExecuteSQLFile"/>
+
+				<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${sql.dbname};Uid=${DBUserID};Password=${DBPassword}"
+						 transaction="false"
+						 delimiter="GO"
+						 delimstyle="Line"
+						 source="${sql.dir}\FullTextIndexes.sql" 
+						 output="${build.logdir}\FullTextIndexes.log"/>
+
+
+				<echo message="Executing SQL file ${sql.dir}\PIKS Core Data Dictionary.sql ..."/>
+				<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${sql.dbname};Uid=${DBUserID};Password=${DBPassword}"
+						transaction="true"
+						delimiter="GO"
+						delimstyle="Line"
+						 batch="false"
+						failonerror="false"
+							   source="${sql.dir}\PIKS Core Data Dictionary.sql"
+						output="${sql.dir}\PIKS Core Data Dictionary.txt" />
+
+				<property name="sql.sourcefile" value="${sql.dir}\BBS_${ReleaseName}_DataCorrections.sql" />
+				<if test="${file::exists(sql.sourcefile)}">
+				<call target="ExecuteSQLFile"/>
+			</if>
+
+                      
+			<sql
+					 connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"
+					 transaction="false"
+					 delimiter="GO"
+					 delimstyle="Line"
+					 output="${sql.logfile}">
+				  UPDATE custom_captions SET capt_us='${buildnumber.version}' WHERE capt_family = 'CRMBuildNumber';
+			</sql>
+
+
+
+			<echo message="Executing SQL file ${build.dir}\PIKS Database\MAS\MAS Implementation.sql..."/>
+			<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=MAS_PRC;Uid=${DBUserID};Password=${DBPassword}"
+					transaction="true"
+					delimiter="GO"
+					delimstyle="Line"
+					batch="false"
+					failonerror="false"
+					source="${build.dir}\PIKS Database\MAS\MAS Implementation.sql"
+					output="${build.dir}\PIKS Database\MAS\MAS Implementation.txt" />
+
+<!--
+These have moved in Git, and I'm not sure we really want to redefine them
+every time due to job scheduling and job history.  Let's leave this to be
+a manual step for now.
+
+			<echo message="Defining CRM SQL Agent Objects..."/>
+			<property name="sql.dir" value="${build.dir}\PIKS Database\Core_Scripts\Agent_Jobs" />
+			<property name="sql.logfile" value="${build.logdir}\Agent_Jobs.txt" />
+			<foreach item="File" property="filename">
+					<in>
+							<items>
+									<include name="${sql.dir}\*.sql" />
+							</items>
+					</in>
+					<do>
+							<echo message="Executing SQL file ${filename} ..."/>
+							<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"
+							 transaction="true"
+							 delimiter="GO"
+							 delimstyle="Line"
+							 batch="false"
+							 source="${filename}"
+							 output="${sql.logfile}" />
+					</do>
+			</foreach>
+-->
+
+
+		</if> <!-- BuildCRMDatabase -->
+
+
+
+		<!-- Now handle the Business Report Queries -->
+		<echo message="Defining Business Report Objects..."/>
+		<tstamp />
+
+		<!-- Set the sql.dir to install the CRM components-->
+		<property name="sql.dir" value="${build.dir}\PIKS Database\BRDatabase" />
+		<property name="sql.logfile" value="${build.logdir}\BRQueries.txt" />
+
+		<delete if="${CleanUpSource}">
+			<fileset>
+				<include name="${sql.dir}\*.scc"/>
+				<include name="${sql.dir}\*.bat"/>
+			</fileset>
+		</delete>
+
+		<echo message="Defining Business Report Database Objects..."/>
+		<call target="ExecuteSQLFolder" />
+
+		<if test="${not BuildBBOS}" >
+			<property name="sql.dir" value="${build.dir}\PIKS Database\Core_Scripts" />
+
+			<echo message="Executing SQL file ${sql.dir}\Security Restore Logins.sql ..."/>
+			<sql 
+				 connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"
+				 transaction="false"
+				 delimiter="GO"
+				 delimstyle="Line"
+				 batch="false"
+				 source="${sql.dir}\Security Restore Logins.sql" 
+				 output="${build.logdir}\Security.txt">
+			</sql>
+
+			<echo message="Executing SQL file ${sql.dir}\Security.sql ..."/>
+			<sql 
+				 connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"
+				 transaction="false"
+				 delimiter="GO"
+				 delimstyle="Line"
+				 batch="false"
+				 source="${sql.dir}\Security.sql" 
+				 output="${sql.logfile}">
+			</sql>
+		</if>
+
+	</target>
+	<!-- End BuildDatabase -->
+
+
+	<!-- 
+		Builds SqlCLR assemblies
+	-->
+	<target name="BuildSqlCLR" if="${BuildSQLCLR}" depends="PreBuild"  description="Builds the ASP.NET components of the SqlCLR implementation">
+
+		<echo message="Building the Sql CLR Assemblies..."/>
+		<tstamp />
+
+		<property name="sql.dir" value="${build.dir}\PIKS Database\Core_Scripts" />
+		<echo message="Executing SQL file ${sql.dir}\SecurityCLR.sql ..."/>
+		<sql 
+			 connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"
+			 transaction="false"
+			 delimiter="GO"
+			 delimstyle="Line"
+			 batch="false"
+			 source="${sql.dir}\SecurityCLR.sql" 
+			 output="${build.logdir}\SecurityCLR.txt">
+		</sql>
+
+
+		<svn-checkout
+			destination="${build.dir}\PIKS Database\SqlCLR"
+			uri="${sourcecode.url}/PRCo/PIKS Database/SQLCLR"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>
+		
+		<property name="build.outdir" value="${build.SQLCLR}" />
+		<mkdir dir="${build.outdir}" />
+
+		<echo message="Building PACAFileAccessAssembly"/>
+		<!-- Update the Version Info for our output -->
+		<property name="build.srcdir" value="${build.dir}\PIKS Database\SqlCLR\PACAFileAccessAssembly" />
+		<property name="assemblyinfo.location" value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, PACAFileAccessAssembly -->
+		<csc target="library" debug="false" output="${build.outdir}\PACAFileAccessAssembly.dll"  doc="${build.outdir}\PACAFileAccessAssembly.xml" >
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+			</sources>
+		</csc>
+
+
+		<!-- register the assembly with SQL server and install the functions -->
+		<!-- The accpac user should now have the ability to do this. 
+				 If not, check the Security.sql file to make sure all relevant scripts 
+				 have been run.
+		-->
+		<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"                         
+			 transaction="false"
+			 delimiter="GO"
+			 delimstyle="Line"
+			 batch="false"
+			 source="${build.srcdir}\Test Scripts\Register.sql" 
+			 output="${build.logdir}\PACAFileAccessAssembly.txt" >
+		</sql>
+
+		<echo message="Building PIKSUtils"/>
+		<!-- Update the Version Info for our output -->
+		<property name="build.srcdir" value="${build.dir}\PIKS Database\SqlCLR\PIKSFunctions" />
+		<property name="assemblyinfo.location" value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, PIKSUtils-->
+		<csc target="library" debug="false" output="${build.outdir}\PIKSUtils.dll"  doc="${build.outdir}\PIKSUtils.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+			</sources>
+		</csc>
+
+		<!-- register the assembly with SQL server and install the functions -->
+		<!-- The accpac user should now have the ability to do this. 
+				 If not, check the Security.sql file to make sure all relevant scripts 
+				 have been run.
+		-->
+		<sql connstring="Provider=SQLOLEDB;Data Source=${DBServer};Database=${DBName};Uid=BBSBuild;Password=BBSBuild1901"                         
+			 transaction="false"
+			 delimiter="GO"
+			 delimstyle="Line"
+			 batch="false"
+			 source="${build.srcdir}\Register.sql" 
+			 output="${build.logdir}\PIKSUtils.txt" >
+		</sql>
+
+		<delete if="${CleanUpSource}">
+			<fileset>
+				<include name="${build.srcdir}\*.cs"/>
+				<exclude name="${build.srcdir}\*.sql"/>
+				<include name="${build.srcdir}\Properties\*.*"/>
+			</fileset>
+		</delete>
+    </target>
+
+	<!-- 
+	   Builds the CRM application
+	-->
+	<target name="BuildCRM" if="${BuildCRM}" depends="PreBuild, BuildBBSUtils, BuildBBSReportInterface, BuildExternalNews, BuildPayIndicator"  description="Builds the customizations to the CRM application">
+		<tstamp />
+
+		<delete if="${GetLatestFromVSS}" dir="${build.CRM}\WWWRoot\bin"         failonerror="true" />
+		<delete if="${GetLatestFromVSS}" dir="${build.CRM}\WWWRoot\CustomPages" failonerror="true" />
+		<delete if="${GetLatestFromVSS}" dir="${build.CRM}\WWWRoot\Img\PRCo"    failonerror="true" />
+
+		<echo message="Getting CRM Project Source From VSS..."/>
+		<svn-checkout
+			destination="${build.CRM}"
+			uri="${sourcecode.url}/PRCo/CRM"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>	
+						
+		<property name="build.srcdir" value="${build.CRM}\WWWRoot" />
+		<property name="build.outdir" value="${build.CRM}\WWWRoot\bin" />
+		<mkdir dir="${build.outdir}" />
+
+
+		<echo message="Copy CRM reference assemblies..."/>
+		<copy file="${build.referenceassemblies}\TSIUtils.dll" tofile="${build.outdir}\TSIUtils.dll" />
+		<copy file="${build.referenceassemblies}\PerfectAddressDLLWrapper.dll" tofile="${build.outdir}\PerfectAddressDLLWrapper.dll" />
+		<copy file="${build.referenceassemblies}\LumenWorks.Framework.IO.dll" tofile="${build.outdir}\LumenWorks.Framework.IO.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\ICSharpCode.SharpZipLib.dll" tofile="${build.outdir}\ICSharpCode.SharpZipLib.dll" />
+
+		<copy file="${build.components}\ExternalNews\ExternalNews.dll" tofile="${build.outdir}\ExternalNews.dll" />
+		<copy file="${build.components}\PayIndicator\PayIndicator.dll" tofile="${build.outdir}\PayIndicator.dll" />
+		<copy file="${build.components}\BBSReportInterface\BBSReportInterface.dll" tofile="${build.outdir}\BBSReportInterface.dll" />
+		<copy file="${build.referenceassemblies}\Renci.SshNet.dll" tofile="${build.outdir}\Renci.SshNet.dll" />
+		<copy file="${build.referenceassemblies}\Newtonsoft.Json.dll"  tofile="${build.outdir}\Newtonsoft.Json.dll" />
+		
+		<!-- Setup the AJAX Control Toolkit  -->
+		<copy file="${build.referenceassemblies}\AjaxControlToolkit.dll"  tofile="${build.outdir}\AjaxControlToolkit.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\AjaxMin.dll"         tofile="${build.outdir}\AjaxMin.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\HtmlAgilityPack.dll" tofile="${build.outdir}\HtmlAgilityPack.dll" />
+				
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location"                 value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, baby! -->
+		<echo message="Compiling the CRM WWWRoot binary..."/>
+		<csc target="library" debug="false" output="${build.outdir}\WWWRoot.dll" doc="${build.outdir}\WWWRoot.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\Properties\*.cs" />
+				<include name="${build.srcdir}\CustomPages\*.cs" />
+				<include name="${build.srcdir}\CustomPages\*\*.cs" />
+			</sources>
+			<references>
+				<include name="${build.outdir}\TSIUtils.dll" />
+				<include name="${build.outdir}\BBSReportInterface.dll" />
+				<include name="${build.outdir}\ExternalNews.dll" />
+				<include name="${build.outdir}\PayIndicator.dll" />
+				<include name="${build.outdir}\PerfectAddressDLLWrapper.dll" />
+				<include name="${build.outdir}\Newtonsoft.Json.dll" />
+				<include name="${build.outdir}\AjaxControlToolkit.dll" />
+				
+				<include name="${build.outdir}\ICSharpCode.SharpZipLib.dll" />
+				<include name="${build.outdir}\LumenWorks.Framework.IO.dll" />
+				<include name="${build.outdir}\Renci.SshNet.dll" />
+			</references>
+		</csc>
+
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\CustomPages\*.cs" />
+				<include name="${build.srcdir}\CustomPages\*\*.cs" />
+
+				<include name="${build.srcdir}\*.scc" />
+				<include name="${build.srcdir}\CustomPages\*.scc" />
+				<include name="${build.srcdir}\CustomPages\*\*.scc" />
+
+				<include name="${build.srcdir}\*.csproj" />
+				<include name="${build.srcdir}\CustomPages\*.csproj" />
+				<include name="${build.srcdir}\CustomPages\*\*.csproj" />
+
+				<include name="${build.srcdir}\*.resx" />
+				<include name="${build.srcdir}\CustomPages\*.resx" />
+				<include name="${build.srcdir}\CustomPages\*\*.resx" />
+
+				<include name="${build.srcdir}\*.sln" />
+				<include name="${build.srcdir}\Properties"/>
+			</fileset>
+		</delete>
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.CRM}"> 
+				<include name="*.sln"/>
+				<exclude name="*.scc"/>
+			</fileset>
+		</delete>
+		<delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+	</target>
+
+
+	<!--
+		Builds TravantCRM
+    -->
+    <target name="BuildTravantCRM"  description="Builds the CRM Customization">
+
+        <property name="build.srcdir" value="${build.CRM}\TravantCRM" />
+        <property name="build.bindir" value="${build.CRM}\TravantCRM\Bin" />
+
+		<svn-checkout
+			destination="${build.srcdir}"
+			uri="${sourcecode.url}/PRCo/CRM/TravantCRM"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>	
+    
+        <!-- Update the Version Info for our output -->
+        <property name="assemblyinfo.location" 		value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+        <call target="SetAssemblyVersion"/>
+
+        <copy file="${build.referenceassemblies}\TSIUtils.dll"     	 tofile="${build.bindir}\TSIUtils.dll" />
+		<copy file="${build.referenceassemblies}\SageCRMNet.dll"     tofile="${build.bindir}\SageCRMNet.dll" />
+		<copy file="${build.referenceassemblies}\SageCrmWrapper.dll" tofile="${build.bindir}\SageCrmWrapper.dll" />
+
+        <!-- Compile, baby! -->
+        <csc target="library" optimize="true" debug="false" output="${build.bindir}\TravantCRM.dll" doc="${build.bindir}\TravantCRM.xml">
+            <nowarn>
+                <warning number="1591"/>
+            </nowarn>
+            <sources>
+                <include name="${build.srcdir}\*.cs" />
+                <include name="${build.srcdir}\Properties\*.cs" />
+            </sources>
+            <references>
+                <include name="${build.bindir}\TSIUtils.dll" />
+				<include name="${build.bindir}\SageCRMNet.dll" />
+				<include name="${build.bindir}\SageCrmWrapper.dll" />
+            </references>
+        </csc>
+
+    </target>
+
+
+
+	<!--
+		Builds BBOSBusinessObjects
+	-->
+	<target name="BuildBBOSBusinessObjects" if="${BuildBBOS}" depends="PreBuild, BuildBBSReportInterface" description="Builds the BBOS Business Object Framework">
+		<tstamp />
+		<svn-checkout
+			destination="${build.BBOSdir}\EBBBusinessObjects"
+			uri="${sourcecode.url}/EBB/EBBBusinessObjects"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>	
+		
+
+		<property name="build.srcdir" value="${build.BBOSdir}\EBBBusinessObjects" />
+		<property name="build.outdir" value="${build.BBOSdir}\EBBBusinessObjects\Bin" />
+		<mkdir dir="${build.outdir}" />
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location" value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<copy overwrite="true" file="${build.BBOSReferenceAssemblies}\TSIUtils.dll"          tofile="${build.outdir}\TSIUtils.dll" />
+		<copy overwrite="true" file="${build.BBOSReferenceAssemblies}\TSIUtils.xml"          tofile="${build.outdir}\TSIUtils.xml" />
+		<copy file="${build.components}\BBSReportInterface\BBSReportInterface.dll" tofile="${build.outdir}\BBSReportInterface.dll" />
+
+		<!-- Compile, baby! -->
+		<csc target="library" optimize="true" debug="true"  output="${build.outdir}\EBBBusinessObjects.dll" doc="${build.outdir}\EBBBusinessObjects.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.cs" />
+			</sources>
+			<references>
+				<include name="${build.outdir}\TSIUtils.dll" />
+				<include name="${build.outdir}\BBSReportInterface.dll" />
+			</references>
+		</csc>
+
+		<delete if="${CleanUpSource}">
+			<fileset>
+				<include name="${build.srcdir}\*.*"/>
+				<include name="${build.srcdir}\Properties\*.*"/>
+			</fileset>
+		</delete>
+		<delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+	</target>
+
+	<!-- 
+	   Builds the BBOS web application
+	-->
+	<target name="BuildBBOSWebAppOLD" if="${BuildBBOS}"
+					depends="PreBuild, BuildBBOSBusinessObjects, BuildBBSReportInterface, BuildExternalNews, BuildBBSMonitor, BuildWebSurvey"
+					description="Builds the BBOS web application">
+		<tstamp />
+		<if test="${GetLatestFromVSS}">
+
+
+			<echo message="Getting BBOS Project Source From VSS..."/>
+			<svn-checkout
+				destination="${build.BBOSdir}\BBOS"
+				uri="${sourcecode.url}/EBB/EBB"
+				username="${sourcecode.username}"
+				password="${sourcecode.password}"
+				verbose="true"
+				quiet="false"  
+			/>							
+		</if>
+
+		<property name="build.srcdir" value="${build.BBOSdir}\BBOS" />
+		<property name="build.outdir" value="${build.BBOSdir}\BBOS\bin" />
+		<mkdir dir="${build.outdir}" />
+
+		<echo message="Copy EBB reference assemblies..."/>
+		<copy file="${build.BBOSReferenceAssemblies}\TSIUtils.dll" tofile="${build.outdir}\TSIUtils.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\Payflow_dotNET.dll" tofile="${build.outdir}\Payflow_dotNET.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\ICSharpCode.SharpZipLib.dll" tofile="${build.outdir}\ICSharpCode.SharpZipLib.dll" />
+
+
+		<copy file="${build.components}\BBSReportInterface\BBSReportInterface.dll" tofile="${build.outdir}\BBSReportInterface.dll" />
+		<copy file="${build.components}\ExternalNews\ExternalNews.dll" tofile="${build.outdir}\ExternalNews.dll" />
+		<copy file="${build.components}\WebSurvey\sstchur.web.survey.dll" tofile="${build.outdir}\sstchur.web.survey.dll" />
+		<copy file="${build.BBOSdir}\EBBBusinessObjects\Bin\EBBBusinessObjects.dll" tofile="${build.outdir}\EBBBusinessObjects.dll" />
+
+	 
+		<!-- Setup the AJAX Control Toolkit  -->
+		<copy file="${build.referenceassemblies}\AjaxControlToolkit.dll"  tofile="${build.outdir}\AjaxControlToolkit.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\AjaxMin.dll"         tofile="${build.outdir}\AjaxMin.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\HtmlAgilityPack.dll" tofile="${build.outdir}\HtmlAgilityPack.dll" />
+               
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location"                 value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<property name="ConfigFile" value="${build.srcdir}\web.config" />
+		<copy file="${build.testconfigs}\BBOS.Web.config" tofile="${ConfigFile}"  overwrite="true" verbose="true"/>
+
+		<!-- Compile, baby! -->
+		<echo message="Compiling BBOS the binary..."/>
+		<csc target="library" debug="false" output="${build.outdir}\EBB.dll" doc="${build.outdir}\EBB.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.cs" />
+				<include name="${build.srcdir}\App_GlobalResources\*.cs" />
+				<include name="${build.srcdir}\App_LocalResources\*.cs" />
+			</sources>
+			<resources dynamicprefix="false" prefix="PRCo.EBB.UI.Web">
+				<include name="${build.srcdir}\App_GlobalResources\*.resx" />
+				<include name="${build.srcdir}\App_LocalResources\*.resx" />
+			</resources>
+			<references>
+				<include name="${build.outdir}\TSIUtils.dll" />
+				<include name="${build.outdir}\BBSReportInterface.dll" />
+				<include name="${build.outdir}\ExternalNews.dll" />
+				<include name="${build.outdir}\EBBBusinessObjects.dll" />
+				<include name="${build.outdir}\AjaxControlToolkit.dll" />
+				<include name="${build.outdir}\Payflow_dotNET.dll" />
+				<include name="${build.outdir}\ICSharpCode.SharpZipLib.dll" />
+				<include name="${build.outdir}\sstchur.web.survey.dll" />
+				<include name="System.Web.DataVisualization.dll"/>
+			</references>
+		</csc>
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.*" />
+				<include name="${build.srcdir}\App_LocalResources\*.cs" />
+				<include name="${build.srcdir}\App_GlobalResources\*.cs" />
+
+				<include name="${build.srcdir}\*.scc" />
+				<include name="${build.srcdir}\App_LocalResources\*.scc" />
+				<include name="${build.srcdir}\App_GlobalResources\*.scc" />
+
+				<include name="${build.srcdir}\*.csproj" />
+			</fileset>
+		</delete>
+		<delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+	</target>
+
+
+	<!-- 
+	   Builds the New BBOS web application
+	-->
+	<target name="BuildBBOSWebApp" if="${BuildBBOS}"
+					depends="PreBuild, BuildBBOSBusinessObjects, BuildBBSReportInterface, BuildExternalNews, BuildBBSMonitor, BuildWebSurvey"
+					description="Builds the BBOS web application">
+		<tstamp />
+		<if test="${GetLatestFromVSS}">
+			<echo message="Getting BBOS Project Source From VSS..."/>
+			<svn-checkout
+				destination="${build.BBOSdir}\BBOS"
+				uri="${sourcecode.url}/EBB/BBOS"
+				username="${sourcecode.username}"
+				password="${sourcecode.password}"
+				verbose="true"
+				quiet="false"  
+			/>							
+		</if>
+
+		<property name="build.srcdir" value="${build.BBOSdir}\BBOS" />
+		<property name="build.outdir" value="${build.BBOSdir}\BBOS\bin" />
+		<mkdir dir="${build.outdir}" />
+
+		<echo message="Copy BBOS reference assemblies..."/>
+		<copy file="${build.BBOSReferenceAssemblies}\TSIUtils.dll" tofile="${build.outdir}\TSIUtils.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\Payflow_dotNET.dll" tofile="${build.outdir}\Payflow_dotNET.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\ICSharpCode.SharpZipLib.dll" tofile="${build.outdir}\ICSharpCode.SharpZipLib.dll" />
+
+		<copy file="${build.components}\BBSReportInterface\BBSReportInterface.dll" tofile="${build.outdir}\BBSReportInterface.dll" />
+		<copy file="${build.components}\ExternalNews\ExternalNews.dll" tofile="${build.outdir}\ExternalNews.dll" />
+		<copy file="${build.components}\WebSurvey\sstchur.web.survey.dll" tofile="${build.outdir}\sstchur.web.survey.dll" />
+		<copy file="${build.BBOSdir}\EBBBusinessObjects\Bin\EBBBusinessObjects.dll" tofile="${build.outdir}\EBBBusinessObjects.dll" />
+		<copy file="${build.BBOSdir}\EBBBusinessObjects\Bin\EBBBusinessObjects.pdb" tofile="${build.outdir}\EBBBusinessObjects.pdb" />
+
+	 
+		<!-- Setup the AJAX Control Toolkit  -->
+		<copy file="${build.referenceassemblies}\AjaxControlToolkit.dll"  tofile="${build.outdir}\AjaxControlToolkit.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\AjaxMin.dll"         tofile="${build.outdir}\AjaxMin.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\HtmlAgilityPack.dll" tofile="${build.outdir}\HtmlAgilityPack.dll" />
+
+		<!-- Updated MS Compilers -->
+		<copy file="${build.BBOSReferenceAssemblies}\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll" tofile="${build.outdir}\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll" />
+		<copy todir="${build.outdir}\roslyn">
+		  <fileset basedir="${build.BBOSReferenceAssemblies}\roslyn">
+			<include name="**" />
+		  </fileset>
+		</copy>
+		
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location"                 value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<property name="ConfigFile" value="${build.srcdir}\web.config" />
+		<copy file="${build.testconfigs}\BBOS.Web.config" tofile="${ConfigFile}"  overwrite="true" verbose="true"/>
+
+		<!-- Compile, baby! -->
+		<echo message="Compiling BBOS the binary..."/>
+		<csc target="library" optimize="true" debug="true" output="${build.outdir}\BBOS.dll" doc="${build.outdir}\BBOS.xml">
+			<nowarn>
+					<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\UserControls\*.cs" />
+				<include name="${build.srcdir}\Widgets\*.cs" />
+				<include name="${build.srcdir}\Properties\*.cs" />
+				<include name="${build.srcdir}\App_GlobalResources\*.cs" />
+				<include name="${build.srcdir}\App_LocalResources\*.cs" />
+			</sources>
+			<resources dynamicprefix="false" prefix="PRCo.EBB.UI.Web">
+				<include name="${build.srcdir}\App_GlobalResources\*.resx" />
+				<include name="${build.srcdir}\App_LocalResources\*.resx" />
+			</resources>
+			<references>
+				<include name="${build.outdir}\TSIUtils.dll" />
+				<include name="${build.outdir}\BBSReportInterface.dll" />
+				<include name="${build.outdir}\ExternalNews.dll" />
+				<include name="${build.outdir}\EBBBusinessObjects.dll" />
+				<include name="${build.outdir}\AjaxControlToolkit.dll" />
+				<include name="${build.outdir}\HtmlAgilityPack.dll" />
+				<include name="${build.outdir}\ExternalNews.dll" />
+				<include name="${build.outdir}\Payflow_dotNET.dll" />
+				<include name="${build.outdir}\ICSharpCode.SharpZipLib.dll" />
+				<include name="${build.outdir}\sstchur.web.survey.dll" />
+				<include name="${build.outdir}\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll" />
+				<include name="System.Web.DataVisualization.dll"/>
+			</references>
+		</csc>
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.*" />
+				<include name="${build.srcdir}\App_LocalResources\*.cs" />
+				<include name="${build.srcdir}\App_GlobalResources\*.cs" />
+
+				<include name="${build.srcdir}\*.scc" />
+				<include name="${build.srcdir}\App_LocalResources\*.scc" />
+				<include name="${build.srcdir}\App_GlobalResources\*.scc" />
+
+				<include name="${build.srcdir}\*.csproj" />
+			</fileset>
+		</delete>
+		<delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+	</target>	
+
+
+	<!-- 
+	   Builds the BBwebServices service
+	-->
+	<target name="BuildBBOSWebService" if="${BuildBBOS}" depends="PreBuild"  description="Builds the BBOS web service">
+		<tstamp />
+		<echo message="Getting BBOSWebService Source From VSS..."/>
+		<svn-checkout
+			destination="${build.BBOSdir}\BBWebServices"
+			uri="${sourcecode.url}/EBB/BBOSWebService"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>					
+				
+		<property name="build.srcdir" value="${build.BBOSdir}\BBWebServices" />
+		<property name="build.outdir" value="${build.BBOSdir}\BBWebServices\bin" />
+		<mkdir dir="${build.outdir}" />
+
+		<echo message="Copy BBOSWebServices reference assemblies..."/>
+		<copy file="${build.BBOSReferenceAssemblies}\TSIUtils.dll" tofile="${build.outdir}\TSIUtils.dll" />
+		<copy file="${build.BBOSdir}\EBBBusinessObjects\Bin\EBBBusinessObjects.dll" tofile="${build.outdir}\EBBBusinessObjects.dll" />
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location"                 value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, baby! -->
+		<echo message="Compiling the BBOSWebService.dll..."/>
+		<csc target="library" debug="false" output="${build.outdir}\BBOSWebService.dll" doc="${build.outdir}\BBOSWebService.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.cs" />
+			</sources>
+			<references>
+				<include name="${build.outdir}\TSIUtils.dll" />
+				<include name="${build.outdir}\EBBBusinessObjects.dll" />
+			</references>
+		</csc>
+
+		<property name="ConfigFile" value="${build.srcdir}\web.config" />
+		<copy file="${build.testconfigs}\BBOSServices.Web.config" tofile="${ConfigFile}"  overwrite="true" verbose="true"/>
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.cs" />
+
+				<include name="${build.srcdir}\*.scc" />
+				<include name="${build.srcdir}\Properties\*.scc" />
+
+				<include name="${build.srcdir}\*.csproj" />
+			</fileset>
+		</delete>
+		<delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+
+		<!-- Now create a test instance of the web services -->
+		<property name="build.outdir" value="${build.BBOSdir}\BBWebServicesTest" />
+		<mkdir dir="${build.outdir}" />
+
+		<copy todir="${build.outdir}">
+			<fileset basedir="${build.srcdir}">
+       			<include name="*.*" />
+			</fileset>
+		</copy>
+
+		<property name="ConfigFile" value="${build.outdir}\web.config" />
+		<copy file="${build.testconfigs}\BBOSServicesTest.Web.config" tofile="${ConfigFile}"  overwrite="true" verbose="true"/>
+    </target>
+
+
+	<!-- 
+	   Builds the BBOSweb Mobile Web Application
+	-->
+	<target name="BuildBBOSMobile" if="${BuildBBOS}" depends="PreBuild"  description="Builds the BBOS Mobile Web Application">
+			<tstamp />
+			<echo message="Getting BBOSMobile Source From VSS..."/>
+			<vssget if="${GetLatestFromVSS}"
+					username="${VSSUserID}"
+					password="${VSSPassword}"
+					localpath="${build.BBOSdir}\BBOSMobile"
+					recursive="true"
+					replace="true"
+					writable="true"
+					dbpath="${VSSDBPath}"
+					path="${VSSProjectBBOS}/BBOSMobile"
+			/>
+
+			<property name="build.srcdir" value="${build.BBOSdir}\BBOSMobile" />
+			<property name="build.outdir" value="${build.BBOSdir}\BBOSMobile\bin" />
+			<mkdir dir="${build.outdir}" />
+
+			<echo message="Copy BBOSServices reference assemblies..."/>
+			<copy file="${build.BBOSReferenceAssemblies}\TSIUtils.dll" tofile="${build.outdir}\TSIUtils.dll" />
+			<copy file="${build.BBOSdir}\EBBBusinessObjects\Bin\EBBBusinessObjects.dll" tofile="${build.outdir}\EBBBusinessObjects.dll" />
+
+			<!-- Setup the AJAX Control Toolkit  -->
+			<copy file="${build.referenceassemblies}\AjaxControlToolkit.dll"  tofile="${build.outdir}\AjaxControlToolkit.dll" />
+			<copy file="${build.BBOSReferenceAssemblies}\AjaxMin.dll"         tofile="${build.outdir}\AjaxMin.dll" />
+			<copy file="${build.BBOSReferenceAssemblies}\HtmlAgilityPack.dll" tofile="${build.outdir}\HtmlAgilityPack.dll" />
+
+			<!-- Update the Version Info for our output -->
+			<property name="assemblyinfo.location"                 value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+			<call target="SetAssemblyVersion"/>
+
+			<!-- Compile, baby! -->
+			<echo message="Compiling the BBOSMobile.dll..."/>
+			<csc target="library" debug="false" output="${build.outdir}\BBOSMobile.dll" doc="${build.outdir}\BBOSMobile.xml">
+					<nowarn>
+							<warning number="1591"/>
+					</nowarn>
+					<sources>
+							<include name="${build.srcdir}\*.cs" />
+							<include name="${build.srcdir}\Properties\*.cs" />
+							<include name="${build.srcdir}\App_GlobalResources\*.cs" />
+					</sources>
+					<resources dynamicprefix="false" prefix="PRCo.EBB.UI.Web">
+							<include name="${build.srcdir}\App_GlobalResources\*.resx" />
+					</resources>
+
+					<references>
+							<include name="${build.outdir}\TSIUtils.dll" />
+							<include name="${build.outdir}\EBBBusinessObjects.dll" />
+							<include name="${build.outdir}\AjaxControlToolkit.dll" />
+					</references>
+			</csc>
+
+
+
+			<property name="ConfigFile" value="${build.srcdir}\web.config" />
+			<copy file="${build.testconfigs}\BBOSMobile.Web.config" tofile="${ConfigFile}"  overwrite="true" verbose="true"/> 
+
+			<delete if="${CleanUpSource}">
+					<fileset basedir="${build.srcdir}">
+							<include name="${build.srcdir}\*.cs" />
+							<include name="${build.srcdir}\Properties\*.cs" />
+							<include name="${build.srcdir}\App_GlobalResources\*.cs" />
+
+							<include name="${build.srcdir}\*.scc" />
+							<include name="${build.srcdir}\Properties\*.scc" />
+							<include name="${build.srcdir}\App_GlobalResources\*.scc" />
+
+							<include name="${build.srcdir}\*.csproj" />
+							<include name="${build.srcdir}\*.resx" />
+					</fileset>
+			</delete>
+			<delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+	</target>
+
+
+	<!-- 
+	   Builds the BBOSWidgets application
+	-->
+	<target name="BuildBBOSWidgets" if="${BuildBBOS}" depends="PreBuild"  description="Builds the BBOSWidgets application">
+		<tstamp />
+		<echo message="Getting BBOSWidgets Source From VSS..."/>
+		<svn-checkout
+			destination="${build.BBOSdir}\BBOSWidgets"
+			uri="${sourcecode.url}/EBB/BBOSWidgets"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>					
+		
+		<property name="build.srcdir" value="${build.BBOSdir}\BBOSWidgets" />
+		<property name="build.outdir" value="${build.BBOSdir}\BBOSWidgets\bin" />
+		<mkdir dir="${build.outdir}" />
+
+		<echo message="Copy BBOSWidgets reference assemblies..."/>
+		<copy file="${build.BBOSReferenceAssemblies}\TSIUtils.dll" tofile="${build.outdir}\TSIUtils.dll" />
+		<copy file="${build.BBOSdir}\EBBBusinessObjects\Bin\EBBBusinessObjects.dll" tofile="${build.outdir}\EBBBusinessObjects.dll" />
+
+	 
+		<!-- Setup the AJAX Control Toolkit  -->
+		<copy file="${build.referenceassemblies}\AjaxControlToolkit.dll"  tofile="${build.outdir}\AjaxControlToolkit.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\AjaxMin.dll"         tofile="${build.outdir}\AjaxMin.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\HtmlAgilityPack.dll" tofile="${build.outdir}\HtmlAgilityPack.dll" />
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location"                 value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, baby! -->
+		<echo message="Compiling the BBOSWidgets.dll..."/>
+		<csc target="library" debug="false" output="${build.outdir}\BBOSWidgets.dll" doc="${build.outdir}\BBOSWidgets.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.cs" />
+			</sources>
+			<references>
+				<include name="${build.outdir}\TSIUtils.dll" />
+				<include name="${build.outdir}\EBBBusinessObjects.dll" />
+				<include name="${build.outdir}\AjaxControlToolkit.dll" />
+			</references>
+		</csc>
+
+		<property name="ConfigFile" value="${build.srcdir}\web.config" />
+		<copy file="${build.testconfigs}\BBOSWidgets.Web.config" tofile="${ConfigFile}"  overwrite="true" verbose="true"/>
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.cs" />
+				<include name="${build.srcdir}\*.scc" />
+				<include name="${build.srcdir}\Properties\*.scc" />
+				<include name="${build.srcdir}\*.csproj" />
+			</fileset>
+		</delete>
+		<delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+	</target>
+
+
+	<!-- 
+	   Builds the BBOSPublicProfiles application
+	-->
+	<target name="BuildBBOSPublicProfiles" if="${BuildBBOS}" depends="PreBuild"  description="Builds the BBOSPublicProfiles application">
+		<tstamp />
+		<echo message="Getting BBOSPublicProfiles Source From VSS..."/>
+		<svn-checkout
+			destination="${build.BBOSdir}\ProducePublicProfiles"
+			uri="${sourcecode.url}/EBB/BBOSPublicProfiles"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>									
+
+
+		<property name="build.srcdir" value="${build.BBOSdir}\ProducePublicProfiles" />
+		<property name="build.outdir" value="${build.BBOSdir}\ProducePublicProfiles\bin" />
+		<mkdir dir="${build.outdir}" />
+
+		<echo message="Copy BBOSPublicProfiles reference assemblies..."/>
+		<copy file="${build.BBOSReferenceAssemblies}\TSIUtils.dll" tofile="${build.outdir}\TSIUtils.dll" />
+		<copy file="${build.BBOSdir}\EBBBusinessObjects\Bin\EBBBusinessObjects.dll" tofile="${build.outdir}\EBBBusinessObjects.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\Payflow_dotNET.dll" tofile="${build.outdir}\Payflow_dotNET.dll" />
+		<copy file="${build.components}\BBSReportInterface\BBSReportInterface.dll" tofile="${build.outdir}\BBSReportInterface.dll" />
+
+		<!-- Setup the AJAX Control Toolkit  -->
+		<copy file="${build.referenceassemblies}\AjaxControlToolkit.dll"  tofile="${build.outdir}\AjaxControlToolkit.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\AjaxMin.dll"         tofile="${build.outdir}\AjaxMin.dll" />
+		<copy file="${build.BBOSReferenceAssemblies}\HtmlAgilityPack.dll" tofile="${build.outdir}\HtmlAgilityPack.dll" />
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location"                 value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, baby! -->
+		<echo message="Compiling the BBOSPublicProfiles.dll..."/>
+		<csc target="library" debug="false" output="${build.outdir}\BBOSPublicProfiles.dll" doc="${build.outdir}\BBOSPublicProfiles.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.cs" />
+				<include name="${build.srcdir}\Controls\*.cs" />
+			</sources>
+			<references>
+				<include name="${build.outdir}\TSIUtils.dll" />
+				<include name="${build.outdir}\EBBBusinessObjects.dll" />
+				<include name="${build.outdir}\AjaxControlToolkit.dll" />
+				<include name="${build.outdir}\Payflow_dotNET.dll" />
+			</references>
+		</csc>
+
+		<property name="ConfigFile" value="${build.srcdir}\web.config" />
+		<copy file="${build.testconfigs}\BBOSPublicProfiles.Web.config" tofile="${ConfigFile}"  overwrite="true" verbose="true"/>
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.cs" />
+				<include name="${build.srcdir}\*.scc" />
+				<include name="${build.srcdir}\Properties\*.scc" />
+				<include name="${build.srcdir}\*.csproj" />
+			</fileset>
+		</delete>
+		<delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+	</target>
+
+
+	<target name="DeployToQA" description="">
+		<tstamp />
+
+		<if test="${DeployBBOS}" >
+			<copy todir="${BBOSDeployDir}Apps\BBOS\" overwrite="true">                                
+				<fileset basedir="${build.BBOSdir}\BBOS">
+						<include name="**" />
+				</fileset>
+			</copy> 
+
+			<copy todir="${BBOSDeployDir}Apps\BBOSMobile\" overwrite="true">                                
+				<fileset basedir="${build.BBOSdir}\BBOSMobile">
+						<include name="**" />
+				</fileset>
+			</copy> 
+
+			<copy todir="${BBOSDeployDir}Apps\BBOSWidgets\" overwrite="true">                                
+				<fileset basedir="${build.BBOSdir}\BBOSWidgets">
+						<include name="**" />
+				</fileset>
+			</copy> 
+
+			<copy todir="${BBOSDeployDir}Apps\BBWebServices\" overwrite="true">                                
+				<fileset basedir="${build.BBOSdir}\BBWebServices">
+						<include name="**" />
+				</fileset>
+			</copy> 
+
+			<copy todir="${BBOSDeployDir}Apps\BBWebServicesTest\" overwrite="true">                                
+				<fileset basedir="${build.BBOSdir}\BBWebServicesTest">
+						<include name="**" />
+				</fileset>
+			</copy>
+
+			<copy todir="${BBOSDeployDir}Apps\ProducePublicProfiles\" overwrite="true">                                
+				<fileset basedir="${build.BBOSdir}\ProducePublicProfiles">
+						<include name="**" />
+				</fileset>
+			</copy>
+
+
+			<copy todir="${BBOSDeployDir}Apps\LumberPublicProfiles\" overwrite="true">                                
+				<fileset basedir="${build.BBOSdir}\ProducePublicProfiles">
+						<include name="**" />
+				</fileset>
+			</copy>
+
+			<property name="ConfigFile" value="${BBOSDeployDir}Apps\LumberPublicProfiles\web.config" />
+			<copy file="${build.testconfigs}\LumberPublicProfile.config" tofile="${ConfigFile}"  overwrite="true" verbose="true"/>
+
+
+			<copy todir="${BBOSDeployDir}Apps\BBSUtils\" overwrite="true">                                
+				<fileset basedir="${build.components}\BBSUtils">
+						<include name="**" />
+				</fileset>
+			</copy>
+		</if>
+
+
+		<if test="${DeployCRM}" >
+			<copy todir="${CRMDeployDir}CRM\CustomDotNet\" overwrite="true">                                
+				<fileset basedir="${build.CRM}\TravantCRM\Bin">
+					 <include name="**" />
+				</fileset>
+			</copy> 
+
+
+			<copy todir="${CRMDeployDir}CRM\WWWRoot\" overwrite="true">                                
+				<fileset basedir="${build.CRM}\WWWRoot">
+						<include name="**" />
+						<exclude name="eware.dll" />
+				</fileset>
+			</copy> 
+
+			<copy todir="${CRMDeployDir}Apps\BBSReportInterface\" overwrite="true">                                
+				<fileset basedir="${build.components}\BBSReportInterface">
+						<include name="**" />
+				</fileset>
+			</copy>
+
+			<copy todir="${CRMDeployDir}Apps\BBSUtils\" overwrite="true">                                
+				<fileset basedir="${build.components}\BBSUtils">
+						<include name="**" />
+				</fileset>
+			</copy>
+
+
+			<copy todir="${CRMDeployDir}CRM\WWWRoot\Templates\" overwrite="true">                                
+				<fileset basedir="${CRMDeployDir}CRM\WWWRoot\Templates - Copy">
+						<include name="**" />
+				</fileset>
+			</copy>
+		</if>
+
+
+		<if test="${DeployBBSMonitor}" >
+        
+			<copy todir="${BBSMonitorDeployDir}BBSMonitor\" overwrite="true">                                
+				<fileset basedir="${build.components}\BBSMonitor">
+						<include name="**" />
+				</fileset>
+			</copy> 
+
+			<copy todir="${BBSMonitorDeployDir2}BBSMonitor\" overwrite="true" verbose="true">                                
+				<fileset basedir="${build.components}\BBSMonitor">
+						<include name="**" />
+				</fileset>
+			</copy> 
+  	        <copy file="${build.testconfigs}\BBSMonitor.CRM.exe.config" tofile="${BBSMonitorDeployDir2}BBSMonitor\BBSMonitor.exe.config"  overwrite="true" verbose="true"/>
+			
+			<copy todir="${BBSMonitorDeployDir3}BBSMonitor\" overwrite="true" verbose="true">                                
+				<fileset basedir="${build.components}\BBSMonitor">
+						<include name="**" />
+				</fileset>
+			</copy> 
+  	        <copy file="${build.testconfigs}\BBSMonitor.MAS.exe.config" tofile="${BBSMonitorDeployDir3}BBSMonitor\BBSMonitor.exe.config"  overwrite="true" verbose="true"/>			
+		</if>
+
+		<copy if="${BuildSQLCLR}" todir="${SQLCLRDir}" overwrite="true">                                
+			<fileset basedir="${build.SQLCLR}">
+				   <include name="**" />
+			</fileset>
+		</copy>
+		
+
+		<call target="DeployReports"/>
+    </target>                
+
+
+	<!--
+		Deploys the BBS reports to the report server
+	-->
+	<target name="DeployReports" if="${DeploySSRSReports}" description="Deploys the BBS reports to the MS SRS">
+		<tstamp />
+
+		<delete if="${GetLatestFromVSS}" dir="${build.dir}\Reporting" failonerror="true" />
+		
+
+		<property name="build.reports.basedir"         value="${build.dir}\Reporting"/>
+		<mkdir dir="${build.reports.basedir}" />
+
+		<svn-checkout
+			destination="${build.reports.basedir}"
+			uri="${sourcecode.url}/PRCo/Reporting"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>									
+				
+	   <delete if="${CleanUpSource}" verbose="true">
+			<fileset basedir="${build.reports.basedir}">
+				<include name="*.sln"/>
+				<include name="*.scc"/>
+				<include name="Accounting/*.rptproj"/>
+				<include name="Accounting/*.scc"/>
+				<include name="Accounting Performance/*.rptproj"/>
+				<include name="Accounting Performance/*.scc"/>
+				<include name="AccountsReceivable/*.rptproj"/>
+				<include name="AccountsReceivable/*.scc"/>
+				<include name="Advertising/*.rptproj"/>
+				<include name="Advertising/*.scc"/>
+				<include name="Advertising Publishing/*.rptproj"/>
+				<include name="Advertising Publishing/*.scc"/>
+				<include name="Advertising Sales/*.rptproj"/>
+				<include name="Advertising Sales/*.scc"/>
+				<include name="AUSReports/*.rptproj"/>
+				<include name="AUSReports/*.scc"/>
+				<include name="BBOSMemberReports/*.rptproj"/>
+				<include name="BBOSMemberReports/*.scc"/>
+				<include name="BBOSUsageReports/*.rptproj"/>
+				<include name="BBOSUsageReports/*.scc"/>
+				<include name="BBScoreReports/*.rptproj"/>
+				<include name="BBScoreReports/*.scc"/>
+				<include name="BBSReporting/*.rptproj"/>
+				<include name="BBSReporting/*.scc"/>
+				<include name="BusinessReport/*.rptproj"/>
+				<include name="BusinessReport/*.scc"/>
+				<include name="Content/*.rptproj"/>
+				<include name="Content/*.scc"/>
+				<include name="CRMArchive/*.rptproj"/>
+				<include name="CRMArchive/*.css"/>
+				<include name="Customer Service/*.rptproj"/>
+				<include name="Customer Service/*.scc"/>
+				<include name="JeopardyLetters/*.rptproj"/>
+				<include name="JeopardyLetters/*.scc"/>
+				<include name="Local SOurce/*.rptproj"/>
+				<include name="Local SOurce/*.scc"/>
+				<include name="Lumber Reports/*.rptproj"/>
+				<include name="Lumber Reports/*.scc"/>
+				<include name="Rating Metrics/*.rptproj"/>
+				<include name="Rating Metrics/*.scc"/>
+				<include name="Sales/*.rptproj"/>
+				<include name="Sales/*.scc"/>
+				<include name="Special Services/*.rptproj"/>
+				<include name="Special Services/*.scc"/>
+				<include name="TESForms/*.rptproj"/>
+				<include name="TESForms/*.scc"/>
+			</fileset>
+		</delete>
+
+		<echo message="Deploying Accounting"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\Accounting"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}Accounting" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 600 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+
+		<echo message="Deploying Accounting Performance"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\Accounting Performance"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}Accounting/Performance" />
+		<property name="Reports.server.ds"     value="MAS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 600 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+
+		<echo message="Deploying AccountsReceivable"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\AccountsReceivable"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}AccountsReceivable" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 600 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+		<echo message="Deploying Advertising"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\Advertising"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}Advertising" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 600 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+
+		<echo message="Deploying Advertising Publishing/*"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\Advertising Publishing"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}Advertising/Publishing" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 600 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+		
+		
+		<echo message="Deploying Advertising Sales"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\Advertising Sales"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}Advertising/Sales" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 600 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+		
+		<echo message="Deploying AUSReports"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\AUSReports"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}AUSReports" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 180 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+		<echo message="Deploying BBOSMemberReports"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\BBOSMemberReports" />
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}BBOSMemberReports" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 180 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"'/>
+
+		<echo message="Deploying BBOSUsageReports"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\BBOSUsageReports" />
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}BBOSUsageReports" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 180 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"'/>
+
+		<echo message="Deploying BBScoreReports"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\BBScoreReports"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}BBScoreReports" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 180 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+		<echo message="Deploying BBSReporting"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\BBSReporting"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}BBSReporting" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 180 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+		<echo message="Deploying BusinessReport"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\BusinessReport" />
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}BusinessReport" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 180 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"'/>
+
+		<echo message="Deploying Content"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\Content"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}Content" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 600 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+		<echo message="Deploying CRMArchive"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\CRMArchive"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}CRMArchive" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 180 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+		<echo message="Deploying Customer Service"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\Customer Service"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}Customer Service" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 180 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+		<echo message="Deploying Local Source"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\Local Source"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}Local Source" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 180 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+		<echo message="Deploying JeopardyLetters"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\JeopardyLetters"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}JeopardyLetters" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 180 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+		<echo message="Deploying Lumber Reports"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\Lumber Reports"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}Lumber Reports" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 180 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+		<echo message="Deploying Rating Metrics"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\Rating Metrics"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}Rating Metrics" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 180 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+		<echo message="Deploying Sales"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\Sales"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}Sales" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 600 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+		<echo message="Deploying Special Services"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\Special Services"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}Special Services" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 600 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+
+		<echo message="Deploying TESForms"/>
+		<property name="build.reports.dir"     value="${build.reports.basedir}\TESForms"/>
+		<property name="Reports.server.dir"    value="${Reports.rootfolder}TESForms" />
+		<property name="Reports.server.ds"     value="BBS" />
+		<exec failonerror="true" program="${Reports.rs.exe}" append="true" commandline='-e Mgmt2010 -i ${Reports.deployscript} -s ${Reports.server} -l 180 -t -v reportfolder="${Reports.server.dir}" -v dsname="${Reports.server.ds}" -v filePath="${build.reports.dir}"' />
+    </target>
+
+
+	<target name="CopyBuild" description="Copies the build files from the 'SourceDir' to the 'TargetDir'">
+	    <echo message="Copying build from '${SourceDir}' to '${TargetDir}'"/>
+		<copy todir="${TargetDir}">
+			<fileset basedir="${SourceDir}">
+				<include name="**" />
+			</fileset>
+		</copy>				
+	</target>
+</project>        

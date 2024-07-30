@@ -1,0 +1,117 @@
+<project name="BBSBuildInclude" default="" xmlns="http://nant.sf.net/release/0.85-rc4/nant.xsd" basedir=".">
+    <echo message="Loading local configuration file."/>
+    <echo message="Building ALL"/>
+
+
+
+	<!-- General Processing Flags -->
+	<property name="ReleaseName"         value="5.1" />
+	<property name="CRMDirName"          value="CRM" />
+	<property name="ProductionBuild"     value="true" />
+	<property name="GetLatestFromVSS"    value="true" />
+	<property name="CleanUpSource"       value="true" />
+	<property name="BuildNumberFile"     value="BuildNumber.txt" />
+
+	<!-- Components to build flags -->
+	<property name="BuildCRM"		value="true" />
+	<property name="BuildBBOS"		value="true" />
+	<property name="DeployReportsToSRS"     value="true" />
+
+	<!-- these options are specific to BBS Components solution 
+		*** Be careful using these flags.  Dependencies exist on these modules
+		and they should always be set to true unless you really know
+		what you are doing!!!!
+	-->
+	<property name="BuildBBSDataFormatter"		value="true" />
+	<property name="BuildBBSReportInterface"	value="true" />
+	<property name="BuildBBSUtils"			value="true" />
+	<property name="BuildBBSMonitor"		value="true" />
+	<property name="BBSMonitorServiceName"		value="BBSMonitor" />
+	<property name="BuildBBSListingTests"           value="true" />
+	<property name="ExecuteBBSListingTests"         value="true" />
+
+	<!-- if BuildDatabase is false, none of the database targets will be built -->
+	<property name="BuildDatabase"	     value="true" />
+	<property name="BuildSQLCLR"	     value="true" />
+
+	<!-- within database, you have these options -->
+	<property name="BuildCRMDatabase"    value="true" />
+	<property name="RestoreDBToBaseline" value="true" />
+	<property name="BackupRestoreBBOSUserTables" value="false" />
+	<property name="RebuildCRMIndexes"   value="true" />
+	<property name="BuildBBSInterface"   value="true" />
+	<property name="BuildBRDatabase"     value="true" />
+	<property name="SQLCLRDir"           value="D:\Applications\CRM\SQLCLR\bin\" />
+
+
+	<!-- If we're not building the database, then we cannot build the SQLCLR -->
+	<if test="${not BuildDatabase}" >
+		<property name="BuildSQLCLR"   value="false" />
+	</if>
+
+
+	<!-- BuildAll actions-->
+	<property name="PerformCountLines"	value="true" />
+	<property name="PerformGenerateAPIDoc"	value="true" />
+	<property name="PerformGenerateDBDoc"	value="true" />
+
+
+	<property name="AJAXControlToolkitDir"     value="C:\Program Files\Microsoft ASP.NET\ASP.NET 2.0 AJAX Extensions\AJAX Control Toolkit\Binaries" />
+
+	<!-- EMAIL SETTINGS -->
+	<property name="EmailFrom" 		value="it@bluebookservices.com"/>
+	<property name="EmailTo2" 		value="mrempert@bluebookprco.com;cwalls@travant.com" />
+	<property name="EmailTo1" 		value="cwalls@travant.com;" />
+	<property name="EmailTo" 		value="cwalls@travant.com;mmamalis@travant.com;it@bluebookservices.com" />
+        <property name="EmailSMTP"	        value="10.1.1.1"/>
+
+	<!-- DATABASE SETTINGS -->
+	<property name="DBServer"               value="DEV1" />
+	<property name="DBName"                 value="CRM" />
+	<property name="DBBaseLineDataFile"     value="\\Dev1\d$\Restore_Point\CRM_Production.bak" />
+
+
+	<property name="DBDataFile"             value="D:\Program Files\Microsoft SQL Server\MSSQL.1\MSSQL\Data\${DBName}" />
+	<property name="DBUserID"               value="accpac" />
+	<property name="DBPassword"             value="accpac" />
+	<property name="BBSInterfaceDBName"     value="BBSInterface" />
+
+	<!-- SRS SETTINGS -->
+	<property name="Reports.rs.exe"	    	value="D:\Program Files\Microsoft SQL Server\90\Tools\Binn\rs.exe" />
+	<property name="ReportServicesDir"  	value="D:\Program Files\Microsoft SQL Server\MSSQL.3\Reporting Services\ReportServer\bin"/>
+	<property name="Reports.server"	    	value="http://Dev1/ReportServer" />
+	<property name="Reports.deployscript"	value="${project::get-base-directory()}\DeployReports.rss" />
+	<property name="Reports.rootfolder"	value="" />
+
+	<!-- UTILITY SETTINGS -->
+	<property name="LineCounterBaseDir"	value="D:\Program Files\Travant Line Counter"/>
+	<property name="NunitBaseDir" 	        value="D:\Program Files\NUnit 2.2.8\bin"/>
+	<property name="DBDocBaseDir"           value="D:\Program Files\DbDoc" />
+
+	<!-- If we're not geting the latest from VSS, then don't clean up the source files -->
+	<if test="${not GetLatestFromVSS}" >
+		<property name="CleanUpSource"   value="false" />
+	</if>
+
+	<!-- Use TStamp to set a property to the the current datetime defining the format -->
+	<tstamp property="Build.DateTime" pattern="yyyy-MM-dd.HHmm" />
+	<tstamp property="Build.StartDateTime" pattern="MM/dd/yyyy HH:mm" />
+	<property name="project.name" 			value="BBS"/>
+	<property name="nant.onfailure"			value="OnFailure"/>
+	<property name="nant.onsuccess"			value="OnSuccess"/>
+
+	<!-- VSS SETTINGS -->
+	<property name="VSSUserID"              value="Build"/>
+	<property name="VSSPassword"            value="vss_2011"/>
+	<property name="VSSDBPath"              value="\\Dev1\VSS\srcsafe.ini"/>
+
+	<property name="VSSProjectRoot"		value="$/" />
+	<property name="VSSBuild"		value="$/Build" />
+	<property name="VSSDatabaseRoot" 	value="$/PIKS Database" />
+	<property name="VSSSqlCLR" 		value="$/PIKS Database/SqlCLR" />
+
+	<property name="VSSProjectCRM" 			value="$/CRM" />
+	<property name="VSSProjectBBOS"			value="$/EBB" />
+	<property name="VSSBBSComponents"		value="$/BBS Components" />
+	<property name="VSSReporting"			value="$/Reporting" />
+</project>	

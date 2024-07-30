@@ -1,0 +1,125 @@
+<project name="BBSBuildInclude" default="" basedir=".">
+    <echo message="Loading local configuration file."/>
+    <echo message="Building ALL"/>
+
+
+	<!-- General Processing Flags -->
+	<property name="ReleaseName"         value="8.8" />
+	<property name="ProductionBuild"     value="true" />
+	<property name="GetLatestFromVSS"    value="true" />
+	<property name="CleanUpSource"       value="false" />
+	<property name="BuildNumberFile"     value="BuildNumber.txt" />
+
+	<!-- Components to build flags -->
+	<property name="BuildCRM"	     value="true" />
+	<property name="BuildBBOS"	     value="true" />
+	<property name="BuildBBSMonitor"     value="true" />
+	<property name="BuildDatabase"	     value="true" />
+	<property name="BuildSQLCLR"	     value="true" />
+
+	<!-- within database, you have these options -->
+	<property name="BuildCRMDatabase"    value="true" />
+	<property name="RestoreDBToBaseline" value="true" />
+
+
+
+	<!-- If we're not building the database, then we cannot build the SQLCLR -->
+	<if test="${not BuildDatabase}" >
+		<property name="BuildSQLCLR"   value="false" />
+	</if>
+
+
+	<!-- BuildAll actions-->
+	<property name="PerformCountLines"		value="true" />
+	<property name="PerformGenerateAPIDoc"	value="false" />
+	<property name="PerformGenerateDBDoc"	value="true" />
+
+	<property name="BBSMonitorServiceName"		value="BBSMonitor" />
+	<property name="BuildBBSListingTests"           value="false" />
+	<property name="ExecuteBBSListingTests"         value="false" />
+
+	<property name="BBOSDeployDir"		value="D:\Applications\" />
+	<property name="CRMDeployDir"		value="\\AZ-NC-SAGE-Q1\D$\Applications\" />
+	<property name="BBSMonitorDeployDir"	value="\\AZ-NC-SQL-Q1\D$\Applications\" />
+	<property name="BBSMonitorDeployDir2"	value="\\AZ-NC-SAGE-Q1\D$\Applications\" />
+	<property name="BBSMonitorDeployDir3"	value="\\AZ-NC-SAGE-Q2\D$\Applications\" />
+
+	<property name="DeploySSRSReports" value="true" />
+	<property name="DeployBBOS" value="true" />
+	<if test="${not BuildBBOS}" >
+		<property name="DeployBBOS" value="false" />
+	</if>
+
+	<property name="DeployCRM" value="true" />
+	<if test="${not BuildCRM}" >
+		<property name="DeployCRM" value="false" />
+	</if>
+
+	<property name="DeployBBSMonitor" value="true" />
+	<if test="${not BuildBBSMonitor}" >
+		<property name="DeployBBSMonitor" value="false" />
+	</if>
+
+
+	<!-- EMAIL SETTINGS -->
+	<property name="EmailFrom" 		value="it@bluebookservices.com"/>
+	<property name="EmailTo1" 		value="cwalls@travant.com" />
+	<property name="EmailTo" 		value="noc@bluebookservices.com;korlowski@bluebookservices.com" />
+    <property name="EmailSMTP"	    value="smtp3.bluebookservices.com" />
+
+	<!-- DATABASE SETTINGS -->
+	<property name="DBServer"               value="qasql.bluebookservices.local" />
+	<property name="DBName"                 value="CRM" />
+	<property name="DBBaseLineDataFile"     value="D:\RestorePoint\CRM_Production.bak" />
+	<property name="DBBaseLineDataFileUNC"  value="\\AZ-NC-SQL-Q1\d$\RestorePoint\CRM_Production.bak" />
+	<property name="DBDataFile"             value="D:\Applications\SQLServer_Data\${DBName}" />
+	<property name="SQLCLRDir"              value="\\AZ-NC-SQL-Q1\d$\Applications\SQLCLR" />
+	<property name="DBUserID"               value="BBSBuild" />
+	<property name="DBPassword"             value="BBSBuild1901" />
+
+	<property name="MAS_PRC_Name"                value="MAS_PRC" />
+	<property name="MAS_PRC_BaseLineDataFile"    value="D:\RestorePoint\MAS_PRC.bak" />
+	<property name="MAS_PRC_DataFile"             value="D:\Applications\SQLServer_Data\${MAS_PRC_Name}" />
+
+	<property name="MAS_SYSTEM_Name"              value="MAS_SYSTEM" />
+	<property name="MAS_SYSTEM_BaseLineDataFile"  value="D:\RestorePoint\MAS_SYSTEM.bak" />
+	<property name="MAS_SYSTEM_DataFile"          value="D:\Applications\SQLServer_Data\${MAS_SYSTEM_Name}" />
+
+
+	<!-- SRS SETTINGS -->
+	<property name="Reports.rs.exe"	    	value="${project::get-base-directory()}\ReportUtils\rs.exe" />
+	<property name="Reports.server"	    	value="http://qareports.bluebookservices.local/ReportServer" />
+	<property name="Reports.deployscript"	value="${project::get-base-directory()}\ReportUtils\DeployReports.rss" />
+	<property name="Reports.rootfolder"	value="" />
+
+	<!-- UTILITY SETTINGS -->
+	<property name="LineCounterBaseDir"		value="D:\Utilities\LineCounter"/>
+	<property name="DBDocBaseDir"           value="D:\Utilities\DBDoc" />
+	<property name="cURLBaseDir"         	value="D:\Utilities\cURL" />
+
+	<!-- If we're not getting the latest from VSS, then don't clean up the source files -->
+	<if test="${not GetLatestFromVSS}" >
+		<property name="CleanUpSource"   value="false" />
+	</if>
+
+	<!-- Use TStamp to set a property to the the current datetime defining the format -->
+	<tstamp property="Build.DateTime" pattern="yyyy-MM-dd.HHmm" />
+	<tstamp property="Build.StartDateTime" pattern="MM/dd/yyyy HH:mm" />
+	<property name="project.name" 			value="BBSi"/>
+	<property name="nant.onfailure"			value="OnFailure"/>
+	<property name="nant.onsuccess"			value="OnSuccess"/>
+
+	<!-- SourceControl SETTINGS -->
+	<property name="sourcecode.url"      value="https://github.com/BlueBookServices/BBSi/branches/Develop" />
+    <property name="sourcecode.username" value="BBSiGH"/>
+    <property name="sourcecode.password" value="Gh@!(01"/>
+	
+	
+	<property name="projectSite.url"            value="https://qaapps.bluebookservices.com/projectsite/"/>
+	<property name="frameworkAPI.url"           value="https://qaapps.bluebookservices.com/projectsite/build/doc/api/index.aspx"/>
+	<property name="dbDoc.url"              	value="https://qaapps.bluebookservices.com/projectsite/build/doc/database/index.html"/>
+	<property name="unitTestResults.url"        value=""/>
+	<property name="clientLogo.url"             value="https://qaapps.bluebookservices.com/projectsite/images/BBSSeal.gif"/>
+	<property name="clientName"        			value="Blue Book Services, Inc."/>
+	<property name="ResultsMsg"        			value=""/>
+</project>	

@@ -1,0 +1,918 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2005/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <DataSources>
+    <DataSource Name="LumberLeads">
+      <rd:DataSourceID>a9ec5555-3d9c-4068-8cf8-6971fc4c6c17</rd:DataSourceID>
+      <DataSourceReference>LumberLeads</DataSourceReference>
+    </DataSource>
+  </DataSources>
+  <InteractiveHeight>11in</InteractiveHeight>
+  <ReportParameters>
+    <ReportParameter Name="CreatedDate">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>=today()</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Imported Since Date</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <rd:DrawGrid>true</rd:DrawGrid>
+  <InteractiveWidth>8.5in</InteractiveWidth>
+  <rd:SnapToGrid>true</rd:SnapToGrid>
+  <RightMargin>1in</RightMargin>
+  <LeftMargin>1in</LeftMargin>
+  <BottomMargin>1in</BottomMargin>
+  <rd:ReportID>bdab8667-9c13-4e03-9e49-8574b97a1b35</rd:ReportID>
+  <DataSets>
+    <DataSet Name="LumberLeads">
+      <Fields>
+        <Field Name="LeadID">
+          <DataField>LeadID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="BBID">
+          <DataField>BBID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Listing_Status">
+          <DataField>Listing Status</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="CRM_Comp_Name">
+          <DataField>CRM Comp Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Created_Date">
+          <DataField>Created Date</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Debtor_File_Name">
+          <DataField>Debtor File Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Debtor_Cust_ID">
+          <DataField>Debtor Cust ID</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Location">
+          <DataField>Location</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="BatchID">
+          <DataField>BatchID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="UnmatchARLeadID">
+          <DataField>UnmatchARLeadID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Submitter_BBID">
+          <DataField>Submitter BBID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Times_Submitted">
+          <DataField>Times Submitted</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Last_AR_Date">
+          <DataField>Last AR Date</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>LumberLeads</DataSourceName>
+        <CommandText>Declare @UnmatchedAR table 
+	(SubmitterBBID int, CustID nvarchar(50), CustName nvarchar(200))
+
+Insert into @UnmatchedAR
+	Select distinct 
+		praa_CompanyID
+		, praad_ARCustomerID
+		, praad_FileCompanyName
+	From crm.dbo.PRARAging with (nolock)
+	Inner Join crm.dbo.Company with (nolock) on comp_CompanyID = praa_CompanyID
+		and comp_PRIndustryType = 'L'
+	inner join crm.dbo.PRARAgingDetail with (nolock) on praa_ARAgingID = praad_ARAgingID
+	Left Outer Join crm.dbo.PRARTranslation with (nolock) on prar_CompanyID = praa_CompanyID
+		and praad_ARCustomerID = prar_CustomerNumber
+	Where prar_ARTranslationID is null
+
+SELECT DISTINCT 
+	[LeadID] = CRMBridge.LeadID 
+	, [BBID] = CompanyID
+	, [Listing Status] = comp_PRListingStatus
+	, [CRM Comp Name] = comp_Name
+	, [Created Date] = CRMBridge.CreatedDateTime
+	, [Debtor File Name] = CompanyName
+	, [Debtor Cust ID] = CustID
+	, [Location] = CityStateCountryShort
+	, [BatchID] = m1.BatchID
+    , [UnmatchARLeadID] = Lead.LeadID
+    , [Submitter BBID] = AssociatedCompanyID
+    , [Times Submitted] = ARDetailCount
+    , [Last AR Date] = LastARDate
+  FROM LumberLeads.dbo.Lead with (nolock)
+       INNER JOIN LumberLeads.dbo.Match m1  with (nolock) ON Lead.LeadID = m1.LeadID
+       INNER JOIN LumberLeads.dbo.Match m2   with (nolock)ON m1.BatchID = m2.BatchID
+       INNER JOIN LumberLeads.dbo.CRMBridge  with (nolock) ON m2.LeadID = CRMBridge.LeadID
+       INNER JOIN CRM.dbo.Company  with (nolock) ON CompanyID = comp_CompanyID 
+       INNER JOIN CRM.dbo.vPRLocation  with (nolock) ON comp_PRListingCityID = prci_CityID
+		Inner Join @UnmatchedAR on 
+			SubmitterBBID = AssociatedCompanyID
+			and CustName = CompanyName
+ WHERE Source = 'Unmatched AR'
+	and CRMBridge.CreatedDateTime &gt; @CreatedDate
+ORDER BY CompanyID;</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@CreatedDate">
+            <Value>=Parameters!CreatedDate.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+  </DataSets>
+  <Width>13.375in</Width>
+  <Body>
+    <ReportItems>
+      <Table Name="table1">
+        <DataSetName>LumberLeads</DataSetName>
+        <Details>
+          <TableRows>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="LeadID">
+                      <rd:DefaultName>LeadID</rd:DefaultName>
+                      <Style>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>12</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!LeadID.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="BBID">
+                      <rd:DefaultName>BBID</rd:DefaultName>
+                      <Style>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>11</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!BBID.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Listing_Status">
+                      <rd:DefaultName>Listing_Status</rd:DefaultName>
+                      <Style>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>10</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Listing_Status.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="CRM_Comp_Name">
+                      <rd:DefaultName>CRM_Comp_Name</rd:DefaultName>
+                      <Style>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>9</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!CRM_Comp_Name.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Created_Date">
+                      <rd:DefaultName>Created_Date</rd:DefaultName>
+                      <Style>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>8</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Created_Date.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Debtor_File_Name">
+                      <rd:DefaultName>Debtor_File_Name</rd:DefaultName>
+                      <Style>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>7</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Debtor_File_Name.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Debtor_Cust_ID">
+                      <rd:DefaultName>Debtor_Cust_ID</rd:DefaultName>
+                      <Style>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>6</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Debtor_Cust_ID.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Location">
+                      <rd:DefaultName>Location</rd:DefaultName>
+                      <Style>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>5</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Location.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="BatchID">
+                      <rd:DefaultName>BatchID</rd:DefaultName>
+                      <Style>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>4</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!BatchID.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="UnmatchARLeadID">
+                      <rd:DefaultName>UnmatchARLeadID</rd:DefaultName>
+                      <Style>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>3</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!UnmatchARLeadID.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Submitter_BBID">
+                      <rd:DefaultName>Submitter_BBID</rd:DefaultName>
+                      <Style>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>2</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Submitter_BBID.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Times_Submitted">
+                      <rd:DefaultName>Times_Submitted</rd:DefaultName>
+                      <Style>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>1</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Times_Submitted.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Last_AR_Date">
+                      <rd:DefaultName>Last_AR_Date</rd:DefaultName>
+                      <Style>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Last_AR_Date.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.21in</Height>
+            </TableRow>
+          </TableRows>
+        </Details>
+        <Header>
+          <TableRows>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ColSpan>13</ColSpan>
+                  <ReportItems>
+                    <Textbox Name="textbox1">
+                      <rd:DefaultName>textbox1</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>12pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>26</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>="Unmatched AR Imported Since "&amp;Parameters!CreatedDate.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox2">
+                      <rd:DefaultName>textbox2</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>11pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>25</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Lead ID</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox3">
+                      <rd:DefaultName>textbox3</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>11pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>24</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>BBID</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox4">
+                      <rd:DefaultName>textbox4</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>11pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>23</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Listing Status</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox5">
+                      <rd:DefaultName>textbox5</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>11pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>22</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>CRM Comp Name</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox6">
+                      <rd:DefaultName>textbox6</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>11pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>21</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Created Date</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox7">
+                      <rd:DefaultName>textbox7</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>11pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>20</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Debtor File Name</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox8">
+                      <rd:DefaultName>textbox8</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>11pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>19</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Debtor Cust ID</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox9">
+                      <rd:DefaultName>textbox9</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>11pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>18</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Location</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox10">
+                      <rd:DefaultName>textbox10</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>11pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>17</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Batch ID</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox11">
+                      <rd:DefaultName>textbox11</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>11pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>16</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Unmatch ARLead ID</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox12">
+                      <rd:DefaultName>textbox12</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>11pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>15</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Submitter BBID</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox13">
+                      <rd:DefaultName>textbox13</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>11pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>14</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Times Submitted</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox14">
+                      <rd:DefaultName>textbox14</rd:DefaultName>
+                      <Style>
+                        <Color>White</Color>
+                        <BackgroundColor>SteelBlue</BackgroundColor>
+                        <BorderColor>
+                          <Default>LightGrey</Default>
+                        </BorderColor>
+                        <BorderStyle>
+                          <Default>Solid</Default>
+                        </BorderStyle>
+                        <FontFamily>Calibri</FontFamily>
+                        <FontSize>11pt</FontSize>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>13</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Last AR Date</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.22in</Height>
+            </TableRow>
+          </TableRows>
+          <RepeatOnNewPage>true</RepeatOnNewPage>
+        </Header>
+        <TableColumns>
+          <TableColumn>
+            <Width>0.75in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>0.625in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1.5in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1.5in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>1in</Width>
+          </TableColumn>
+        </TableColumns>
+        <Height>0.68in</Height>
+      </Table>
+    </ReportItems>
+    <Height>0.75in</Height>
+  </Body>
+  <Language>en-US</Language>
+  <TopMargin>1in</TopMargin>
+</Report>

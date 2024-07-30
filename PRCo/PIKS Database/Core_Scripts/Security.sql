@@ -1,0 +1,216 @@
+/**
+This script has hard-coded references to the CRM database.  This is
+because we cannot find a way to dynamically specify a database name
+in a "USE" statement.
+
+**/
+USE [CRM]
+GO
+
+--
+-- Set Permissions on Tables
+--
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRARAging] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRARAgingDetail] TO BBOS
+
+GRANT SELECT,INSERT,UPDATE ON [dbo].[Library] TO BBOS
+GRANT SELECT,UPDATE ON [dbo].[PRAdCampaign] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRAdCampaignAuditTrail] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRAdCampaignAuditTrailSummary] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRBRResponse.*] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRExternalLinkAuditTrail] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRFeedback] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRFinancial] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRMembershipPurchase] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRPayment] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRPaymentProduct] TO BBOS
+GRANT SELECT,UPDATE ON [dbo].[PRPublicationArticle] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRRequest] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRRequestDetail] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRSearchAuditTrail] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRSearchAuditTrailCriteria] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRSearchWizardAuditTrail] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRSearchWizardAuditTrailDetail] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRSelfServiceAuditTrail] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRSelfServiceAuditTrailDetail] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRServiceUnitAllocation] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRServiceUnitUsage] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRSSFile] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRSSContact] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRWebAuditTrail] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRWebUser] TO BBOS
+GRANT SELECT,INSERT,UPDATE,DELETE ON [dbo].[PRWebUserContact] TO BBOS
+GRANT SELECT,INSERT,UPDATE,DELETE ON [dbo].[PRWebUserCustomData] TO BBOS
+GRANT SELECT,INSERT,UPDATE,DELETE ON [dbo].[PRWebUserList] TO BBOS
+GRANT SELECT,INSERT,UPDATE,DELETE ON [dbo].[PRWebUserListDetail] TO BBOS
+GRANT SELECT,INSERT,UPDATE,DELETE ON [dbo].[PRWebUserNote] TO BBOS
+GRANT SELECT,INSERT,UPDATE,DELETE ON [dbo].[PRWebUserSearchCriteria] TO BBOS
+GRANT SELECT,INSERT,UPDATE,DELETE ON [dbo].[PRSocialMedia] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRWebServiceAuditTrail] TO BBOS
+GRANT SELECT,UPDATE ON [dbo].[SQL_Identity] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRPublicationArticleRead] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRExternalNewsAuditTrail] TO BBOS
+GRANT SELECT,INSERT,UPDATE ON [dbo].[PRWidgetKey] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRLinkedInAuditTrail] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRWidgetAuditTrail] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRSurveyResponse] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRSurveyResponseDetail] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRGetListedRequest] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRWebSiteVisitor] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRBusinessReportPurchase] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRBackgroundCheckRequest] TO BBOS
+GRANT SELECT,INSERT ON [dbo].[PRBusinessValuation] TO BBOS
+
+GRANT SELECT,INSERT,UPDATE,DELETE ON dbo.PRWebUserCustomField TO BBOS
+GRANT SELECT,INSERT,UPDATE,DELETE ON dbo.PRWebUserCustomFieldLookup TO BBOS
+GRANT SELECT,INSERT,UPDATE,DELETE ON dbo.PRWebUserNoteReminder TO BBOS
+
+GRANT SELECT,INSERT,UPDATE,DELETE ON [dbo].[PRWordPressPostCompany] TO WPUser
+GRANT SELECT,INSERT,UPDATE,DELETE ON [dbo].[PRWordPressPostCompany] TO WordPressProduceUser
+
+--
+-- Set Permissions on Executables
+--
+GRANT EXECUTE ON usp_AddOnlineTradeReport TO BBOS
+GRANT EXECUTE ON usp_AllocateServiceUnits TO BBOS
+GRANT EXECUTE ON usp_AllocateBackgroundChecks TO BBOS
+GRANT EXECUTE ON usp_ConsumeBackgroundCheckUnits TO BBOS
+GRANT EXECUTE ON usp_AUSSettingsUpdate TO BBOS
+GRANT EXECUTE ON usp_EmailCampaignOptInSettingsUpdate TO BBOS
+GRANT EXECUTE ON usp_BBOSBBScoreReport TO BBOS
+GRANT EXECUTE ON ufn_BRGetHQID TO BBOS
+GRANT EXECUTE ON usp_ConsumeServiceUnits TO BBOS
+GRANT EXECUTE ON usp_CreateEmail TO BBOS
+GRANT EXECUTE ON usp_CreateTask TO BBOS
+GRANT EXECUTE ON ufn_FormatPerson TO BBOS
+GRANT EXECUTE ON ufn_FormatPerson2 TO BBOS
+GRANT EXECUTE ON ufn_FormatPersonById TO BBOS
+GRANT EXECUTE ON ufn_FormatPhone TO BBOS
+GRANT EXECUTE ON ufn_FormatUserName TO BBOS
+GRANT EXECUTE ON ufn_GetAddressIDForList TO BBOS
+GRANT EXECUTE ON ufn_GetAddressForMailingLabel TO BBOS
+GRANT EXECUTE ON ufn_GetAssignedRatingNumeralList TO BBOS
+GRANT EXECUTE ON ufn_GetAvailableUnits TO BBOS
+GRANT EXECUTE ON ufn_GetBrandsList TO BBOS
+GRANT EXECUTE ON ufn_GetClassificationsForList TO BBOS
+GRANT EXECUTE ON ufn_GetCommoditiesForList TO BBOS
+GRANT EXECUTE ON ufn_getCurrentBBScore TO BBOS
+GRANT EXECUTE ON ufn_GetCustomCaptionValue TO BBOS
+GRANT EXECUTE ON ufn_GetCustomCaptionValueList TO BBOS
+GRANT EXECUTE ON ufn_GetItem TO BBOS
+GRANT EXECUTE ON ufn_GetListingFromCompany TO BBOS
+GRANT EXECUTE ON ufn_GetLowerAlpha TO BBOS
+GRANT EXECUTE ON usp_GetNextID TO BBOS
+GRANT EXECUTE ON ufn_GetPRCoSpecialistUserId TO BBOS
+GRANT EXECUTE ON ufn_GetRatingDefinitions TO BBOS
+GRANT EXECUTE ON ufn_GetSearchAuditTrailCriteriaValue TO BBOS
+GRANT EXECUTE ON ufn_GetVCardAddressListSeq TO BBOS
+GRANT EXECUTE ON ufn_GetWebUserLocation TO BBOS
+GRANT EXECUTE ON ufn_GetEnterpriseAvailableLicenseCount TO BBOS
+GRANT EXECUTE ON ufn_HasNote TO BBOS
+GRANT EXECUTE ON ufn_HasCSG TO BBOS
+GRANT EXECUTE ON ufn_IsAddressValidForRadius TO BBOS
+GRANT EXECUTE ON ufn_IsEligibleForBRSurvey TO BBOS
+GRANT EXECUTE ON usp_ProcessNewMembeshipUser TO BBOS
+GRANT EXECUTE ON ufn_FormatAddress TO BBOS
+GRANT EXECUTE ON ufn_GetProductPrice TO BBOS
+GRANT EXECUTE ON usp_ConsumeServiceUnits TO BBOS
+GRANT EXECUTE ON usp_RethrowError TO BBOS
+GRANT EXECUTE ON usp_UpdateCompanyRelationship TO BBOS
+GRANT EXECUTE ON ufnclr_EncryptText TO BBOS
+GRANT EXECUTE ON usp_SendBusinessReportSurvey TO BBOS
+GRANT EXECUTE ON usp_SaveLumberSettings TO BBOS
+GRANT EXECUTE ON ufn_GetPayReportCount TO BBOS
+GRANT EXECUTE ON usp_SendBBOSPassword TO BBOS
+GRANT EXECUTE ON ufn_GetAddressListSeq TO BBOS
+GRANT EXECUTE ON ufn_GetListingCache TO BBOS
+GRANT EXECUTE ON ufn_GetRelationshipTypeList TO BBOS
+GRANT EXECUTE ON ufn_GetRelationshipTypeCodeList TO BBOS
+GRANT EXECUTE ON ufn_GetRelationshipIDList TO BBOS
+GRANT EXECUTE ON ufn_PrepareCompanyName TO BBOS
+GRANT EXECUTE ON ufn_GetCSItemCache TO BBOS
+GRANT EXECUTE ON ufn_GetPrimaryService TO BBOS
+GRANT EXECUTE ON ufn_IsEligibleForManualTES TO BBOS
+GRANT EXECUTE ON ufn_IsEligibleForManualTES2 TO BBOS
+GRANT EXECUTE ON ufn_GetAdPublicationViewCount TO BBOS
+--GRANT EXECUTE ON ufn_GetRemainingBRCount TO BBOS
+GRANT EXECUTE ON usp_GetBluePrintsEditionArchive TO BBOS
+GRANT EXECUTE ON ufn_GetFormattedEmail TO BBOS
+GRANT EXECUTE ON ufn_GetFormattedEmail2 TO BBOS
+GRANT EXECUTE ON ufn_GetFormattedEmail3 TO BBOS
+GRANT EXECUTE ON ufn_GetFormattedEmail4 TO BBOS
+GRANT EXECUTE ON usp_ProcessDuplicateUser TO BBOS
+GRANT EXECUTE ON ufn_HasNewClaimActivity TO BBOS
+GRANT EXECUTE ON ufn_HasMeritoriousClaim TO BBOS
+GRANT EXECUTE ON usp_GeneratePassword TO BBOS
+GRANT EXECUTE ON ufn_GetNoteReminderList TO BBOS
+GRANT EXECUTE ON usp_SetCustomData TO BBOS
+GRANT EXECUTE ON usp_GetBBOSARDetails TO BBOS
+GRANT EXECUTE ON usp_GetBBOSARSummary TO BBOS
+GRANT EXECUTE ON usp_GetBBOSARCharts TO BBOS
+GRANT EXECUTE ON usp_GetBBOSARDetailsForChartLumber TO BBOS
+GRANT EXECUTE ON usp_GetBBOSARDetailsForChartProduce TO BBOS
+GRANT EXECUTE ON ufn_Divide TO BBOS
+GRANT EXECUTE ON ufn_GetCSGValueForList TO BBOS
+GRANT EXECUTE ON usp_BRRatings TO BBOS
+GRANT EXECUTE ON usp_BRFinancialInformation TO BBOS
+GRANT EXECUTE ON usp_BRFinancialInformationFlags TO BBOS
+
+GRANT EXECUTE ON ufn_GetBusinessEventDateDisplayed TO BBOS
+GRANT EXECUTE ON ufn_KYCPostTitleAdjust TO BBOS
+GRANT EXECUTE ON usp_BRBBScoreHistory TO BBOS
+GRANT EXECUTE ON usp_BRBBScoreHistoryRank TO BBOS
+
+GRANT SELECT ON ufn_CompanyList TO BBOS
+GRANT SELECT ON ufn_GetAUSListing TO BBOS
+GRANT SELECT ON ufn_GetAUSSettings TO BBOS
+GRANT SELECT ON ufn_GetCompaniesWithinRadius TO BBOS
+GRANT SELECT ON ufn_GetRadius TO BBOS
+GRANT SELECT ON Tokenize TO BBOS
+GRANT SELECT ON ufn_GetSearchCountForCriteriaType TO BBOS
+
+GRANT EXECUTE ON ufn_HasCertification TO BBOS
+GRANT EXECUTE ON ufn_HasCertification_Organic TO BBOS
+GRANT EXECUTE ON ufn_HasCertification_FoodSafety TO BBOS
+GRANT EXECUTE ON ufn_GetListingLicenseSeq TO BBOS
+
+GRANT EXECUTE ON usp_BRTradeReportDetailsFootNotes TO BBOS
+GRANT EXECUTE ON usp_BRTradeReportDetails TO BBOS
+
+GRANT EXECUTE ON ufn_GetCompanyTradeAssociationForList TO BBOS
+GRANT DELETE ON PRWebUserWidget TO BBOS
+GRANT INSERT ON PRWebUserWidget TO BBOS
+
+GRANT EXECUTE ON usp_IndustryPayTrendAR TO BBOS
+GRANT EXECUTE ON usp_IndustryPayTrendAR_Lumber TO BBOS
+GRANT EXECUTE ON ufn_GetBBS200MembershipPrice TO BBOS
+
+GRANT EXECUTE ON usp_Alerts_GetMonitoredCompanies TO BBOS
+GRANT EXECUTE ON usp_Alerts_GetCreditItems TO BBOS
+GRANT EXECUTE ON usp_Alerts_GetNews TO BBOS
+GRANT EXECUTE ON usp_Alerts_GetCourtCases TO BBOS
+GRANT EXECUTE ON usp_Alerts_GetClaims TO BBOS
+GRANT EXECUTE ON usp_Alerts_GetNewPublishableScore TO BBOS
+GRANT EXECUTE ON usp_Alerts_GetScoreChange TO BBOS
+GRANT EXECUTE ON usp_Alerts_GetRatingNumerals TO BBOS
+GRANT EXECUTE ON usp_GetCompanyContactDataExportCSV TO BBOS
+GRANT EXECUTE ON usp_GetCompanyDataExportReportCSV TO BBOS
+GRANT EXECUTE ON usp_GetCompanyDataExportReportLumberCSV TO BBOS
+
+GRANT EXECUTE ON ufn_GetWatchdogGroupsForList TO BBOS
+GRANT EXECUTE ON ufn_GetWordPressCategories TO BBOS
+GRANT EXECUTE ON ufn_GetWordPressCategories2 TO BBOS
+GRANT EXECUTE ON ufn_GetCapt_US TO BBOS
+
+GRANT EXECUTE ON ufn_getPreviousRatingLine TO BBOS
+
+GRANT EXECUTE ON ufn_GetListingBankBlock2 TO BBOS
+GRANT EXECUTE ON ufn_GetAllocatedUnits TO BBOS
+
+
+Go
+
+USE MAS_PRC
+GRANT EXECUTE ON dbo.ufn_GetBillTo TO accpac
+GRANT EXECUTE ON dbo.ufn_GetBillTo TO ReportUser
+Go

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="DeployToCRM1" default="Deploy" xmlns="http://nant.sf.net/release/0.85-rc4/nant.xsd" basedir=".">
+
+    <echo message="Using '${nant.settings.currentframework}' framework on '${platform::get-name()}' platform." />
+
+    <property name="Target.BaseDir" value="\\CRM1\D$\Applications" />
+    <property name="Target.CRMDir" value="${Target.BaseDir}\CRM" />
+    <property name="Target.ComponentsDir" value="${Target.BaseDir}\BBS Components" />
+
+    <property name="Source.BaseDir" value="D:\Applications" />
+    <property name="Source.CRMDir" value="${Source.BaseDir}\CRM" />
+    <property name="Source.ComponentsDir" value="${Source.BaseDir}\BBS Components" />
+
+
+
+    <property name="project.name"           value="DeployToCRM1" />
+
+
+    <!--
+         Defines many helper function required for
+         the deployment.
+    -->
+    <include buildfile="Deploy.include" />
+
+
+
+    <!-- Deploy -->
+    <target name="Deploy" depends="PreDeploy, DeployCRM, DeployBBSreportInterface, DeployBBSUtils">
+    
+    </target>
+
+
+
+    <!-- BBSreportInterface -->
+    <target name="DeployBBSreportInterface" depends="PreDeploy">
+
+        <property name="Target.Dir" value="${Target.ComponentsDir}\BBSReportInterface" />
+        <property name="Source.Dir" value="${Source.ComponentsDir}\BBSReportInterface" />
+
+        <!-- Copy files -->
+        <echo message="Copy BBSreportInterface from ${Source.Dir} to ${Target.Dir}" />
+
+
+        <copy todir="${Target.Dir}" overwrite="true">
+            <fileset basedir="${Source.Dir}">
+                <include name="**" />
+                <exclude name="Properties/**" />
+                <exclude name="**/*.cs" />
+                <exclude name="**/*.csproj*" />
+                <exclude name="**/*.scc" />
+                <exclude name="**/vssver.scc" />
+                <exclude name="**/trace*.txt" />
+                <exclude name="**/*.pdb" />
+          </fileset>
+        </copy>
+    </target>
+
+
+
+    <!-- BBOSUtils -->
+    <target name="DeployBBSUtils" depends="PreDeploy">
+
+        <property name="Target.Dir" value="${Target.ComponentsDir}\BBSUtils" />
+        <property name="Source.Dir" value="${Source.ComponentsDir}\BBSUtils" />
+
+        <!-- Copy files -->
+        <echo message="Copy BBSUtils from ${Source.Dir} to ${Target.Dir}" />
+
+        <property name="ConfigFile" value="${Target.Dir}/Web.config" />
+        <copy file="${ConfigFile}" tofile="${ConfigFile}.bak" overwrite="true" failonerror="false" />
+
+        <copy todir="${Target.Dir}" overwrite="true">
+            <fileset basedir="${Source.Dir}">
+                <include name="**" />
+                <exclude name="Email/**" />
+                <exclude name="Properties/**" />
+                <exclude name="**/*.cs" />
+                <exclude name="**/*.designer.cs" />
+                <exclude name="**/*.csproj*" />
+                <exclude name="**/*.scc" />
+                <exclude name="**/*.config" />
+                <exclude name="**/vssver.scc" />
+                <exclude name="**/trace*.txt" />
+                <exclude name="**/*.pdb" />
+                <exclude name="*.txt" />
+                <exclude name="web.config" />
+          </fileset>
+        </copy>
+    </target>
+
+    <!-- CRM -->
+    <target name="DeployCRM" depends="PreDeploy">
+
+        <property name="Target.Dir" value="${Target.CRMDir}" />
+        <property name="Source.Dir" value="${Source.CRMDir}" />
+
+        <property name="ConfigFile" value="${Target.Dir}/Web.config" />
+        <copy file="${ConfigFile}" tofile="${ConfigFile}.bak" overwrite="true" failonerror="false" />
+
+
+        <!-- Copy files -->
+        <echo message="Copy CRM from ${Source.Dir} to ${Target.Dir}" />
+
+        <copy todir="${Target.Dir}" overwrite="true">
+            <fileset basedir="${Source.Dir}">
+                <include name="WWWRoot/index.htm" />
+                <include name="WWWRoot/prco.css" />
+                <include name="WWWRoot/bin/**" />
+                <include name="WWWRoot/CustomPages/**" />
+                <include name="WWWRoot/Img/PRCo/**" />
+                <exclude name="**/*.config" />
+                <exclude name="**/vssver.scc" />
+          </fileset>
+        </copy>
+    </target>
+
+
+</project>

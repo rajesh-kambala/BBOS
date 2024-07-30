@@ -1,0 +1,585 @@
+<project name="BBSComponents" default="" basedir=".">
+
+
+<!-- The targets in this file represent the individual projects built by BBS Components solution. 
+	 This file is part of the larger BBS build script an dis not intended to run independently.
+-->
+
+    <echo message=""/>
+    <echo message="Loading BBSComponents Nant Targets"/>
+    <echo message=""/>
+	
+	<!--
+		Builds BBSDataFormatter
+	-->
+	<target name="BuildBBSDataFormatter" depends="PreBuild" description="Builds the BBS Data Formatter">
+                <tstamp />
+
+		<property name="nant.settings.currentframework" value="net-3.5" />
+		<svn-checkout
+			destination="${build.components}\BBSDataFormatter"
+			uri="${sourcecode.url}/PRCo/BBS Components/BBSDataFormatter"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>	
+
+		<property name="build.srcdir" value="${build.components}\BBSDataFormatter" />
+		<property name="build.outdir" value="${build.components}\BBSDataFormatter" />
+		<mkdir dir="${build.outdir}" />
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location" value="${build.srcdir}\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, baby! -->
+		<csc target="library" debug="false" output="${build.outdir}\BBSDataFormatter.dll" doc="${build.outdir}\BBSDataFormatter.xml" optimize="true" >
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+			</sources>
+		</csc>
+
+		<!-- <copy file="${build.outdir}\BBSDataFormatter.dll" tofile="${ReportServicesDir}\BBSDataFormatter.dll" verbose="false"/> -->
+		<!-- <regasm assembly="${build.outdir}\BBSDataFormatter.dll" codebase="true" /> -->
+
+		<!-- Clean up after ourselves... -->
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="*.cs"/>
+				<include name="*.scc"/>
+				<include name="*.csproj*"/>
+				<include name="*.resx"/>
+			</fileset>
+		</delete>
+
+		<property name="nant.settings.currentframework" value="net-4.0" />
+	</target>
+
+	
+
+
+
+
+	<!-- 
+		Builds BBSUtils
+	-->
+    <target name="BuildBBSUtils" depends="PreBuild, BuildBBSReportInterface"  description="Builds the BBSUtils ASP.NET Application">
+
+        <tstamp />
+		<svn-checkout
+			destination="${build.components}\BBSUtils"
+			uri="${sourcecode.url}/PRCo/BBS Components/BBSUtils"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>			
+	
+
+		<property name="build.srcdir" value="${build.components}\BBSUtils" />
+		<property name="build.outdir" value="${build.components}\BBSUtils\bin" />
+		<mkdir dir="${build.outdir}" />
+
+		<copy file="${build.referenceassemblies}\TSIUtils.dll" tofile="${build.outdir}\TSIUtils.dll" />
+		<!-- <copy file="${build.components}\BBSReportInterface\BBSReportInterface.dll" tofile="${build.outdir}\BBSReportInterface.dll" /> -->
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location" value="${build.srcdir}\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, baby! -->
+		<csc target="library" debug="false" output="${build.outdir}\BBSUtils.dll" doc="${build.outdir}\BBSUtils.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+			</sources>
+			<references>
+				<include name="${build.outdir}\TSIUtils.dll" />
+				<include name="${build.outdir}\BBSReportInterface.dll" />
+			</references>
+		</csc>
+
+		<!-- Update the config file -->
+		<property name="ConfigFile"   value="${build.srcdir}\web.config" />
+	        <copy file="${build.testconfigs}\BBSUtils.web.config" tofile="${ConfigFile}"  overwrite="true" verbose="true"/>
+
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="*.cs"/>
+				<include name="*.scc"/>
+				<include name="*.csproj*"/>
+				<include name="*.resx"/>
+			</fileset>
+		</delete>
+                <delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+	</target>
+
+
+	<!--
+		Builds BBSReportInterface
+	-->
+	<target name="BuildBBSReportInterface" depends="PreBuild" description="Builds the BBS Report Interface">
+		<tstamp />
+		
+		<svn-checkout
+			destination="${build.components}\BBSReportInterface"
+			uri="${sourcecode.url}/PRCo/BBS Components/BBSReportInterface"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>	
+
+		<property name="build.srcdir" value="${build.components}\BBSReportInterface" />
+		<property name="build.outdir" value="${build.components}\BBSReportInterface" />
+		<mkdir dir="${build.outdir}" />
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location" value="${build.srcdir}\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, baby! -->
+		<csc target="library" debug="false" output="${build.outdir}\BBSReportInterface.dll" doc="${build.outdir}\BBSReportInterface.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.cs" />
+				<include name="${build.srcdir}\Web References\ReportExecution\*.cs" />
+				<include name="${build.srcdir}\Web References\ReportService\*.cs" />
+			</sources>
+			<references>
+				<include name="${build.referenceassemblies}\TSIUtils.dll" />
+			</references>
+		</csc>
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="*.cs"/>
+				<include name="*.scc"/>
+				<include name="*.csproj*"/>
+				<include name="*.resx"/>
+			</fileset>
+		</delete>
+		<delete if="${CleanUpSource}" dir="${build.srcdir}\Web References" />
+                <delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+	</target>
+
+
+	
+
+
+	<!--
+		Builds FaxInterface
+	-->
+	<target name="BuildFaxInterface" depends="PreBuild" description="Builds the Fax Interface">
+		<tstamp />
+		<svn-checkout
+			destination="${build.components}\FaxInterface"
+			uri="${sourcecode.url}/PRCo/BBS Components/FaxInterface"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>	
+		
+		<property name="build.srcdir" value="${build.components}\FaxInterface" />
+		<property name="build.outdir" value="${build.components}\FaxInterface" />
+		<mkdir dir="${build.outdir}" />
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location" value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, baby! -->
+		<csc target="library" debug="false" output="${build.outdir}\FaxInterface.dll" doc="${build.outdir}\FaxInterface.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.cs" />
+				<include name="${build.srcdir}\Web References\ConcordFaxService\*.cs" />
+				<include name="${build.srcdir}\Web References\ConcordReportingService\*.cs" />
+			</sources>
+			<references>
+				<include name="${build.referenceassemblies}\TSIUtils.dll" />
+			</references>
+		</csc>
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="*.cs"/>
+				<include name="*.scc"/>
+				<include name="*.csproj*"/>
+				<include name="*.resx"/>
+			</fileset>
+		</delete>
+		<delete if="${CleanUpSource}" dir="${build.srcdir}\Web References" />
+	        <delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+	</target>	
+	
+	
+	
+
+
+	<!--
+		Builds EmailInterface
+	-->
+	<target name="BuildEmailInterface" depends="PreBuild" description="Builds the Email Interface">
+		<tstamp />
+		<svn-checkout
+			destination="${build.components}\EmailInterface"
+			uri="${sourcecode.url}/PRCo/BBS Components/EmailInterface"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>	
+
+		<property name="build.srcdir" value="${build.components}\EmailInterface" />
+		<property name="build.outdir" value="${build.components}\EmailInterface" />
+		<mkdir dir="${build.outdir}" />
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location" value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, baby! -->
+		<csc target="library" debug="false" output="${build.outdir}\EmailInterface.dll" doc="${build.outdir}\EmailInterface.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.cs" />
+			</sources>
+			<references>
+				<include name="${build.referenceassemblies}\Microsoft.Exchange.WebServices.dll" />
+				<include name="${build.referenceassemblies}\TSIUtils.dll" />
+			</references>
+		</csc>
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="*.cs"/>
+				<include name="*.scc"/>
+				<include name="*.csproj*"/>
+				<include name="*.resx"/>
+			</fileset>
+		</delete>
+	        <delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+	</target>	
+
+
+	<!--
+		Builds ExternalNews
+	-->
+	<target name="BuildExternalNews" 
+				depends="PreBuild" description="Builds the ExternalNews Component">
+		<tstamp />
+
+		<svn-checkout
+			destination="${build.components}\ExternalNews"
+			uri="${sourcecode.url}/PRCo/BBS Components/ExternalNews"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>			
+
+		<property name="build.srcdir" value="${build.components}\ExternalNews" />
+		<property name="build.outdir" value="${build.components}\ExternalNews" />
+		<mkdir dir="${build.outdir}" />
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location" value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, baby! -->
+		<csc target="library" debug="false" output="${build.outdir}\ExternalNews.dll" doc="${build.outdir}\ExternalNews.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+                                <include name="${build.srcdir}\Properties\AssemblyInfo.cs" />
+			</sources>
+			<references>
+				<include name="${build.referenceassemblies}\TSIUtils.dll" />
+			</references>
+		</csc>
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="*.cs"/>
+				<include name="*.scc"/>
+				<include name="*.csproj*"/>
+				<include name="*.resx"/>
+                                <include name="*.congif"/>
+			</fileset>
+		</delete>
+                <delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+	</target>
+
+
+
+	<!--
+		Builds PayIndicator
+	-->
+	<target name="BuildPayIndicator" depends="PreBuild" description="Builds the PayIndicator">
+		<tstamp />
+		<svn-checkout
+			destination="${build.components}\PayIndicator"
+			uri="${sourcecode.url}/PRCo/BBS Components/PayIndicator"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>			
+		
+		<property name="build.srcdir" value="${build.components}\PayIndicator" />
+		<property name="build.outdir" value="${build.components}\PayIndicator" />
+		<mkdir dir="${build.outdir}" />
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location" value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, baby! -->
+		<csc target="library" debug="false" output="${build.outdir}\PayIndicator.dll" doc="${build.outdir}\PayIndicator.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\*.cs" />
+			</sources>
+			<references>
+				<include name="${build.referenceassemblies}\TSIUtils.dll" />
+			</references>
+		</csc>
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="*.cs"/>
+				<include name="*.scc"/>
+				<include name="*.csproj*"/>
+				<include name="*.resx"/>
+			</fileset>
+		</delete>
+        <delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+	</target>
+
+
+	<!--
+		Builds BBSMonitor
+	-->
+	<target name="BuildBBSMonitor" if="${BuildBBSMonitor}" 
+			depends="PreBuild,BuildBBSReportInterface,BuildExternalNews,BuildFaxInterface,BuildEmailInterface,BuildPayIndicator" description="Builds the BBSMonitor">
+        <tstamp />
+		<svn-checkout
+			destination="${build.components}\BBSMonitor"
+			uri="${sourcecode.url}/PRCo/BBS Components/BBSMonitor"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>	
+		
+
+		<property name="build.srcdir" value="${build.components}\BBSMonitor" />
+		<property name="build.outdir" value="${build.components}\BBSMonitor" />
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location" value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<copy file="${build.referenceassemblies}\TSIUtils.dll" tofile="${build.outdir}\TSIUtils.dll" />
+		<copy file="${build.referenceassemblies}\LumenWorks.Framework.IO.dll" tofile="${build.outdir}\LumenWorks.Framework.IO.dll" />
+		<copy file="${build.referenceassemblies}\Renci.SshNet.dll" tofile="${build.outdir}\Renci.SshNet.dll" />
+	    <copy file="${build.BBOSReferenceAssemblies}\ICSharpCode.SharpZipLib.dll" tofile="${build.outdir}\ICSharpCode.SharpZipLib.dll" />
+		<copy file="${build.components}\BBSReportInterface\BBSReportInterface.dll" tofile="${build.outdir}\BBSReportInterface.dll" />
+	    <copy file="${build.components}\ExternalNews\ExternalNews.dll" tofile="${build.outdir}\ExternalNews.dll" />
+		<copy file="${build.components}\FaxInterface\FaxInterface.dll" tofile="${build.outdir}\FaxInterface.dll" />
+		<copy file="${build.components}\EmailInterface\EmailInterface.dll" tofile="${build.outdir}\EmailInterface.dll" />
+		<copy file="${build.components}\PayIndicator\PayIndicator.dll" tofile="${build.outdir}\PayIndicator.dll" />
+        <copy file="${build.BBOSdir}\EBBBusinessObjects\Bin\EBBBusinessObjects.dll" tofile="${build.outdir}\EBBBusinessObjects.dll" />
+
+		<!-- Compile, baby! -->
+		<csc target="exe" debug="false" output="${build.outdir}\BBSMonitor.exe" doc="${build.outdir}\BBSMonitor.xml" optimize="true" >
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\AssemblyInfo.cs" />
+			</sources>
+			<references>
+				<include name="${build.outdir}\TSIUtils.dll" />
+				<include name="${build.outdir}\LumenWorks.Framework.IO.dll" />
+				<include name="${build.outdir}\Renci.SshNet.dll" />
+                <include name="${build.outdir}\ICSharpCode.SharpZipLib.dll" />
+				<include name="${build.outdir}\BBSReportInterface.dll" />
+				<include name="${build.outdir}\ExternalNews.dll" />
+				<include name="${build.outdir}\FaxInterface.dll" />
+				<include name="${build.outdir}\EmailInterface.dll" />
+				<include name="${build.outdir}\PayIndicator.dll" />
+				<include name="${build.outdir}\EBBBusinessObjects.dll" />
+			</references>
+		</csc>
+
+		<!-- Update the config file -->
+		<property name="ConfigFile"   value="${build.srcdir}\BBSMonitor.exe.config" />
+
+		<if test="${BuildBBOS}" >			
+		     <copy file="${build.testconfigs}\BBSMonitor.exe.config" tofile="${ConfigFile}"  overwrite="true" verbose="true"/>
+		</if>
+
+
+		<!-- Clean up after ourselves... -->
+		<delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="*.cs"/>
+				<include name="*.scc"/>
+				<include name="*.csproj*"/>
+				<include name="*.resx"/>
+				<include name="*.trace.txt"/>
+				<include name="*.error.txt"/>
+				<include name="app.config"/>
+				<include name="vssver.scc"/>
+			</fileset>
+		</delete>
+
+                
+		<move todir="${build.srcdir}\Template">
+			<fileset basedir="${build.srcdir}\Template">
+				<include name="*.txt" />
+				<include name="*.xml" />
+				<include name="*.html" />
+				<exclude name="BBSMonitor.xml" />
+			</fileset>
+		</move>
+	</target>
+
+
+
+	<!--
+		Builds BBSListingTests
+	-->
+	<target name="BuildBBSListingTests" if="${BuildBBSListingTests}" description="Builds the BBS Listing Tester">
+		<tstamp />
+		<svn-checkout
+			destination="${build.components}\BBSListingTests"
+			uri="${sourcecode.url}/PRCo/BBS Components/BBSListingTests"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>	
+
+		<property name="build.srcdir" value="${build.components}\BBSListingTests" />
+		<property name="build.outdir" value="${build.components}\BBSListingTests" />
+		<mkdir dir="${build.outdir}" />
+
+		<!-- Update the Version Info for our output -->
+		<property name="assemblyinfo.location" value="${build.srcdir}\Properties\AssemblyInfo.cs" />
+		<call target="SetAssemblyVersion"/>
+
+		<!-- Compile, baby! -->
+		<echo message="Compiling BBSListingTests.exe..."/>
+		<csc target="exe" debug="false" output="${build.outdir}\BBSListingTests.exe" doc="${build.outdir}\BBSListingTests.xml" optimize="true" >
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+				<include name="${build.srcdir}\Properties\AssemblyInfo.cs" />
+			</sources>
+		</csc>
+
+
+		<!-- Clean up after ourselves... -->
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="*.cs"/>
+				<include name="*.scc"/>
+				<include name="*.csproj*"/>
+				<include name="*.resx"/>
+				<include name="*.config"/>
+			</fileset>
+		</delete>
+		<delete if="${CleanUpSource}" dir="${build.srcdir}\Properties" />
+
+	</target>
+
+
+
+	<!--
+		Execute BBSListingTests
+	-->
+	<target name="ExecuteBBSListingTests" if="${ExecuteBBSListingTests}" depends="BuildBBSListingTests" description="Executes the BBS Listing Tester">
+		<tstamp />
+
+		<property name="build.srcdir" value="${build.components}\BBSListingTests" />
+		<property name="build.outdir" value="${build.logdir}\BBSListingTests\" />
+
+
+		<property name="ConfigFile"   value="${build.srcdir}\BBSListingTests.exe.config" />
+  	    <copy file="${build.testconfigs}\BBSListingTests.exe.config" tofile="${ConfigFile}"  overwrite="true" verbose="true"/>
+
+		<exec failonerror="true" program="BBSListingTests.exe" append="true" basedir="${build.srcdir}" output="${build.logdir}\BBSListingTests.txt" commandline='/All /OutputDir:"${build.outdir}"'  />
+	</target>
+
+
+
+
+	<!--
+		Builds WebSurvey
+	-->
+	<target name="BuildWebSurvey" depends="PreBuild" description="Builds the Web survey">
+        <tstamp />
+		<svn-checkout
+			destination="${build.components}\WebSurvey"
+			uri="${sourcecode.url}/PRCo/BBS Components/WebSurvey"
+			username="${sourcecode.username}"
+			password="${sourcecode.password}"
+			verbose="true"
+			quiet="false"  
+		/>	
+
+		<property name="build.srcdir" value="${build.components}\WebSurvey" />
+		<property name="build.outdir" value="${build.components}\WebSurvey" />
+		<mkdir dir="${build.outdir}" />
+
+
+
+		<!-- Compile, baby! -->
+		<csc target="library" debug="false" output="${build.outdir}\sstchur.web.survey.dll" doc="${build.outdir}\sstchur.web.survey.xml">
+			<nowarn>
+				<warning number="1591"/>
+			</nowarn>
+			<sources>
+				<include name="${build.srcdir}\*.cs" />
+			</sources>
+		</csc>
+
+		<delete if="${CleanUpSource}">
+			<fileset basedir="${build.srcdir}">
+				<include name="*.cs"/>
+				<include name="*.scc"/>
+				<include name="*.csproj*"/>
+				<include name="*.resx"/>
+			</fileset>
+		</delete>
+	</target>
+</project>

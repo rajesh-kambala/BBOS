@@ -1,0 +1,1 @@
+<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="GetVCard.aspx.cs" Inherits="PRCo.BBOS.UI.Web.GetVCard" %>

@@ -1,0 +1,1323 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns:am="http://schemas.microsoft.com/sqlserver/reporting/authoringmetadata">
+  <Description>Business Report - BBScore Subreport</Description>
+  <am:AuthoringMetadata>
+    <am:CreatedBy>
+      <am:Name>SSDTRS</am:Name>
+      <am:Version>17.10.35004.147</am:Version>
+    </am:CreatedBy>
+    <am:UpdatedBy>
+      <am:Name>SSDTRS</am:Name>
+      <am:Version>17.10.35004.147</am:Version>
+    </am:UpdatedBy>
+    <am:LastModifiedTimestamp>2024-06-13T16:13:35.1887877Z</am:LastModifiedTimestamp>
+  </am:AuthoringMetadata>
+  <Author>Travant Solutions, Inc. - Christopher Walls</Author>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BBS">
+      <DataSourceReference>BBS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>d55b6687-b653-45c3-a3aa-590003645014</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="dsBBScore_Current">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyId">
+            <Value>=Parameters!CompanyID.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@CurrentRunDate">
+            <Value>=Parameters!CurrentRunDate.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>select prbs_BBScore, prbs_Model, comp_PRIndustryType, prbs_RunDate, prbs_IndustryAve, prbs_IndustryPercentile from PRBBScore WITH (NOLOCK)
+            LEFT OUTER JOIN Company WITH(NOLOCK) ON comp_CompanyID = prbs_CompanyID
+            where prbs_CompanyId = @CompanyId 
+                and prbs_PRPublish = 'Y'
+                AND comp_PRPublishBBScore='Y' 
+                and prbs_RunDate = @CurrentRunDate</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="prbs_BBScore">
+          <DataField>prbs_BBScore</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="prbs_Model">
+          <DataField>prbs_Model</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="comp_PRIndustryType">
+          <DataField>comp_PRIndustryType</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="prbs_RunDate">
+          <DataField>prbs_RunDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="prbs_IndustryAve">
+          <DataField>prbs_IndustryAve</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="prbs_IndustryPercentile">
+          <DataField>prbs_IndustryPercentile</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsBBScore_History">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyID">
+            <Value>=Parameters!CompanyID.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@HistoryThresholdMonths">
+            <Value>=Parameters!HistoryThreshold.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ConfidenceThreshold">
+            <Value>=Parameters!ConfidenceThreshold.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@IndustryType">
+            <Value>=Parameters!IndustryType.Value</Value>
+            <rd:UserDefined>true</rd:UserDefined>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>usp_BRBBScoreHistory</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="RunDate">
+          <DataField>RunDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="BBScore">
+          <DataField>BBScore</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="OldBBScore">
+          <DataField>OldBBScore</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsCurrentRunDate">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@IndustryType">
+            <Value>=Parameters!IndustryType.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT MAX(prbs_RunDate) AS CurrentRunDate
+ FROM PRBBScore WITH (NOLOCK)
+      INNER JOIN Company  WITH (NOLOCK) ON prbs_CompanyID = comp_CompanyID
+WHERE comp_PRIndustryType = CASE @IndustryType WHEN 'L' THEN 'L' ELSE 'P' END</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="CurrentRunDate">
+          <DataField>CurrentRunDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsBBScore_Exists">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyID">
+            <Value>=Parameters!CompanyID.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@HistoryThresholdMonths">
+            <Value>=Parameters!HistoryThreshold.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@CurrentRunDate">
+            <Value>=Parameters!CurrentRunDate.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>Select
+    Case When Exists(
+                Select *
+                From   PRBBScore WITH (NOLOCK)
+                LEFT OUTER JOIN Company WITH(NOLOCK) ON comp_CompanyID = prbs_CompanyID
+                Where  prbs_CompanyID = @CompanyID
+                       And prbs_PRPublish = 'Y'
+                       AND comp_PRPublishBBScore='Y' 
+                       And prbs_RunDate &gt;= DateAdd(month, -1 * @HistoryThresholdMonths, DateAdd(month, DateDiff(month, 0, @CurrentRunDate), 0))
+              ) Then 1
+         Else 0
+    End As "BBScore_Exists"</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="BBScore_Exists">
+          <DataField>BBScore_Exists</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsUseBothModels">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>select dbo.ufn_GetCustomCaptionValue('BBSUseBothModelsForLineChart','BBSUseBothModelsForLineChart', 'en-us') </CommandText>
+      </Query>
+      <Fields>
+        <Field Name="ID">
+          <DataField />
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Rectangle Name="Rectangle1">
+            <ReportItems>
+              <Textbox Name="txtBBScoreMsg">
+                <CanGrow>true</CanGrow>
+                <CanShrink>true</CanShrink>
+                <KeepTogether>true</KeepTogether>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>For more information about Blue Book Scores, please review the appropriate reference material in the BBOS Learning Center's </Value>
+                        <Style>
+                          <FontSize>9pt</FontSize>
+                        </Style>
+                      </TextRun>
+                      <TextRun>
+                        <Value>Membership Guide</Value>
+                        <ActionInfo>
+                          <Actions>
+                            <Action>
+                              <Hyperlink>https://apps.bluebookservices.com/BBOS/BlueBookServices.aspx</Hyperlink>
+                            </Action>
+                          </Actions>
+                        </ActionInfo>
+                        <Style>
+                          <FontSize>9pt</FontSize>
+                          <TextDecoration>Underline</TextDecoration>
+                          <Color>Blue</Color>
+                        </Style>
+                      </TextRun>
+                      <TextRun>
+                        <Value>.</Value>
+                        <Style>
+                          <FontSize>9pt</FontSize>
+                        </Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style />
+                  </Paragraph>
+                </Paragraphs>
+                <Top>0.375in</Top>
+                <Height>0.25in</Height>
+                <Width>7.375in</Width>
+                <Style>
+                  <PaddingLeft>2pt</PaddingLeft>
+                  <PaddingRight>2pt</PaddingRight>
+                  <PaddingTop>2pt</PaddingTop>
+                </Style>
+              </Textbox>
+              <Textbox Name="Textbox1">
+                <CanGrow>true</CanGrow>
+                <KeepTogether>true</KeepTogether>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>The data available for this company over the past three months does not support statistically valid Blue Book Scores.  For complete details about Blue Book Scores, consult the supporting documentation available within Blue Book Online Services or contact a Rating Analyst.</Value>
+                        <Style />
+                      </TextRun>
+                    </TextRuns>
+                    <Style />
+                  </Paragraph>
+                </Paragraphs>
+                <rd:DefaultName>Textbox1</rd:DefaultName>
+                <Top>0.66667in</Top>
+                <Height>0.25in</Height>
+                <Width>7.375in</Width>
+                <ZIndex>1</ZIndex>
+                <Visibility>
+                  <Hidden>=iif(Sum(Fields!BBScore_Exists.Value, "dsBBScore_Exists") = 1, TRUE, FALSE)</Hidden>
+                </Visibility>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                  <PaddingLeft>2pt</PaddingLeft>
+                  <PaddingRight>2pt</PaddingRight>
+                  <PaddingTop>2pt</PaddingTop>
+                  <PaddingBottom>2pt</PaddingBottom>
+                </Style>
+              </Textbox>
+              <Textbox Name="txtHeader">
+                <CanGrow>true</CanGrow>
+                <KeepTogether>true</KeepTogether>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>BLUE BOOK SCORE HISTORY</Value>
+                        <Style>
+                          <FontFamily>Times New Roman</FontFamily>
+                          <FontSize>16pt</FontSize>
+                        </Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style>
+                      <TextAlign>Center</TextAlign>
+                    </Style>
+                  </Paragraph>
+                </Paragraphs>
+                <Height>0.3in</Height>
+                <Width>7.5in</Width>
+                <ZIndex>2</ZIndex>
+                <DocumentMapLabel>BLUE BOOK SCORE HISTORY</DocumentMapLabel>
+                <Style>
+                  <TopBorder>
+                    <Style>Solid</Style>
+                  </TopBorder>
+                  <PaddingLeft>2pt</PaddingLeft>
+                  <PaddingRight>2pt</PaddingRight>
+                  <PaddingTop>2pt</PaddingTop>
+                  <PaddingBottom>2pt</PaddingBottom>
+                </Style>
+              </Textbox>
+              <Chart Name="BBScoreHistory">
+                <ChartCategoryHierarchy>
+                  <ChartMembers>
+                    <ChartMember>
+                      <Group Name="BBScoreHistory_CategoryGroup">
+                        <GroupExpressions>
+                          <GroupExpression>=Fields!RunDate.Value</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                      <SortExpressions>
+                        <SortExpression>
+                          <Value>=Fields!RunDate.Value</Value>
+                        </SortExpression>
+                      </SortExpressions>
+                      <Label>=Fields!RunDate.Value</Label>
+                    </ChartMember>
+                  </ChartMembers>
+                </ChartCategoryHierarchy>
+                <ChartSeriesHierarchy>
+                  <ChartMembers>
+                    <ChartMember>
+                      <Label>BBScore</Label>
+                    </ChartMember>
+                    <ChartMember>
+                      <Label>Old BBScore</Label>
+                    </ChartMember>
+                  </ChartMembers>
+                </ChartSeriesHierarchy>
+                <ChartData>
+                  <ChartSeriesCollection>
+                    <ChartSeries Name="BBScore">
+                      <ChartDataPoints>
+                        <ChartDataPoint>
+                          <ChartDataPointValues>
+                            <Y>=Sum(Fields!BBScore.Value)</Y>
+                          </ChartDataPointValues>
+                          <ChartDataLabel>
+                            <Style>
+                              <FontFamily>calibri</FontFamily>
+                              <FontSize>11pt</FontSize>
+                              <FontWeight>Bold</FontWeight>
+                              <Format>0;(0)</Format>
+                            </Style>
+                            <UseValueAsLabel>true</UseValueAsLabel>
+                            <Visible>true</Visible>
+                          </ChartDataLabel>
+                          <Style>
+                            <Border>
+                              <Width>2pt</Width>
+                            </Border>
+                            <Color>DarkBlue</Color>
+                          </Style>
+                          <ChartMarker>
+                            <Type>Square</Type>
+                            <Style>
+                              <Border>
+                                <Color>Black</Color>
+                              </Border>
+                              <Color>Black</Color>
+                            </Style>
+                          </ChartMarker>
+                          <DataElementOutput>Output</DataElementOutput>
+                        </ChartDataPoint>
+                      </ChartDataPoints>
+                      <Type>Line</Type>
+                      <Style />
+                      <ChartEmptyPoints>
+                        <Style />
+                        <ChartMarker>
+                          <Style />
+                        </ChartMarker>
+                        <ChartDataLabel>
+                          <Style />
+                        </ChartDataLabel>
+                      </ChartEmptyPoints>
+                      <ChartItemInLegend>
+                        <LegendText>BB Score</LegendText>
+                      </ChartItemInLegend>
+                      <ValueAxisName>Primary</ValueAxisName>
+                      <CategoryAxisName>Primary</CategoryAxisName>
+                      <ChartSmartLabel>
+                        <CalloutLineColor>Black</CalloutLineColor>
+                        <MinMovingDistance>0pt</MinMovingDistance>
+                      </ChartSmartLabel>
+                    </ChartSeries>
+                    <ChartSeries Name="OldBBScore">
+                      <Hidden>=First(Fields!ID.Value, "dsUseBothModels") &lt;&gt; "true" OR Parameters!IndustryType.Value="L"</Hidden>
+                      <ChartDataPoints>
+                        <ChartDataPoint>
+                          <ChartDataPointValues>
+                            <Y>=Sum(Fields!OldBBScore.Value)</Y>
+                          </ChartDataPointValues>
+                          <ChartDataLabel>
+                            <Style />
+                            <UseValueAsLabel>true</UseValueAsLabel>
+                            <Visible>true</Visible>
+                          </ChartDataLabel>
+                          <Style>
+                            <Color>#8b8bff</Color>
+                          </Style>
+                          <ChartMarker>
+                            <Type>Square</Type>
+                            <Style />
+                          </ChartMarker>
+                          <DataElementOutput>Output</DataElementOutput>
+                        </ChartDataPoint>
+                      </ChartDataPoints>
+                      <Type>Line</Type>
+                      <Style />
+                      <ChartEmptyPoints>
+                        <Style />
+                        <ChartMarker>
+                          <Style />
+                        </ChartMarker>
+                        <ChartDataLabel>
+                          <Style />
+                        </ChartDataLabel>
+                      </ChartEmptyPoints>
+                      <ChartItemInLegend>
+                        <LegendText>Retired BBScore</LegendText>
+                      </ChartItemInLegend>
+                      <ValueAxisName>Primary</ValueAxisName>
+                      <CategoryAxisName>Primary</CategoryAxisName>
+                      <ChartSmartLabel>
+                        <CalloutLineColor>Black</CalloutLineColor>
+                        <MinMovingDistance>0pt</MinMovingDistance>
+                      </ChartSmartLabel>
+                    </ChartSeries>
+                  </ChartSeriesCollection>
+                </ChartData>
+                <ChartAreas>
+                  <ChartArea Name="Default">
+                    <ChartCategoryAxes>
+                      <ChartAxis Name="Primary">
+                        <Style>
+                          <FontFamily>calibri</FontFamily>
+                          <FontSize>8pt</FontSize>
+                          <Format>MMM yyyy</Format>
+                        </Style>
+                        <ChartAxisTitle>
+                          <Caption>Date</Caption>
+                          <Style>
+                            <FontWeight>Bold</FontWeight>
+                          </Style>
+                        </ChartAxisTitle>
+                        <Interval>1</Interval>
+                        <IntervalType>Months</IntervalType>
+                        <ChartMajorGridLines>
+                          <Enabled>True</Enabled>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                            </Border>
+                          </Style>
+                        </ChartMajorGridLines>
+                        <ChartMinorGridLines>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                              <Style>Dotted</Style>
+                            </Border>
+                          </Style>
+                        </ChartMinorGridLines>
+                        <ChartMinorTickMarks>
+                          <Length>0.5</Length>
+                        </ChartMinorTickMarks>
+                        <CrossAt>NaN</CrossAt>
+                        <Scalar>true</Scalar>
+                        <Minimum>=min(Fields!RunDate.Value, "dsBBScore_History")</Minimum>
+                        <Maximum>=Parameters!CurrentRunDate.Value</Maximum>
+                        <Angle>90</Angle>
+                        <MinFontSize>8pt</MinFontSize>
+                        <ChartAxisScaleBreak>
+                          <Style />
+                        </ChartAxisScaleBreak>
+                      </ChartAxis>
+                      <ChartAxis Name="Secondary">
+                        <Style>
+                          <FontSize>8pt</FontSize>
+                        </Style>
+                        <ChartAxisTitle>
+                          <Caption>Axis Title</Caption>
+                          <Style>
+                            <FontSize>8pt</FontSize>
+                          </Style>
+                        </ChartAxisTitle>
+                        <ChartMajorGridLines>
+                          <Enabled>False</Enabled>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                            </Border>
+                          </Style>
+                        </ChartMajorGridLines>
+                        <ChartMinorGridLines>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                              <Style>Dotted</Style>
+                            </Border>
+                          </Style>
+                        </ChartMinorGridLines>
+                        <ChartMinorTickMarks>
+                          <Length>0.5</Length>
+                        </ChartMinorTickMarks>
+                        <CrossAt>NaN</CrossAt>
+                        <Location>Opposite</Location>
+                        <Minimum>NaN</Minimum>
+                        <Maximum>NaN</Maximum>
+                        <ChartAxisScaleBreak>
+                          <Style />
+                        </ChartAxisScaleBreak>
+                      </ChartAxis>
+                    </ChartCategoryAxes>
+                    <ChartValueAxes>
+                      <ChartAxis Name="Primary">
+                        <Style>
+                          <FontSize>8pt</FontSize>
+                        </Style>
+                        <ChartAxisTitle>
+                          <Caption>Blue Book Score</Caption>
+                          <Style>
+                            <FontWeight>Bold</FontWeight>
+                          </Style>
+                        </ChartAxisTitle>
+                        <Interval>100</Interval>
+                        <ChartMajorGridLines>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                            </Border>
+                          </Style>
+                        </ChartMajorGridLines>
+                        <ChartMinorGridLines>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                              <Style>Dotted</Style>
+                            </Border>
+                          </Style>
+                        </ChartMinorGridLines>
+                        <ChartMinorTickMarks>
+                          <Length>0.5</Length>
+                        </ChartMinorTickMarks>
+                        <CrossAt>NaN</CrossAt>
+                        <Minimum>500</Minimum>
+                        <Maximum>1000</Maximum>
+                        <ChartAxisScaleBreak>
+                          <Style />
+                        </ChartAxisScaleBreak>
+                      </ChartAxis>
+                      <ChartAxis Name="Secondary">
+                        <Style>
+                          <FontSize>8pt</FontSize>
+                        </Style>
+                        <ChartAxisTitle>
+                          <Caption>Axis Title</Caption>
+                          <Style>
+                            <FontSize>8pt</FontSize>
+                          </Style>
+                        </ChartAxisTitle>
+                        <ChartMajorGridLines>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                            </Border>
+                          </Style>
+                        </ChartMajorGridLines>
+                        <ChartMinorGridLines>
+                          <Style>
+                            <Border>
+                              <Color>Gainsboro</Color>
+                              <Style>Dotted</Style>
+                            </Border>
+                          </Style>
+                        </ChartMinorGridLines>
+                        <ChartMinorTickMarks>
+                          <Length>0.5</Length>
+                        </ChartMinorTickMarks>
+                        <CrossAt>NaN</CrossAt>
+                        <Location>Opposite</Location>
+                        <Minimum>NaN</Minimum>
+                        <Maximum>NaN</Maximum>
+                        <ChartAxisScaleBreak>
+                          <Style />
+                        </ChartAxisScaleBreak>
+                      </ChartAxis>
+                    </ChartValueAxes>
+                    <ChartThreeDProperties>
+                      <Rotation>24</Rotation>
+                      <DepthRatio>86</DepthRatio>
+                      <WallThickness>0</WallThickness>
+                    </ChartThreeDProperties>
+                    <Style>
+                      <BackgroundColor>LightSteelBlue</BackgroundColor>
+                      <BackgroundGradientType>TopBottom</BackgroundGradientType>
+                    </Style>
+                  </ChartArea>
+                </ChartAreas>
+                <ChartLegends>
+                  <ChartLegend Name="Legend1">
+                    <Hidden>=First(Fields!ID.Value, "dsUseBothModels") &lt;&gt; "true" OR Parameters!IndustryType.Value="L"</Hidden>
+                    <Style>
+                      <BackgroundGradientType>None</BackgroundGradientType>
+                      <FontSize>8pt</FontSize>
+                    </Style>
+                    <Position>BottomLeft</Position>
+                    <ChartLegendTitle>
+                      <Caption />
+                      <Style>
+                        <FontSize>8pt</FontSize>
+                        <FontWeight>Bold</FontWeight>
+                        <TextAlign>Center</TextAlign>
+                      </Style>
+                    </ChartLegendTitle>
+                    <HeaderSeparatorColor>Black</HeaderSeparatorColor>
+                    <ColumnSeparatorColor>Black</ColumnSeparatorColor>
+                  </ChartLegend>
+                </ChartLegends>
+                <ChartTitles>
+                  <ChartTitle Name="Default">
+                    <Caption>Blue Book Score Trend</Caption>
+                    <Style>
+                      <BackgroundGradientType>None</BackgroundGradientType>
+                      <FontSize>12pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                      <TextAlign>General</TextAlign>
+                      <VerticalAlign>Top</VerticalAlign>
+                    </Style>
+                  </ChartTitle>
+                </ChartTitles>
+                <Palette>BrightPastel</Palette>
+                <ChartBorderSkin>
+                  <Style>
+                    <BackgroundColor>Gray</BackgroundColor>
+                    <BackgroundGradientType>None</BackgroundGradientType>
+                    <Color>White</Color>
+                  </Style>
+                </ChartBorderSkin>
+                <ChartNoDataMessage Name="NoDataMessage">
+                  <Caption>No Data Available</Caption>
+                  <Style>
+                    <BackgroundGradientType>None</BackgroundGradientType>
+                    <TextAlign>General</TextAlign>
+                    <VerticalAlign>Top</VerticalAlign>
+                  </Style>
+                </ChartNoDataMessage>
+                <DataSetName>dsBBScore_History</DataSetName>
+                <Top>2.28819in</Top>
+                <Height>3in</Height>
+                <Width>7.5in</Width>
+                <ZIndex>3</ZIndex>
+                <Visibility>
+                  <Hidden>=iif(Sum(Fields!BBScore_Exists.Value, "dsBBScore_Exists") &gt; 0, FALSE, TRUE)</Hidden>
+                </Visibility>
+                <Style>
+                  <Border>
+                    <Color>LightGrey</Color>
+                    <Style>Solid</Style>
+                  </Border>
+                  <BackgroundColor>LightSteelBlue</BackgroundColor>
+                  <BackgroundGradientType>TopBottom</BackgroundGradientType>
+                </Style>
+              </Chart>
+              <Subreport Name="Subreport1">
+                <ReportName>BBScoreGauge</ReportName>
+                <Parameters>
+                  <Parameter Name="CompanyID">
+                    <Value>=Parameters!CompanyID.Value</Value>
+                  </Parameter>
+                  <Parameter Name="DisplayText">
+                    <Value>=IIF(CountRows("dsBBScore_Current") &gt; 0, true, false)</Value>
+                  </Parameter>
+                </Parameters>
+                <Top>1.04861in</Top>
+                <Left>1.51042in</Left>
+                <Height>1in</Height>
+                <Width>4.5in</Width>
+                <ZIndex>4</ZIndex>
+                <Visibility>
+                  <Hidden>=iif(Sum(Fields!BBScore_Exists.Value, "dsBBScore_Exists") &gt; 0, iif(LCase(First(Fields!prbs_Model.Value, "dsBBScore_Current")) = "blendedV2", TRUE, FALSE), TRUE)</Hidden>
+                </Visibility>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                </Style>
+              </Subreport>
+              <Subreport Name="Subreport2">
+                <ReportName>BBScoreGauge3</ReportName>
+                <Parameters>
+                  <Parameter Name="prbs_BBScore">
+                    <Value>=First(Fields!prbs_BBScore.Value, "dsBBScore_Current")</Value>
+                  </Parameter>
+                  <Parameter Name="comp_PRIndustryType">
+                    <Value>=First(Fields!comp_PRIndustryType.Value, "dsBBScore_Current")</Value>
+                  </Parameter>
+                  <Parameter Name="DisplayText">
+                    <Value>=IIF(CountRows("dsBBScore_Current") &gt; 0, true, false)</Value>
+                  </Parameter>
+                </Parameters>
+                <Top>1.04861in</Top>
+                <Left>1.51042in</Left>
+                <Height>1in</Height>
+                <Width>4.5in</Width>
+                <ZIndex>5</ZIndex>
+                <Visibility>
+                  <Hidden>=iif(Sum(Fields!BBScore_Exists.Value, "dsBBScore_Exists") &gt; 0, iif(LCase(First(Fields!prbs_Model.Value, "dsBBScore_Current")) &lt;&gt; "blendedV2", TRUE, FALSE), TRUE)</Hidden>
+                </Visibility>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                </Style>
+              </Subreport>
+            </ReportItems>
+            <Height>5.28819in</Height>
+            <Width>7.5in</Width>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Rectangle>
+          <Tablix Name="Tablix1">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>1.8in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.8in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.8in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Industry Percentile</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox2</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>LightGrey</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox4">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Subject Company  Score</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox4</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>LightGrey</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox6">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Industry Average</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox6</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>LightGrey</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="prbs_IndustryPercentile">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!prbs_IndustryPercentile.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>prbs_IndustryPercentile</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="prbs_BBScore">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!prbs_BBScore.Value</Value>
+                                  <Style>
+                                    <Format>0;(0)</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>prbs_BBScore</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="prbs_IndustryAve">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!prbs_IndustryAve.Value</Value>
+                                  <Style>
+                                    <Format>0;(0)</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>prbs_IndustryAve</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox8">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=IIF (LCase(Fields!prbs_Model.Value)="blendedV2",
+ 
+ IIF (Fields!prbs_BBScore.Value &lt;= 599, "Subject company falls in the High Risk Category",
+ IIF (Fields!prbs_BBScore.Value &lt;= 699, "Subject company falls in the Moderate High Risk Category",
+ IIF (Fields!prbs_BBScore.Value &lt;= 749, "Subject company falls in the Moderate Risk Category",
+ IIF (Fields!prbs_BBScore.Value &lt;= 799, "Subject company falls in the Moderate Low Risk Category",
+ "Subject company falls in the Low Risk Category"))))
+ ,
+ 
+IIF (Fields!prbs_BBScore.Value &lt;= 599, "Subject company falls in the High Risk Category",
+ IIF (Fields!prbs_BBScore.Value &lt;= 659, "Subject company falls in the Moderately High Risk Category",
+ IIF (Fields!prbs_BBScore.Value &lt;= 739, "Subject company falls in the Moderate Risk Category",
+ IIF (Fields!prbs_BBScore.Value &lt;= 809, "Subject company falls in the Moderately Low Risk Category",
+ "Subject company falls in the Low Risk Category"))))
+ )</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox8</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <ColSpan>3</ColSpan>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell />
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+                <TablixMember>
+                  <KeepWithGroup>Before</KeepWithGroup>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>dsBBScore_Current</DataSetName>
+            <Top>5.83208in</Top>
+            <Left>1.06125in</Left>
+            <Height>0.75in</Height>
+            <Width>5.4in</Width>
+            <ZIndex>1</ZIndex>
+            <Style>
+              <Border>
+                <Style>Solid</Style>
+              </Border>
+              <TopBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </TopBorder>
+              <BottomBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </BottomBorder>
+              <LeftBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </LeftBorder>
+              <RightBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </RightBorder>
+            </Style>
+          </Tablix>
+          <Textbox Name="Textbox9">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value EvaluationMode="Constant">Note: Percentile is the value at or below which a percentage of data falls.</Value>
+                    <Style>
+                      <FontStyle>Italic</FontStyle>
+                      <FontSize>9pt</FontSize>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Center</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <rd:DefaultName>Textbox9</rd:DefaultName>
+            <Top>6.60986in</Top>
+            <Left>1.06125in</Left>
+            <Height>0.25in</Height>
+            <Width>5.4in</Width>
+            <ZIndex>2</ZIndex>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtScoreDisclaimer">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>An updated Blue Book Score statistical model was launched in July 2023.  This Blue Book Score History graph will display the current and retired Blue Book Score through September 2023 for continuity when assessing a company’s credit risk. For further assistance, please contact a Blue Book rating analyst.</Value>
+                    <Style>
+                      <FontStyle>Italic</FontStyle>
+                      <FontSize>9pt</FontSize>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Center</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Top>5.30493in</Top>
+            <Left>1.06125in</Left>
+            <Height>0.36048in</Height>
+            <Width>5.4in</Width>
+            <ZIndex>3</ZIndex>
+            <Visibility>
+              <Hidden>=First(Fields!ID.Value, "dsUseBothModels") &lt;&gt; "true" OR Parameters!IndustryType.Value="L"</Hidden>
+            </Visibility>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+        </ReportItems>
+        <Height>6.85986in</Height>
+        <Style />
+      </Body>
+      <Width>7.5in</Width>
+      <Page>
+        <LeftMargin>0.5in</LeftMargin>
+        <RightMargin>0.5in</RightMargin>
+        <TopMargin>1in</TopMargin>
+        <BottomMargin>1in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="CompanyID">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>102030</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>CompanyID</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="HistoryThreshold">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>3</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Number of Previous Scores for History</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ConfidenceThreshold">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>5</Value>
+        </Values>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Confidence Threshold</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="IndustryType">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>P</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Industry Type</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="CurrentRunDate">
+      <DataType>DateTime</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>dsCurrentRunDate</DataSetName>
+          <ValueField>CurrentRunDate</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Hidden>true</Hidden>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>3</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>CompanyID</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>HistoryThreshold</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>ConfidenceThreshold</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>IndustryType</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>2</RowIndex>
+          <ParameterName>CurrentRunDate</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <Language>en-US</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportServerUrl>http://qa.reports.bluebookservices.local/ReportServer</rd:ReportServerUrl>
+  <rd:ReportID>e1011f0d-f0bf-4c01-b1c0-90b45940e039</rd:ReportID>
+</Report>

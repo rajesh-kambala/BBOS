@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SharedDataSet xmlns="http://schemas.microsoft.com/sqlserver/reporting/2010/01/shareddatasetdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <DataSet Name="">
+    <Query>
+      <DataSourceReference>BBS</DataSourceReference>
+      <CommandText>SELECT * FROM (
+SELECT user_logon,
+            RTRIM(User_FirstName) + ' ' + RTRIM(User_LastName) as Name
+  FROM Users
+       LEFT OUTER JOIN Channel_Link ON user_userID = ChLi_User_Id
+WHERE  (ChLi_Channel_Id IN (6, 15) OR User_PrimaryChannelId IN (6, 15))
+--   AND user_disabled IS NULL
+UNION
+SELECT 'JEB', 'Julie Brown'
+UNION
+SELECT 'DLL', 'Dietra Lawson'
+UNION
+SELECT 'unknown', '&lt;Unknown&gt;'
+) T1
+ORDER BY user_logon</CommandText>
+    </Query>
+    <Fields>
+      <Field Name="user_logon">
+        <DataField>user_logon</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="Name">
+        <DataField>Name</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+    </Fields>
+  </DataSet>
+</SharedDataSet>

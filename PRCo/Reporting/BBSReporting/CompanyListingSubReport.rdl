@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BBS">
+      <DataSourceReference>BBS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>37705d12-25a6-4334-aaa4-6755ac563dc6</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="dsCompanyInfo">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyId">
+            <Value>=Parameters!CompanyId.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT comp_PRBookTradestyle, 
+       --dbo.ufn_GetCustomCaptionValue('PIKSUtils', 'LogoURL', 'en-us') + comp_PRLogo AS comp_PRLogo, 
+	   'http://apps.bluebookservices.com/BBSUtils/GetLogo.aspx?LogoFile=' + comp_PRLogo AS comp_PRLogo, 
+	   comp_PRPublishLogo, CityStateCountryShort, IndustryTypeDesc = cast(ind.capt_US as varchar(500)) + ' Listing',
+       --dbo.ufn_GetCustomCaptionValue('PIKSUtils', 'LogoURL', 'en-us') + 'YourLogoHere.jpg' as YourLogoHereURL
+	   'http://apps.bluebookservices.com/BBSUtils/GetLogo.aspx?LogoFile=' + 'YourLogoHere.jpg' as YourLogoHereURL
+FROM Company WITH (NOLOCK)
+     INNER JOIN vPRLocation on comp_prlistingcityid = prci_CityId  
+     INNER JOIN Custom_Captions ind ON capt_family = 'comp_PRIndustryType' AND capt_code = comp_PRIndustryType  
+WHERE comp_CompanyId = @CompanyId</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="comp_PRBookTradestyle">
+          <DataField>comp_PRBookTradestyle</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="comp_PRLogo">
+          <DataField>comp_PRLogo</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="comp_PRPublishLogo">
+          <DataField>comp_PRPublishLogo</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="CityStateCountryShort">
+          <DataField>CityStateCountryShort</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="IndustryTypeDesc">
+          <DataField>IndustryTypeDesc</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="YourLogoHereURL">
+          <DataField>YourLogoHereURL</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsGetListing">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyId">
+            <Value>=Parameters!CompanyId.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>/*
+SRS 2005 SP1 has an issue with textboxes that span page breaks.
+Unless the text is longer than one page, the entire textbox will
+be moved to the second page when exported to PDF.  If the text is
+large enough to span a page, the top of the text box is returned
+to its designed position.  This only appears in the PDF export.
+
+A second SRS defect is that when exporting to PDF, leading spaces are lost.
+So we count the number of leading spaces and use that to calculate row
+padding.
+
+CHW 10/22/06
+*/
+
+DECLARE @ListingText varchar(max), @Line varchar(50)
+DECLARE @LineBreakChar varchar(10), @Char char(1)
+DECLARE @LineBreakPos int, @PreviousLineBreakPos int, @LineLength int, @LineBreakCharLength int
+DECLARE @SpaceCount int, @SpaceIndex int
+DECLARE @FirstLine bit
+
+DECLARE @ListingTable table (
+                Ndx int identity(1,1) Primary Key,
+	           ListingText varchar(50),
+               SpaceCount int,
+                LineCount int
+)
+
+-- Get the Listing for the company
+SET @ListingText = dbo.ufn_GetListingFromCompany(@CompanyId, 2, 1);
+SET @LineBreakChar =CHAR(13)+CHAR(10)
+SET @LineBreakCharLength = LEN(@LineBreakChar)
+
+-- Spin through parsing the text on the linebreak character.
+-- Add each line found to an in memory table.
+SET @LineBreakPos = CHARINDEX(@LineBreakChar, @ListingText)
+SET @FirstLine = 1
+WHILE (@LineBreakPos &gt; 0) BEGIN
+        IF (@FirstLine = 1) BEGIN
+	SET @FirstLine = 0
+
+        -- Go get our line
+       SET @Line = SUBSTRING(@ListingText, 0, @LineBreakPos)
+
+        SET @SpaceCount = 0
+        SET @SpaceIndex = 1
+        SET @Char = SUBSTRING(@Line, @SpaceIndex, 1)
+        WHILE (@Char = ' ') BEGIN
+	        SET @SpaceCount = @SpaceCount + 1
+            SET @SpaceIndex = @SpaceIndex + 1
+			SET @Char = SUBSTRING(@Line, @SpaceIndex, 1)
+        END 
+
+		-- Add it to our table
+		INSERT INTO @ListingTable (ListingText, SpaceCount) VALUES (SUBSTRING(@Line, @SpaceCount+1, LEN(@Line) - @SpaceCount), @SpaceCount);
+	END
+
+	-- Save off our current position and 
+	-- Go get the next one so we know where our 
+	-- line ends.
+	SET @PreviousLineBreakPos = ISNULL(@LineBreakPos, 0);
+	SET @LineBreakPos = CHARINDEX(@LineBreakChar, @ListingText, @PreviousLineBreakPos + @LineBreakCharLength)
+
+
+	-- If we didn't find an ending break,
+    -- Use the rest of the text
+	IF (@LineBreakPos &gt; 0) BEGIN
+		SET @LineLength = @LineBreakPos - @PreviousLineBreakPos - @LineBreakCharLength;
+	END ELSE BEGIN
+		SET @LineLength = LEN(@ListingText) - @PreviousLineBreakPos - @LineBreakCharLength + 1;
+	END
+
+	-- Go get our line
+	SET @Line = SUBSTRING(@ListingText, @PreviousLineBreakPos + @LineBreakCharLength, @LineLength)
+
+    SET @SpaceCount = 0
+    SET @SpaceIndex = 1
+    SET @Char = SUBSTRING(@Line, @SpaceIndex, 1)
+    WHILE (@Char = ' ') AND (@SpaceIndex &lt;= LEN(@Line)) BEGIN
+	    SET @SpaceCount = @SpaceCount + 1
+        SET @SpaceIndex = @SpaceIndex + 1
+        SET @Char = SUBSTRING(@Line, @SpaceIndex, 1)
+    END 
+	-- Add it to our table
+	INSERT INTO @ListingTable (ListingText, SpaceCount) VALUES (SUBSTRING(@Line, @SpaceCount+1, LEN(@Line) - @SpaceCount), @SpaceCount);
+END
+
+
+-- This is to address a SRS issue pertaining
+-- to handling texboxes that span page breaks
+DECLARE @LineCount int
+SELECT  @LineCount =  COUNT(1)
+   FROM @ListingTable
+
+--IF (@LineCount &gt; 40) AND (@LineCount &lt; 49) BEGIN
+--    WHILE (@LineCount &lt; 49) BEGIN  --55
+--         SET @LineCount = @LineCount + 1
+--         INSERT INTO @ListingTable (ListingText ) VALUES (' ');
+--    END
+--END
+
+
+UPDATE @ListingTable 
+SET LineCount = @LineCount;
+
+
+-- Return the results
+SELECT * FROM @ListingTable</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Ndx">
+          <DataField>Ndx</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="ListingText">
+          <DataField>ListingText</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="SpaceCount">
+          <DataField>SpaceCount</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="LineCount">
+          <DataField>LineCount</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Image Name="imgLogo">
+            <Source>External</Source>
+            <Value>=IIF( First(Fields!comp_PRPublishLogo.Value, "dsCompanyInfo") is nothing, First(Fields!YourLogoHereURL.Value, "dsCompanyInfo"), First(Fields!comp_PRLogo.Value, "dsCompanyInfo"))</Value>
+            <Sizing>FitProportional</Sizing>
+            <Left>5.25in</Left>
+            <Height>0.788in</Height>
+            <Width>0.788in</Width>
+            <Visibility>
+              <Hidden>=IIF(First(Fields!comp_PRPublishLogo.Value, "dsCompanyInfo") = "Y", false, true)</Hidden>
+            </Visibility>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <Border />
+            </Style>
+          </Image>
+          <Tablix Name="table1">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>3.5in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.16667in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ListingText">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!ListingText.Value</Value>
+                                  <Style>
+                                    <FontFamily>Courier New</FontFamily>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ListingText</rd:DefaultName>
+                          <Style>
+                            <PaddingLeft>=CStr((Fields!SpaceCount.Value * 6) + 2) + "pt"</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <Group Name="table1_Details_Group">
+                    <DataElementName>Detail</DataElementName>
+                  </Group>
+                  <TablixMembers>
+                    <TablixMember />
+                  </TablixMembers>
+                  <DataElementName>Detail_Collection</DataElementName>
+                  <DataElementOutput>Output</DataElementOutput>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>dsGetListing</DataSetName>
+            <Left>3in</Left>
+            <Height>0.16667in</Height>
+            <Width>3.5in</Width>
+            <ZIndex>1</ZIndex>
+            <Style>
+              <FontFamily>Courier New</FontFamily>
+              <FontSize>12pt</FontSize>
+            </Style>
+          </Tablix>
+          <Rectangle Name="Rectangle1">
+            <ReportItems>
+              <Textbox Name="txtCityState">
+                <CanGrow>true</CanGrow>
+                <KeepTogether>true</KeepTogether>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>=First(Fields!CityStateCountryShort.Value, "dsCompanyInfo") + Environment.NewLine + First(Fields!IndustryTypeDesc.Value, "dsCompanyInfo")</Value>
+                        <Style>
+                          <FontWeight>Bold</FontWeight>
+                        </Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style>
+                      <TextAlign>Right</TextAlign>
+                    </Style>
+                  </Paragraph>
+                </Paragraphs>
+                <Left>0.25in</Left>
+                <Height>0.16667in</Height>
+                <Width>2.625in</Width>
+                <Style />
+              </Textbox>
+              <Image Name="Image1">
+                <Source>External</Source>
+                <Value>=First(Fields!YourLogoHereURL.Value, "dsCompanyInfo")</Value>
+                <Sizing>FitProportional</Sizing>
+                <Top>0.23611in</Top>
+                <Left>2.087in</Left>
+                <Height>0.80189in</Height>
+                <Width>0.788in</Width>
+                <ZIndex>1</ZIndex>
+                <Visibility>
+                  <Hidden>=IIF(First(Fields!comp_PRPublishLogo.Value, "dsCompanyInfo") = "Y", true, false)</Hidden>
+                </Visibility>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                </Style>
+              </Image>
+            </ReportItems>
+            <KeepTogether>true</KeepTogether>
+            <Height>1.13542in</Height>
+            <Width>2.875in</Width>
+            <ZIndex>2</ZIndex>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Rectangle>
+        </ReportItems>
+        <Height>1.13542in</Height>
+        <Style />
+      </Body>
+      <Width>6.5in</Width>
+      <Page>
+        <LeftMargin>1in</LeftMargin>
+        <RightMargin>1in</RightMargin>
+        <TopMargin>1in</TopMargin>
+        <BottomMargin>1in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="CompanyId">
+      <DataType>String</DataType>
+      <Prompt>Company ID</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>1</NumberOfColumns>
+      <NumberOfRows>1</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>CompanyId</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <Language>en-US</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>53f73041-f00e-417a-b594-d4fc068ca9df</rd:ReportID>
+</Report>

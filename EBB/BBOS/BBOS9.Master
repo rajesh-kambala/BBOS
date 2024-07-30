@@ -1,0 +1,526 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="BBOS9.Master.cs" Inherits="PRCo.BBOS.UI.Web.BBOS9" %>
+<%@ Register TagPrefix="bbos" TagName="QuickFind" Src="~/UserControls/QuickFind.ascx" %>
+
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server">
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>
+        <asp:Literal ID="litHTMLTitle" runat="server" Text="Blue Book Services" />
+    </title>
+
+    <link href="Content/bootstrap.css" rel="stylesheet" />
+    <link href="Content/bootstrap-datepicker.min.css" rel="stylesheet" />
+    <link href="Content/font-awesome.min.css" rel="stylesheet" />
+    <link href="Content/bbos.min.css" rel="stylesheet" />
+
+    <script type="text/javascript" src="Scripts/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript" src="Scripts/jquery-ui-1.12.1.min.js"></script>
+    <script type="text/javascript" src="Scripts/bootstrap-datepicker.min.js"></script>
+    <script type="text/javascript" src="Scripts/bootbox.min.js"></script>
+
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+        crossorigin="anonymous" />
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+
+    <link href="Content/styles.css" rel="stylesheet" />                         <%--PTs File --%>
+    <script type="text/javascript" async src="Scripts/main.js"></script>        <%--PTs File --%>
+
+    <asp:ContentPlaceHolder ID="contentHead" runat="server">
+    </asp:ContentPlaceHolder>
+
+    <script type="text/javascript">
+        var imgPlus = '<%# UIUtils.GetImageURL("plus.gif") %>';
+        var imgMinus = '<%# UIUtils.GetImageURL("minus.gif") %>';
+    </script>
+
+    <asp:ContentPlaceHolder ID="contentGoogleTagHead" runat="server" Visible="false">
+    </asp:ContentPlaceHolder>
+</head>
+
+<body runat="server" id="Body" class="tw-flex tw-flex-col tw-items-center tw-align-middle">
+    <asp:Panel ID="pnlGoogleTagBody" runat="server" Visible="false">
+    </asp:Panel>
+
+    <form id="form2" runat="server" class="tw-w-full">
+        <asp:ScriptManager ID="ScriptManager1" EnablePartialRendering="true" EnableScriptGlobalization="true" runat="server">
+            <Services>
+                <asp:ServiceReference Path="~/AJAXHelper.asmx" />
+            </Services>
+        </asp:ScriptManager>
+
+        <% =UIUtils.GetJavaScriptTag(UIUtils.JS_BBOS_FILE) %>
+        <% =UIUtils.GetJavaScriptTag(UIUtils.JS_BOOTSTRAP_FUNCTIONS_FILE) %>
+
+        <!-- TOP NAV BAR -->
+        <div class="top-nav">
+            <div class="top-nav-container">
+                <div class="tw-flex-grow">
+                    <div class="top-nav-logo">
+                        <img src='assets/BBS_logo_small.svg' />
+                        <img
+                            class="tw-hidden xl:tw-inline-block"
+                            style="width: 122px; height: 12px"
+                            src='assets/Blue-Book-Services.png' />
+                    </div>
+                    <button
+                        type="button"
+                        class="bbsButton bbsButton-menu-item <%=SelectedMenuClass(AdvancedCompanySearchBase.SELECTED_MENU_CLASS_HOME) %>"
+                        id="home-dropdown">
+                        <p>
+                            <a id="aBBOSHOME" runat="server">
+                                <span class="msicon notranslate">home</span>
+                                <span class="text-label tw-hidden md:tw-inline-block"><% =Resources.Global.Home %></span>
+                            </a>
+                        </p>
+                    </button>
+                    <!-- advanced-search-dropdown -->
+                    <div>
+                        <button
+                            type="button"
+                            class="bbsButton bbsButton-menu-item <%=SelectedMenuClass(AdvancedCompanySearchBase.SELECTED_MENU_CLASS_ADVANCED_SEARCH) %>"
+                            id="advanced-search-dropdown"
+                            onclick="toggleTopNavMenu(event)">
+                            <p>
+                                <span class="msicon notranslate">search</span>
+                                <span class="text-label tw-hidden md:tw-inline-block"><%= Resources.Global.AdvancedSearch %></span>
+                            </p>
+                        </button>
+                        <div id="search-top-menu" class="bbsMenu tw-absolute tw-hidden">
+
+                            <asp:LinkButton id="hlAdvancedCompanySearch" runat="server" CssClass="bbsButton bbsButton-menu-item" OnClick="hlAdvancedCompanySearch_Click" >
+                                <p>
+                                    <span class="msicon notranslate">factory</span>
+                                    <span class="text-label"><% =Resources.Global.AdvancedCompanySearch%></span>
+                                    <span class="bbsBadge">New</span>
+                                </p>
+                            </asp:LinkButton>
+                            <asp:LinkButton id="hlCompanySearch" runat="server" CssClass="bbsButton bbsButton-menu-item" OnClick="btnCompanySearchOnClick">
+                                <p>
+                                    <span class="msicon notranslate">factory</span>
+                                    <span class="text-label"><% =Resources.Global.CompanySearch%></span>
+                                </p>
+                            </asp:LinkButton>
+
+                            <asp:LinkButton ID="hlPersonSearch" runat="server" CssClass="bbsButton bbsButton-menu-item" OnClick="btnPersonSearchOnClick">
+                                    <p>
+                                        <span class="msicon notranslate">person_search</span>
+                                        <span class="text-label"><% =Resources.Global.PeopleSearch%></span>
+                                    </p>
+                            </asp:LinkButton>
+
+                            <asp:HyperLink ID="hlCompanyUpdateSearch" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p>
+                                    <span class="msicon notranslate">work_history</span>
+                                    <span class="text-label"><% =Resources.Global.CompanyUpdatesSearch%></span>
+                                </p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlClaimActivitySearch" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p>
+                                    <span class="msicon notranslate">universal_currency_alt</span>
+                                    <span class="text-label"><% =Resources.Global.ClaimSearch%></span>
+                                </p>
+                            </asp:HyperLink>
+
+                            <hr />
+
+                            <asp:HyperLink ID="hlRecentViews" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p>
+                                    <span class="msicon notranslate">history</span>
+                                    <span class="text-label"><% =Resources.Global.RecentViews%></span>
+                                </p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlLastCompanySearch" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p>
+                                    <span class="msicon notranslate">youtube_searched_for</span>
+                                    <span class="text-label"><% =Resources.Global.RunLastSearch%></span>
+                                </p>
+                            </asp:HyperLink>
+
+                            <hr />
+
+                            <asp:HyperLink ID="hlSavedSearches" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p>
+                                    <span class="msicon notranslate">saved_search</span>
+                                    <span class="text-label"><% =Resources.Global.BrowseSavedSearches%></span>
+                                </p>
+                            </asp:HyperLink>
+                        </div>
+                    </div>
+                    <!-- tools-dropdown -->
+                    <div>
+                        <button
+                            type="button"
+                            id="tools-dropdown"
+                            onclick="toggleTopNavMenu(event)"
+                            class="bbsButton bbsButton-menu-item <%=SelectedMenuClass(AdvancedCompanySearchBase.SELECTED_MENU_CLASS_TOOLS) %>">
+                            <p>
+                                <span class="msicon notranslate">handyman</span>
+                                <span class="text-label tw-hidden md:tw-inline-block"><% = Resources.Global.Tools %></span>
+                            </p>
+                        </button>
+                        <div id="tools-top-menu" class="bbsMenu tw-absolute tw-hidden">
+                            <asp:HyperLink ID="hlNotes" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.Notes%></span></p>
+                                <p class="caption">
+                                    <% =Resources.Global.Notes_Caption%>
+                                </p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlWatchdogLists" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.WatchdogGroupsAlerts%></span></p>
+                                <p class="caption">
+                                    <% =Resources.Global.WatchdogGroupsAlerts_Caption%>
+                                </p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlSpecialServices" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.TradingAssistanceCollectionServices%></span></p>
+                                <p class="caption">
+                                    <% =Resources.Global.TradingAssistanceCollectionServices_Caption%>
+                                </p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlPurchases" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.OnlineBusinessReports%></span></p>
+                                <p class="caption">
+                                    <% =Resources.Global.OnlineBusinessReports_Caption%>
+                                </p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlTES" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.SubmitTradeExperienceSurvey%></span></p>
+                                <p class="caption">
+                                    <% =Resources.Global.SubmitTradeExperienceSurvey_Caption%>
+                                </p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlAdditionalTools" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.AdditionalTools%></span></p>
+                                <p class="caption">
+                                    <% =Resources.Global.AdditionalTools_Caption%>
+                                </p>
+                            </asp:HyperLink>
+
+                            <hr />
+
+                            <asp:HyperLink ID="hlCustomFields" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.CustomData%></span></p>
+                                <p class="caption">
+                                    <% =Resources.Global.CustomData_Caption%>
+                                </p>
+                            </asp:HyperLink>
+                        </div>
+                    </div>
+                    <!-- learning-dropdown -->
+                    <div>
+                        <button
+                            type="button"
+                            id="learning-dropdown"
+                            onclick="toggleTopNavMenu(event)"
+                            class="bbsButton bbsButton-menu-item <%=SelectedMenuClass(AdvancedCompanySearchBase.SELECTED_MENU_CLASS_LEARNING) %>">
+                            <p>
+                                <span class="msicon notranslate">school</span>
+                                <span class="text-label tw-hidden md:tw-inline-block"><% = Resources.Global.LearningCenter %></span>
+                            </p>
+                        </button>
+                        <div id="learning-top-menu" class="bbsMenu tw-absolute tw-hidden">
+                            <asp:HyperLink ID="hlLearningCenter" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.LearningCenterSearch2%></span></p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlBlueprints" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.ProduceBlueprintsMagazine%></span></p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlKnowYourCommodity" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.KnowYourCommodity%></span></p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlBluebookReference" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.ReferenceGuide%></span></p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlBluebookServices" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.BlueBookServices%></span></p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlNewHireAcademy" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.NewHireAcademy%></span></p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlTraining" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p><span class="text-label"><% =Resources.Global.BBOSTraining%></span></p>
+                            </asp:HyperLink>
+
+                            <hr />
+
+                            <asp:HyperLink ID="hlBlueprintFlipbook" runat="server" CssClass="bbsButton bbsButton-menu-item" Target="_blank">
+                                <p>
+                                    <span class="msicon notranslate">menu_book</span>
+                                    <span class="text-label"><% =Resources.Global.BlueprintFlipbook%></span>
+                                    <span class="msicon notranslate">arrow_outward</span>
+                                </p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlNews" runat="server" CssClass="bbsButton bbsButton-menu-item" Target="_blank">
+                                <p>
+                                    <span class="msicon notranslate">full_coverage</span>
+                                    <span class="text-label"><% =Resources.Global.News%></span>
+                                    <span class="msicon notranslate">arrow_outward</span>
+                                </p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlRatingKeyNumerals" runat="server" CssClass="bbsButton bbsButton-menu-item" Target="_blank">
+                                <p>
+                                    <span class="msicon notranslate">key</span>
+                                    <span class="text-label"><% =Resources.Global.RatingKeyNumerals%></span>
+                                    <span class="msicon notranslate">arrow_outward</span>
+                                </p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlManageAlerts" runat="server" CssClass="bbsButton bbsButton-menu-item" Visible="false" >
+                                <p>
+                                    <span class="msicon notranslate">key</span>
+                                    <span class="text-label"><% =Resources.Global.ManageAlerts%></span>
+                                    <span class="msicon notranslate">arrow_outward</span>
+                                </p>
+                            </asp:HyperLink>
+                        </div>
+                    </div>
+                </div>
+                <div class="tw-flex-grow-0">
+                    <div class="input-wrapper left-icon">
+                        <span class="icon-left msicon notranslate">search</span>
+                        <%--<input type="search" placeholder="Quick Search a company name or BBS id" />--%>
+                        <bbos:QuickFind ID="QuickFind" EnableViewState="false" runat="server" />
+                    </div>
+                    <!-- account-setting-dropdown -->
+
+                    <asp:Literal ID="memberName" runat="server" Visible="false" /> <%--TODO:JMT where should this go?  make visible--%>
+                    <asp:Literal ID="accessLevel" runat="server" Visible="false" /> <%--TODO:JMT where should this go?  make visible--%>
+
+                    <div>
+                        <button
+                            type="button"
+                            id="account-dropdown"
+                            onclick="toggleTopNavMenu(event)"
+                            class="bbsButton bbsButton-menu-item">
+                            <p><span class="msicon notranslate">account_circle</span></p>
+                        </button>
+                        <div
+                            id="account-top-menu"
+                            class="bbsMenu tw-absolute tw-right-0 tw-hidden">
+
+                            <asp:HyperLink ID="hlMyCompanyProfile" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p>
+                                    <span class="msicon notranslate">home</span>
+                                    <span class="text-label"><% =Resources.Global.MyCompanyProfile%></span>
+                                </p>
+                            </asp:HyperLink>
+
+                           <asp:HyperLink ID="hlMyMessageCenter" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p>
+                                    <span class="msicon notranslate">message</span>
+                                    <span class="text-label"><% =Resources.Global.MessageCenter%></span>
+                                    <span class="bbsBadge" id="bbsBadge" runat="server"><asp:Literal ID="litMessageCount" runat="server" /></span> <%--TODO:JMT put badge count here--%>
+                                </p>
+                            </asp:HyperLink>
+
+                            <asp:HyperLink ID="hlAccountSettings" runat="server" CssClass="bbsButton bbsButton-menu-item">
+                                <p>
+                                    <span class="msicon notranslate">settings</span>
+                                    <span class="text-label"><% =Resources.Global.AccountSettings%></span>
+                                </p>
+                            </asp:HyperLink>
+
+                            <hr />
+
+                            <div id="divSwitchToEnglish" runat="server" visible="false" class="bbsButton bbsButton-menu-item">
+                                <asp:LinkButton ID="btnSwitchToEnglish" runat="server" OnClick="btnSwitchToEnglish_Click" OnClientClick="bDirty=false;bEnableValidation=false;"  EnableViewState="false" >
+                                    <p>
+                                        <span class="msicon notranslate">g_translate</span>
+                                        <span class="text-label"><asp:Literal runat="server" Text="<%$ Resources:Global, SwitchToEnglish%>" /></span>
+                                    </p>
+                                </asp:LinkButton>
+                            </div>
+
+                            <div id="divSwitchToSpanish" runat="server" visible="false" class="bbsButton bbsButton-menu-item">
+                                <asp:LinkButton ID="btnSwitchToSpanish" runat="server" OnClick="btnSwitchToSpanish_Click" OnClientClick="bDirty=false;bEnableValidation=false;" EnableViewState="false">
+                                    <p>
+                                        <span class="msicon notranslate">g_translate</span>
+                                        <span class="text-label"><asp:Literal runat="server" Text="<%$ Resources:Global, SwitchToSpanish%>" /></span>
+                                    </p>
+                                </asp:LinkButton>
+                            </div>
+
+                            <%--TODO:JMT where should this button go to?--%>
+                            <button class="bbsButton bbsButton-menu-item" onclick="bbAlert('TODO'); return false;">
+                                <p>
+                                    <span class="msicon notranslate">help</span>
+                                    <span class="text-label">Help and Support</span>
+                                </p>
+                            </button>
+                            <hr />
+
+                            <asp:LinkButton ID="btnLogoff" runat="server" Visible="false" OnClick="btnLogoffOnClick" OnClientClick="bDirty=false;bEnableValidation=false;" EnableViewState="false" CssClass="bbsButton bbsButton-menu-item">
+                                <p>
+                                    <span class="msicon notranslate">logout</span>
+                                    <span class="text-label"><%=Resources.Global.LogOut %></span>
+                                </p>
+                            </asp:LinkButton>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <%--TODO:JMT some pages like CompanyDetailsClaims, CompanyDetailsContacts, etc. have a Print button that needs implementation--%>
+        <%--<asp:ImageButton OnClientClick="printpage(); return false;" ID="btnPrint" runat="server" ImageUrl="~/images/printer.png" Width="16" Height="16" ToolTip="<%$ Resources:Global, PrintPage %>" Visible="false" />--%>
+
+        <!-- Content  -->
+        <div class="content">
+            <div class="content-container">
+                <asp:ContentPlaceHolder ID="contentLeftSidebar" runat="server" />
+
+                <div class="main-content">
+                    <asp:ContentPlaceHolder ID="contentMain" runat="server" />
+                </div>
+            </div>
+        </div>
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-container">
+                <div class="tw-flex tw-flex-col tw-gap-4 md:tw-flex-row">
+                    <div
+                        class="tw-flex tw-basis-full tw-items-center tw-gap-2 tw-align-middle">
+                        <img src='assets/BBOS_logo_full.svg' />
+                        <div class="tw-flex tw-flex-col tw-gap-1">
+                            <p
+                                class="tw-whitespace-nowrap tw-font-serif tw-text-xl tw-font-semibold tw-text-brand">
+                                Blue Book Services
+                            </p>
+                            <p class="tw--my-1 tw-text-sm tw-text-success">
+                                Credit Rating and Marketing Information
+                            </p>
+
+                            <div class="tw-flex tw-gap-2 tw-pt-2">
+                                <%--TODO:JMT make sure this digital cert shows up once deployed to QA--%>
+                                <!-- Begin DigiCert site seal HTML and JavaScript -->
+                                <div id="DigiCertClickID_XCLV7tc8" data-language="en" class="text-center">
+                                </div>
+                                <script type="text/javascript">
+                                    var __dcid = __dcid || [];
+                                    __dcid.push({ "cid": "DigiCertClickID_XCLV7tc8", "tag": "XCLV7tc8" });
+                                    (function () { var cid = document.createElement("script"); cid.async = true; cid.src = "//seal.digicert.com/seals/cascade/seal.min.js"; var s = document.getElementsByTagName("script"); var ls = s[(s.length - 1)]; ls.parentNode.insertBefore(cid, ls.nextSibling); }());
+                                </script>
+                                <!-- End DigiCert site seal HTML and JavaScript -->
+                            </div>
+
+                            <asp:Panel ID="SocialMedia" runat="server" Style="margin-top: 7px;">
+                                <p class="tw-flex tw-gap-2 tw-pt-2">
+                                    <a class="social" href="https://www.youtube.com/user/BlueBookServices" target="_blank">
+                                        <img src='assets/youtube.svg' title="BBSI YouTube" alt="BBSI YouTube" /></a>
+                                    <a class="social" href="https://www.linkedin.com/showcase/produce-blue-book" target="_blank">
+                                        <img src='assets/linkedin-in.svg' title="BBSI LinkedIn" alt="BBSI LinkedIn" /></a>
+                                    <a class="social" href="https://twitter.com/producebluebook" target="_blank">
+                                        <img src='assets/x-twitter.svg' title="BBSI X" alt="BBSI X" /></a>
+                                    <a class="social" href="https://www.facebook.com/ProduceBlueBook" target="_blank">
+                                        <img src='assets/facebook-f.svg' title="BBSI Facebook" alt="BBSI Facebook" /></a>
+                                </p>
+                            </asp:Panel>
+
+                            <asp:Panel ID="SocialMediaLumber" Visible="false" runat="server" Style="margin-top: 7px;">
+                                <p class="tw-flex tw-gap-2 tw-pt-2">
+                                    <a class="social" href="https://www.youtube.com/user/BlueBookServices" target="_blank">
+                                        <img src='assets/youtube.svg' title="BBSI YouTube" alt="BBSI YouTube" /></a>
+                                    <a class="social" href="https://www.linkedin.com/showcase/lumber-blue-book" target="_blank">
+                                        <img src='assets/linkedin-in.svg' title="BBSI LinkedIn" alt="BBSI LinkedIn" /></a>
+                                </p>
+                            </asp:Panel>
+                        </div>
+                    </div>
+                    <div class="right-links">
+                        <div>
+                            <p><a href="<% =PageConstants.BBOS_HOME %>"><%= Resources.Global.Home %></a></p>
+                            <p><asp:LinkButton ID="btnTermsAndConditions" runat="server" OnClick="btnTermsAndConditionsOnClick"><%= Resources.Global.TermsOfUse %></asp:LinkButton></p>
+                            <p id="tdAdvertise" runat="server"><a href="GetPublicationFile.aspx?PublicationArticleID=200&PublicationCode=MK"><%= Resources.Global.Advertise %></a></p>
+                            <p><a href="<% =PageConstants.FEEDBACK %>"><%= Resources.Global.Feedback %></a></p>
+                        </div>
+                        <div>
+                            <p><asp:HyperLink ID="hlContactUs" Target="website" runat="server"><%= Resources.Global.ContactUs %></asp:HyperLink></p>
+                            <p><asp:HyperLink ID="hlPrivacy" Target="website" runat="server" EnableViewState="false"><%= Resources.Global.PrivacyPolicy %></asp:HyperLink></p>
+                            <p><asp:HyperLink ID="hlCommunityStandards" NavigateUrl="https://www.producebluebook.com/community-standards/" Target="website" runat="server" EnableViewState="false" Text="Community Standards" /></p>
+                            <p><asp:LinkButton ID="btnMembershipAgreement" runat="server" OnClick="btnMembershipAgreementOnClick"><%= Resources.Global.MembershipAgreement %></asp:LinkButton></p>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    class="tw-flex tw-flex-col tw-items-center tw-border-t tw-border-t-border tw-pt-2 tw-text-xs">
+                    © <% =DateTime.Now.Year.ToString() %> Blue Book Services | 630 668-3500
+                </div>
+            </div>
+        </footer>
+
+        <%--TODO:JMT handle pnlListingContainer and pnlListing popup once we get to page needing it--%>
+        <asp:Panel ID="pnlListingContainer" runat="server" Visible="false" EnableViewState="false" />
+        <input type="hidden" id="hidListingCompanyID" />
+        <div id="pnlListing" style="display: none; width: 320px; height: auto; overflow: scroll; position: absolute; z-index: 100;" class="Popup">
+            <table cellpadding="0" cellspacing="10" style="width: 270px">
+                <tr>
+                    <td style="white-space: nowrap;"><span class="Title_padding">Company Listing</span></td>
+                    <td style="text-align: right; vertical-align: middle; width: 100%">
+                        <%--<img src="<% =UIUtils.GetImageURL("close.gif") %>" alt="Close" align="middle" onclick="document.getElementById('pnlListing').style.display='none';" />--%>
+                        <%--<span class="annotation" onclick="document.getElementById('pnlListing').style.display='none';">&nbsp;&nbsp;Close</span>--%>
+                        <button type="button" class="close" data-dismiss="modal" onclick="document.getElementById('pnlListing').style.display='none';">&times;</button>
+                    </td>
+                </tr>
+            </table>
+            <br />
+
+            <div style="text-align: right; display: none;">
+                <a id="hlListingDownloadListing" href="<% =PageConstants.Format(PageConstants.GET_REPORT, GetReport.COMPANY_LISTING_REPORT)+ "&amp;IncludeBranches=false&amp;CompanyID=" %>"><% =Resources.Global.btnDownloadListing%></a>
+            </div>
+
+            <span id="ltListing"></span>
+        </div>
+
+        <script>
+            const tooltipTriggerList = document.querySelectorAll(
+                '[data-bs-toggle="tooltip"]',
+            );
+            const tooltipList = [...tooltipTriggerList].map(
+                (tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl),
+            );
+        </script>
+
+        <asp:ContentPlaceHolder ID="ScriptSection" runat="server" />
+        <asp:Literal ID="litGoogleAdWords" runat="server" />
+    </form>
+
+    <div id="form1" runat="server" visible="false" class="tw-w-full">
+        <div class="page-container container sidebar-collapsed">
+
+        </div>
+    </div>
+</body>
+</html>

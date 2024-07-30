@@ -1,0 +1,1 @@
+<%@ WebService Language="C#" CodeBehind="BBOSServices.asmx.cs" Class="PRCo.BBOS.WebServices.BBOSServices" %>

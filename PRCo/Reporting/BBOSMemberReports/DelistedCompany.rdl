@@ -1,0 +1,847 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2005/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <DataSources>
+    <DataSource Name="BBOS">
+      <rd:DataSourceID>af9aac62-2e9e-4c73-b23f-e2da5fa89b6f</rd:DataSourceID>
+      <DataSourceReference>BBOS</DataSourceReference>
+    </DataSource>
+  </DataSources>
+  <InteractiveHeight>11in</InteractiveHeight>
+  <ReportParameters>
+    <ReportParameter Name="Culture">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>en-us</Value>
+        </Values>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Culture</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="WebUserID">
+      <DataType>String</DataType>
+      <Prompt>Web User ID</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="CompanyIDs">
+      <DataType>String</DataType>
+      <Prompt>CompanyIDs</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="HQID">
+      <DataType>Integer</DataType>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>HQID</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <rd:DrawGrid>true</rd:DrawGrid>
+  <InteractiveWidth>8.5in</InteractiveWidth>
+  <rd:SnapToGrid>true</rd:SnapToGrid>
+  <RightMargin>0.5in</RightMargin>
+  <LeftMargin>0.5in</LeftMargin>
+  <PageHeader>
+    <ReportItems>
+      <Textbox Name="txtHeaderName">
+        <Width>4.875in</Width>
+        <Style>
+          <FontStyle>Italic</FontStyle>
+          <FontFamily>Arial Narrow</FontFamily>
+          <FontSize>9pt</FontSize>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+        <CanGrow>true</CanGrow>
+        <Value>Delisted Data Report</Value>
+      </Textbox>
+    </ReportItems>
+    <Height>0.25in</Height>
+    <PrintOnLastPage>true</PrintOnLastPage>
+  </PageHeader>
+  <BottomMargin>0.5in</BottomMargin>
+  <rd:ReportID>eae5f47a-74fb-4612-b262-081d285c754e</rd:ReportID>
+  <DataSets>
+    <DataSet Name="dsContacts">
+      <Fields>
+        <Field Name="comp_CompanyID">
+          <DataField>comp_CompanyID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="comp_PRBookTradestyle">
+          <DataField>comp_PRBookTradestyle</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ContactName">
+          <DataField>ContactName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="prwuc_Title">
+          <DataField>prwuc_Title</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Phone">
+          <DataField>Phone</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Fax">
+          <DataField>Fax</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Cell">
+          <DataField>Cell</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Residence">
+          <DataField>Residence</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="prwuc_Email">
+          <DataField>prwuc_Email</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>BBOS</DataSourceName>
+        <CommandText>SELECT comp_CompanyID, 
+  comp_PRBookTradestyle,
+  dbo.ufn_FormatPerson(prwuc_FirstName, prwuc_LastName, prwuc_MiddleName, null, prwuc_Suffix) AS ContactName,
+  prwuc_Title,
+  dbo.ufn_FormatPhone(null, prwuc_PhoneAreaCode, prwuc_PhoneNumber, null) As [Phone],        
+  dbo.ufn_FormatPhone(null, prwuc_FaxAreaCode, prwuc_FaxNumber, null) As [Fax],        
+  dbo.ufn_FormatPhone(null, prwuc_CellAreaCode, prwuc_CellNumber, null) As [Cell],
+  dbo.ufn_FormatPhone(null, prwuc_ResidenceAreaCode, prwuc_ResidenceNumber, null) As [Residence],
+  prwuc_Email
+FROM PRWebUserContact
+INNER JOIN Company ON prwuc_AssociatedCompanyID = comp_CompanyID
+WHERE prwuc_CreatedBy = @WebUserID 
+  AND prwuc_AssociatedCompanyID IN ((select CAST(value AS INT) from dbo.Tokenize(@CompanyIDs, ',')))</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@WebUserID">
+            <Value>=Parameters!WebUserID.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@CompanyIDs">
+            <Value>=Parameters!CompanyIDs.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+    <DataSet Name="dsNotes">
+      <Fields>
+        <Field Name="prwun_WebUserNoteID">
+          <DataField>prwun_WebUserNoteID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>BBOS</DataSourceName>
+        <CommandText>SELECT prwun_WebUserNoteID
+FROM PRWebUserNote
+WHERE prwun_CreatedBy = @WebUserID 
+  AND prwun_AssociatedType = 'C'
+  AND prwun_AssociatedID IN (select CAST(value AS INT) from dbo.Tokenize(@CompanyIDs, ','))</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@WebUserID">
+            <Value>=Parameters!WebUserID.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@CompanyIDs">
+            <Value>=Parameters!CompanyIDs.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+    <DataSet Name="dsWebUser">
+      <Fields>
+        <Field Name="WebUserName">
+          <DataField>WebUserName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>BBOS</DataSourceName>
+        <CommandText>SELECT dbo.ufn_FormatPerson(Pers_FirstName, Pers_LastName, Pers_MiddleName, pers_PRNickname1, Pers_Suffix) AS WebUserName
+FROM PRWebUser 
+INNER JOIN Person_Link ON prwu_PersonLinkID = PeLi_PersonLinkId  
+INNER JOIN Person ON dbo.Person_Link.PeLi_PersonId = Pers_PersonId 
+WHERE prwu_WebUserID = @WebUserID</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@WebUserID">
+            <Value>=Parameters!WebUserID.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+  </DataSets>
+  <Author>Travant Solutions, Inc.</Author>
+  <Code>
+</Code>
+  <Width>7.5in</Width>
+  <Body>
+    <ReportItems>
+      <Textbox Name="textbox6">
+        <CanShrink>true</CanShrink>
+        <Top>0.5in</Top>
+        <Width>3in</Width>
+        <Style>
+          <FontSize>12pt</FontSize>
+          <FontWeight>700</FontWeight>
+          <TextAlign>Center</TextAlign>
+          <VerticalAlign>Middle</VerticalAlign>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+        </Style>
+        <ZIndex>6</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Left>2.5in</Left>
+        <Height>0.25in</Height>
+        <Value>="For: " &amp; First(Fields!WebUserName.Value, "dsWebUser")</Value>
+      </Textbox>
+      <Table Name="table2">
+        <ZIndex>5</ZIndex>
+        <DataSetName>dsNotes</DataSetName>
+        <Top>4.125in</Top>
+        <Details>
+          <TableRows>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ColSpan>3</ColSpan>
+                  <ReportItems>
+                    <Subreport Name="subreport1">
+                      <Parameters>
+                        <Parameter Name="Culture">
+                          <Value>=Parameters!Culture.Value</Value>
+                        </Parameter>
+                        <Parameter Name="NoteIDs">
+                          <Value>=Fields!prwun_WebUserNoteID.Value</Value>
+                        </Parameter>
+                        <Parameter Name="WebUserID">
+                          <Value>=Parameters!WebUserID.Value</Value>
+                        </Parameter>
+                        <Parameter Name="HQID">
+                          <Value>=Parameters!HQID.Value</Value>
+                        </Parameter>
+                      </Parameters>
+                      <ReportName>NotesByNoteID</ReportName>
+                    </Subreport>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+          </TableRows>
+        </Details>
+        <TableColumns>
+          <TableColumn>
+            <Width>2.5in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>2.5in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>2.5in</Width>
+          </TableColumn>
+        </TableColumns>
+        <Height>0.25in</Height>
+      </Table>
+      <Table Name="table1">
+        <ZIndex>4</ZIndex>
+        <DataSetName>dsContacts</DataSetName>
+        <Top>1.25in</Top>
+        <Width>4in</Width>
+        <Details>
+          <TableRows>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox7">
+                      <rd:DefaultName>textbox7</rd:DefaultName>
+                      <Style>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>19</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>BB #:</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="comp_CompanyID">
+                      <rd:DefaultName>comp_CompanyID</rd:DefaultName>
+                      <Style>
+                        <TextAlign>Left</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>18</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!comp_CompanyID.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox3">
+                      <rd:DefaultName>textbox3</rd:DefaultName>
+                      <Style>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>17</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Company Name:</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="comp_PRBookTradestyle">
+                      <rd:DefaultName>comp_PRBookTradestyle</rd:DefaultName>
+                      <Style>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>16</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!comp_PRBookTradestyle.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox9">
+                      <rd:DefaultName>textbox9</rd:DefaultName>
+                      <Style>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>15</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Contact Name:</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="ContactName">
+                      <rd:DefaultName>ContactName</rd:DefaultName>
+                      <Style>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>14</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!ContactName.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox11">
+                      <rd:DefaultName>textbox11</rd:DefaultName>
+                      <Style>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>13</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Title:</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="prwuc_Title">
+                      <rd:DefaultName>prwuc_Title</rd:DefaultName>
+                      <Style>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>12</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!prwuc_Title.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox13">
+                      <rd:DefaultName>textbox13</rd:DefaultName>
+                      <Style>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>11</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Phone:</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Phone">
+                      <rd:DefaultName>Phone</rd:DefaultName>
+                      <Style>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>10</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Phone.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox15">
+                      <rd:DefaultName>textbox15</rd:DefaultName>
+                      <Style>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>9</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Fax:</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Fax">
+                      <rd:DefaultName>Fax</rd:DefaultName>
+                      <Style>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>8</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Fax.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox17">
+                      <rd:DefaultName>textbox17</rd:DefaultName>
+                      <Style>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>7</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Cell:</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Cell">
+                      <rd:DefaultName>Cell</rd:DefaultName>
+                      <Style>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>6</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Cell.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox19">
+                      <rd:DefaultName>textbox19</rd:DefaultName>
+                      <Style>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>5</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Residence:</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="Residence">
+                      <rd:DefaultName>Residence</rd:DefaultName>
+                      <Style>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>4</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!Residence.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox21">
+                      <rd:DefaultName>textbox21</rd:DefaultName>
+                      <Style>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>3</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Email:</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="prwuc_Email">
+                      <rd:DefaultName>prwuc_Email</rd:DefaultName>
+                      <Style>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>2</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>=Fields!prwuc_Email.Value</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox14">
+                      <rd:DefaultName>textbox14</rd:DefaultName>
+                      <Style>
+                        <FontWeight>700</FontWeight>
+                        <TextAlign>Right</TextAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>1</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value />
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+                <TableCell>
+                  <ReportItems>
+                    <Textbox Name="textbox16">
+                      <rd:DefaultName>textbox16</rd:DefaultName>
+                      <Style>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <CanGrow>true</CanGrow>
+                      <Value />
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+          </TableRows>
+        </Details>
+        <Header>
+          <TableRows>
+            <TableRow>
+              <TableCells>
+                <TableCell>
+                  <ColSpan>2</ColSpan>
+                  <ReportItems>
+                    <Textbox Name="textbox2">
+                      <rd:DefaultName>textbox2</rd:DefaultName>
+                      <Style>
+                        <FontWeight>700</FontWeight>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                      <ZIndex>20</ZIndex>
+                      <CanGrow>true</CanGrow>
+                      <Value>Personal Contacts</Value>
+                    </Textbox>
+                  </ReportItems>
+                </TableCell>
+              </TableCells>
+              <Height>0.25in</Height>
+            </TableRow>
+          </TableRows>
+        </Header>
+        <TableColumns>
+          <TableColumn>
+            <Width>1.5in</Width>
+          </TableColumn>
+          <TableColumn>
+            <Width>2.5in</Width>
+          </TableColumn>
+        </TableColumns>
+        <Height>2.75in</Height>
+      </Table>
+      <Textbox Name="txtReportHeader02">
+        <CanShrink>true</CanShrink>
+        <Top>0.25in</Top>
+        <Width>3in</Width>
+        <Style>
+          <FontSize>12pt</FontSize>
+          <FontWeight>700</FontWeight>
+          <TextAlign>Center</TextAlign>
+          <VerticalAlign>Bottom</VerticalAlign>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+        </Style>
+        <ZIndex>3</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Left>2.5in</Left>
+        <Height>0.25in</Height>
+        <Value>Delisted Data Report</Value>
+      </Textbox>
+      <Rectangle Name="rectangle1">
+        <ZIndex>2</ZIndex>
+        <ReportItems>
+          <Textbox Name="txtHeaderURL">
+            <Top>0.875in</Top>
+            <Action>
+              <Hyperlink>http://www.bluebookservices.com</Hyperlink>
+            </Action>
+            <Width>2in</Width>
+            <Style>
+              <Color>Blue</Color>
+              <FontSize>9pt</FontSize>
+              <TextDecoration>Underline</TextDecoration>
+              <PaddingLeft>2pt</PaddingLeft>
+            </Style>
+            <ZIndex>2</ZIndex>
+            <CanGrow>true</CanGrow>
+            <Value>www.bluebookservices.com</Value>
+          </Textbox>
+          <Textbox Name="txtHeaderEmail">
+            <Top>0.75in</Top>
+            <Action>
+              <Hyperlink>mailto:info@bluebookservices.com</Hyperlink>
+            </Action>
+            <Width>2in</Width>
+            <Style>
+              <Color>Blue</Color>
+              <FontSize>9pt</FontSize>
+              <TextDecoration>Underline</TextDecoration>
+              <PaddingLeft>2pt</PaddingLeft>
+            </Style>
+            <ZIndex>1</ZIndex>
+            <CanGrow>true</CanGrow>
+            <Height>0.125in</Height>
+            <Value>info@bluebookservices.com</Value>
+          </Textbox>
+          <Textbox Name="txtHeaderPRCo">
+            <Width>2in</Width>
+            <Style>
+              <FontSize>9pt</FontSize>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>1pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+            </Style>
+            <CanGrow>true</CanGrow>
+            <Height>0.75in</Height>
+            <Value>BLUE BOOK SERVICES
+845 E. GENEVA ROAD
+CAROL STREAM, IL  60188
+Phone 630 668-3500
+FAX 630 668-0303</Value>
+          </Textbox>
+        </ReportItems>
+        <Width>2.125in</Width>
+        <Height>1in</Height>
+      </Rectangle>
+      <Image Name="imgHeaderLogo">
+        <Sizing>Fit</Sizing>
+        <MIMEType />
+        <Source>External</Source>
+        <Style />
+        <ZIndex>1</ZIndex>
+        <Left>6.375in</Left>
+        <Height>1.125in</Height>
+        <Width>1.125in</Width>
+        <Value>PRCoLogo.jpg</Value>
+      </Image>
+      <Textbox Name="txtReportHeader01">
+        <Width>3in</Width>
+        <Style>
+          <FontSize>16pt</FontSize>
+          <FontWeight>700</FontWeight>
+          <TextAlign>Center</TextAlign>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+        </Style>
+        <CanGrow>true</CanGrow>
+        <Left>2.5in</Left>
+        <Height>0.25in</Height>
+        <Value>BLUE BOOK SERVICES</Value>
+      </Textbox>
+    </ReportItems>
+    <Height>4.5in</Height>
+  </Body>
+  <Language>en-US</Language>
+  <PageFooter>
+    <PrintOnFirstPage>true</PrintOnFirstPage>
+    <ReportItems>
+      <Textbox Name="txtFooterPRCo">
+        <Width>2.125in</Width>
+        <Style>
+          <BorderStyle>
+            <Top>Solid</Top>
+          </BorderStyle>
+          <FontFamily>Arial Narrow</FontFamily>
+          <FontSize>9pt</FontSize>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+        </Style>
+        <ZIndex>2</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Value>(c) Blue Book Services</Value>
+      </Textbox>
+      <Textbox Name="txtFooterPageNbr">
+        <Width>3.375in</Width>
+        <Style>
+          <BorderStyle>
+            <Top>Solid</Top>
+          </BorderStyle>
+          <FontFamily>Arial Narrow</FontFamily>
+          <FontSize>9pt</FontSize>
+          <TextAlign>Center</TextAlign>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+        </Style>
+        <ZIndex>1</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Left>2.125in</Left>
+        <Value>= Globals!PageNumber &amp; " of " &amp;  Globals!TotalPages</Value>
+      </Textbox>
+      <Textbox Name="txtFooterExecutionDate">
+        <Style>
+          <BorderStyle>
+            <Top>Solid</Top>
+          </BorderStyle>
+          <FontFamily>Arial Narrow</FontFamily>
+          <FontSize>9pt</FontSize>
+          <Format>g</Format>
+          <TextAlign>Right</TextAlign>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+        </Style>
+        <CanGrow>true</CanGrow>
+        <Left>5.5in</Left>
+        <Value>= Globals!ExecutionTime</Value>
+      </Textbox>
+    </ReportItems>
+    <Height>0.25in</Height>
+    <PrintOnLastPage>true</PrintOnLastPage>
+  </PageFooter>
+  <TopMargin>0.5in</TopMargin>
+</Report>

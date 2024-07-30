@@ -1,0 +1,215 @@
+<project name="Utility" default=""  basedir=".">
+
+<!-- The targets in this file represent the individual utilities. 
+	 This file is part of the larger build script an dis not intended to run independently.
+-->
+
+    <echo message=""/>
+    <echo message="Loading Utility Nant Targets"/>
+    <echo message=""/>
+	
+	<!--
+		Creates a metric of how many lines of code comprise this solution.  The output
+	    is an HTML file that is included in the project web site.
+	 -->
+	<target name="CountLines" if="${file::exists(LineCounterBaseDir + '\LineCounter.exe')}"  description="Counts the lines of code in the solution">
+                <tstamp />	
+		<property name="linecount.dir" value="${build.dir}\LineCount" />
+	        <mkdir dir="${linecount.dir}" />
+
+		<vssget username="${VSSUserID}"
+			password="${VSSPassword}" 
+			localpath="${linecount.dir}\SQL" 
+			recursive="true"
+                        writable="true"
+			dbpath="${VSSDBPath}"
+        	        path="${VSSDatabaseRoot}"
+                />
+
+		<vssget username="${VSSUserID}"
+			password="${VSSPassword}" 
+			localpath="${linecount.dir}\WWWRoot" 
+			recursive="true"
+			replace="true"
+			writable="true"
+			dbpath="${VSSDBPath}"
+			path="${VSSProjectCRM}/WWWRoot/CustomPages"
+		/>
+
+
+		<vssget username="${VSSUserID}"
+			password="${VSSPassword}" 
+			localpath="${linecount.dir}\BBS Components" 
+			recursive="true"
+			writable="true"
+                	replace="true"
+			dbpath="${VSSDBPath}"
+			path="${VSSBBSComponents}"
+		/>
+
+		<vssget username="${VSSUserID}"
+			password="${VSSPassword}" 
+			localpath="${linecount.dir}\Reporting" 
+			recursive="true"
+			writable="true"
+                	replace="true"
+			dbpath="${VSSDBPath}"
+			path="${VSSReporting}"
+		/>
+
+		<vssget if="${GetLatestFromVSS}"
+				username="${VSSUserID}"
+				password="${VSSPassword}"
+				localpath="${linecount.dir}\EBBBusinessObjects"
+				recursive="true"
+				writable="true"
+                                replace="true"
+				dbpath="${VSSDBPath}"
+				path="${VSSProjectBBOS}/EBBBusinessObjects"
+		/>
+
+	
+		<vssget if="${GetLatestFromVSS}"
+			username="${VSSUserID}"
+			password="${VSSPassword}"
+			localpath="${linecount.dir}\BBOS"
+			recursive="true"
+			replace="true"
+			writable="true"
+			dbpath="${VSSDBPath}"
+			path="${VSSProjectBBOS}/EBB"
+		/>
+
+		<vssget if="${GetLatestFromVSS}"
+			username="${VSSUserID}"
+			password="${VSSPassword}"
+			localpath="${linecount.dir}\BBOSWebService"
+			recursive="true"
+			replace="true"
+			writable="true"
+			dbpath="${VSSDBPath}"
+			path="${VSSProjectBBOS}/BBOSWebService"
+		/>
+
+		<vssget if="${GetLatestFromVSS}"
+			username="${VSSUserID}"
+			password="${VSSPassword}"
+			localpath="${linecount.dir}\BBOSMobile"
+			recursive="true"
+			replace="true"
+			writable="true"
+			dbpath="${VSSDBPath}"
+			path="${VSSProjectBBOS}/BBOSMobile"
+		/>
+
+
+
+		<vssget if="${GetLatestFromVSS}"
+			username="${VSSUserID}"
+			password="${VSSPassword}"
+			localpath="${linecount.dir}\BBOSWidgets"
+			recursive="true"
+			replace="true"
+			writable="true"
+			dbpath="${VSSDBPath}"
+			path="${VSSProjectBBOS}/BBOSWidgets"
+		/>
+
+
+
+		<vssget if="${GetLatestFromVSS}"
+			username="${VSSUserID}"
+			password="${VSSPassword}"
+			localpath="${linecount.dir}\BBOSPublicProfiles"
+			recursive="true"
+			replace="true"
+			writable="true"
+			dbpath="${VSSDBPath}"
+			path="${VSSProjectBBOS}/BBOSPublicProfiles"
+		/>
+
+		<vssget if="${GetLatestFromVSS}"
+				username="${VSSUserID}"
+				password="${VSSPassword}" 
+				localpath="${linecount.dir}\PIKSUtils" 
+				recursive="true"
+				writable="true"
+                                replace="true"
+				dbpath="${VSSDBPath}"
+				path="${VSSSqlCLR}/PIKSFunctions"
+		/>
+
+
+		<exec failonerror="true" program="LineCounter.exe" append="true" basedir="${LineCounterBaseDir}" commandline='/SolDir:"${linecount.dir}" /asm:"WWWRoot,BBS Components,SQL,Reporting,EBBBusinessObjects,BBOS,BBOSWebService,BBOSMobile,BBOSWidgets,BBOSPublicProfiles,PIKSUtils" /out:"${build.logdir}\LineCount.html" /Xsl:"${LineCounterBaseDir}\LineCounter.xsl"'  />
+
+		<delete dir="${linecount.dir}" failonerror="true" />
+	</target>
+
+
+	<!--
+		Generates the Database documentation for the entire solution
+	-->
+	<target name="GenerateDBDoc" if="${file::exists(DBDocBaseDir + '\sqldbdoc.exe')}" description="Generates the Database documentation">
+                <tstamp />
+
+		<delete dir="${build.doc}\database" failonerror="false" />
+		<mkdir dir="${build.doc}\database" />
+
+		<exec failonerror="true" verbose="true"  program="sqldbdoc.exe" append="true" basedir="${DBDocBaseDir}" commandline='"server=${DBServer};User ID=${DBUserID};Password=${DBPassword};Initial Catalog=${DBName};" ${build.doc}\database\index.html /y /f:html'  />
+	</target>
+
+
+
+	<!--
+		Generates the API documentation for the entire solution
+	-->
+	<target name="GenerateAPIDoc" description="Generates the API documentation">
+                <tstamp />
+
+		<delete dir="${build.doc}\api" failonerror="false" />
+		<mkdir dir="${build.doc}\api" />
+
+		<exec failonerror="true" verbose="true"  program="BuildSandcastleDoc.bat" append="true" basedir="D:\Applications\Build" commandline='"BBSi Systems ${buildnumber.version} Documentation"'  />
+	</target>
+	
+
+
+	<!--
+		Custom script to set the version information in the AssemblyInfo.cs file specified
+		by the "assemblyinfo.location" location.  Sets the entire "0.0.0.0" string.
+	-->
+	<target name="SetAssemblyVersion" description="Sets the AssemblyVersion value">
+	<script language="C#">
+
+            <imports>
+               <import namespace="System.Text.RegularExpressions"/>
+            </imports>
+            <references>
+               <include name="System.dll"/>
+            </references>
+			<code>
+				<![CDATA[
+				 public static void ScriptMain(Project project)
+				 {
+				  StreamReader reader = new StreamReader(project.Properties["assemblyinfo.location"]);
+				  string contents = reader.ReadToEnd();
+				  reader.Close();
+							  
+				  string replacement = "[assembly: AssemblyVersion(\"" + project.Properties["buildnumber.version"] + "\")]";
+				  string newText = Regex.Replace(contents, @"\[assembly: AssemblyVersion\("".*""\)\]", replacement);
+
+				  //replacement = "[assembly: AssemblyFileVersion(\"" + project.Properties["buildnumber.version"] + "\")]";
+				  //newText = Regex.Replace(contents, @"\[assembly: AssemblyFileVersion\("".*""\)\]", replacement);
+
+			      StreamWriter writer = new StreamWriter(project.Properties["assemblyinfo.location"], false);
+				  writer.Write(newText);
+				  writer.Close();
+				 }
+				 ]]>
+			</code>
+		</script>
+
+	</target>
+
+
+</project>

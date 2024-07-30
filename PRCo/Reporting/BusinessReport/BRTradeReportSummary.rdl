@@ -1,0 +1,929 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Description>Business Report - Trade Report Summary Subreport</Description>
+  <Author>Travant Solutions, Inc. - Christopher Walls</Author>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BBS">
+      <DataSourceReference>BBS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>94824ade-cf1d-4b67-bdff-ffeb5d5c2e62</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="BRTradeReportSummary">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyID">
+            <Value>=Parameters!CompanyID.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@YearsOld">
+            <Value>=Parameters!YearsOld.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>usp_BRTradeReportSummary</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="GraphType">
+          <DataField>GraphType</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="ReportYear">
+          <DataField>ReportYear</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="RatingDescription">
+          <DataField>RatingDescription</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="SortOrder">
+          <DataField>SortOrder</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="RatingSubdescription">
+          <DataField>RatingSubdescription</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Cnt">
+          <DataField>Cnt</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Type1Count">
+          <DataField>Type1Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Type2Count">
+          <DataField>Type2Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="YearRatingTotal">
+          <DataField>YearRatingTotal</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="BRTradeReportSummaryRules">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyID">
+            <Value>=Parameters!CompanyID.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@MonthsOld">
+            <Value>=Parameters!MonthsOld.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>usp_BRTradeReportSummaryRules</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="ConnectionListDate">
+          <DataField>ConnectionListDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="TradeReportCount">
+          <DataField>TradeReportCount</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Chart Name="chartPayReportSummary">
+            <ChartCategoryHierarchy>
+              <ChartMembers>
+                <ChartMember>
+                  <Group Name="chartPayReportSummary_CategoryGroup">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!SortOrder.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=Fields!SortOrder.Value</Value>
+                    </SortExpression>
+                  </SortExpressions>
+                  <Label>=Fields!RatingDescription.Value</Label>
+                </ChartMember>
+              </ChartMembers>
+            </ChartCategoryHierarchy>
+            <ChartSeriesHierarchy>
+              <ChartMembers>
+                <ChartMember>
+                  <Group Name="chartPayReport_SeriesGroup1">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!ReportYear.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <Label>=Fields!ReportYear.Value</Label>
+                  <DataElementOutput>Output</DataElementOutput>
+                </ChartMember>
+              </ChartMembers>
+            </ChartSeriesHierarchy>
+            <ChartData>
+              <ChartSeriesCollection>
+                <ChartSeries Name="Series1">
+                  <ChartDataPoints>
+                    <ChartDataPoint>
+                      <ChartDataPointValues>
+                        <Y>=Sum(Fields!Cnt.Value)</Y>
+                      </ChartDataPointValues>
+                      <ChartDataLabel>
+                        <Style>
+                          <Border>
+                            <Color>Silver</Color>
+                            <Style>Solid</Style>
+                          </Border>
+                          <BackgroundColor>WhiteSmoke</BackgroundColor>
+                          <FontSize>8pt</FontSize>
+                        </Style>
+                        <Label>=IIF(Fields!Cnt.Value = 0, "", IIF(Fields!YearRatingTotal.Value = 0, "0%", Format(Fields!Cnt.Value/Fields!YearRatingTotal.Value, "P0")))</Label>
+                        <Visible>true</Visible>
+                      </ChartDataLabel>
+                      <Style />
+                      <ChartMarker>
+                        <Size>6pt</Size>
+                        <Style />
+                      </ChartMarker>
+                    </ChartDataPoint>
+                  </ChartDataPoints>
+                  <Style />
+                  <ChartEmptyPoints>
+                    <Style />
+                    <ChartMarker>
+                      <Style />
+                    </ChartMarker>
+                    <ChartDataLabel>
+                      <Style />
+                    </ChartDataLabel>
+                  </ChartEmptyPoints>
+                  <ValueAxisName>Primary</ValueAxisName>
+                  <CategoryAxisName>Primary</CategoryAxisName>
+                  <ChartSmartLabel>
+                    <CalloutLineColor>Black</CalloutLineColor>
+                    <MinMovingDistance>0pt</MinMovingDistance>
+                  </ChartSmartLabel>
+                </ChartSeries>
+              </ChartSeriesCollection>
+            </ChartData>
+            <ChartAreas>
+              <ChartArea Name="Default">
+                <ChartCategoryAxes>
+                  <ChartAxis Name="Primary">
+                    <Style>
+                      <Border>
+                        <Style>None</Style>
+                        <Width>0.75pt</Width>
+                      </Border>
+                    </Style>
+                    <ChartAxisTitle>
+                      <Caption>Pay Ranges (in days)</Caption>
+                      <Style>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </ChartAxisTitle>
+                    <ChartMajorGridLines>
+                      <Enabled>False</Enabled>
+                      <Style>
+                        <Border>
+                          <Style>Solid</Style>
+                          <Width>0.75pt</Width>
+                        </Border>
+                      </Style>
+                      <Interval>NaN</Interval>
+                    </ChartMajorGridLines>
+                    <ChartMinorGridLines>
+                      <Enabled>False</Enabled>
+                      <Style>
+                        <Border>
+                          <Style>Solid</Style>
+                          <Width>0.75pt</Width>
+                        </Border>
+                      </Style>
+                      <Interval>NaN</Interval>
+                      <IntervalOffset>-1</IntervalOffset>
+                    </ChartMinorGridLines>
+                    <ChartMajorTickMarks>
+                      <Enabled>True</Enabled>
+                      <Style>
+                        <Border>
+                          <Style>Solid</Style>
+                          <Width>0.75pt</Width>
+                        </Border>
+                      </Style>
+                      <Interval>NaN</Interval>
+                    </ChartMajorTickMarks>
+                    <ChartMinorTickMarks>
+                      <Type>None</Type>
+                    </ChartMinorTickMarks>
+                    <Minimum>NaN</Minimum>
+                    <Maximum>NaN</Maximum>
+                    <PreventFontShrink>true</PreventFontShrink>
+                    <PreventFontGrow>true</PreventFontGrow>
+                    <IncludeZero>false</IncludeZero>
+                    <ChartAxisScaleBreak>
+                      <Style />
+                    </ChartAxisScaleBreak>
+                  </ChartAxis>
+                  <ChartAxis Name="Secondary">
+                    <Style>
+                      <FontSize>8pt</FontSize>
+                    </Style>
+                    <ChartAxisTitle>
+                      <Caption />
+                      <Style>
+                        <FontSize>8pt</FontSize>
+                      </Style>
+                    </ChartAxisTitle>
+                    <CrossAt>NaN</CrossAt>
+                    <Location>Opposite</Location>
+                    <Minimum>NaN</Minimum>
+                    <Maximum>NaN</Maximum>
+                    <ChartAxisScaleBreak>
+                      <Style />
+                    </ChartAxisScaleBreak>
+                  </ChartAxis>
+                </ChartCategoryAxes>
+                <ChartValueAxes>
+                  <ChartAxis Name="Primary">
+                    <Style>
+                      <Border>
+                        <Style>None</Style>
+                        <Width>0.75pt</Width>
+                      </Border>
+                    </Style>
+                    <ChartAxisTitle>
+                      <Caption>Number of Reports</Caption>
+                      <Style>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </ChartAxisTitle>
+                    <Margin>True</Margin>
+                    <Interval>=Ceiling(Max(Fields!Cnt.Value) / 4)</Interval>
+                    <IntervalType>Number</IntervalType>
+                    <ChartMajorGridLines>
+                      <Style>
+                        <Border>
+                          <Style>Solid</Style>
+                          <Width>0.75pt</Width>
+                        </Border>
+                      </Style>
+                      <Interval>NaN</Interval>
+                    </ChartMajorGridLines>
+                    <ChartMinorGridLines>
+                      <Enabled>False</Enabled>
+                      <Style>
+                        <Border>
+                          <Style>Solid</Style>
+                          <Width>0.75pt</Width>
+                        </Border>
+                      </Style>
+                      <Interval>NaN</Interval>
+                    </ChartMinorGridLines>
+                    <ChartMajorTickMarks>
+                      <Enabled>False</Enabled>
+                      <Style>
+                        <Border>
+                          <Style>Solid</Style>
+                          <Width>0.75pt</Width>
+                        </Border>
+                      </Style>
+                      <Interval>NaN</Interval>
+                    </ChartMajorTickMarks>
+                    <ChartMinorTickMarks>
+                      <Type>None</Type>
+                    </ChartMinorTickMarks>
+                    <Scalar>true</Scalar>
+                    <Minimum>0</Minimum>
+                    <Maximum>NaN</Maximum>
+                    <PreventFontShrink>true</PreventFontShrink>
+                    <PreventFontGrow>true</PreventFontGrow>
+                    <IncludeZero>false</IncludeZero>
+                    <ChartAxisScaleBreak>
+                      <Style />
+                    </ChartAxisScaleBreak>
+                  </ChartAxis>
+                  <ChartAxis Name="Secondary">
+                    <Style>
+                      <FontSize>8pt</FontSize>
+                    </Style>
+                    <ChartAxisTitle>
+                      <Caption />
+                      <Style>
+                        <FontSize>8pt</FontSize>
+                      </Style>
+                    </ChartAxisTitle>
+                    <CrossAt>NaN</CrossAt>
+                    <Location>Opposite</Location>
+                    <Minimum>NaN</Minimum>
+                    <Maximum>NaN</Maximum>
+                    <ChartAxisScaleBreak>
+                      <Style />
+                    </ChartAxisScaleBreak>
+                  </ChartAxis>
+                </ChartValueAxes>
+                <ChartThreeDProperties>
+                  <ProjectionMode>Perspective</ProjectionMode>
+                  <Shading>Simple</Shading>
+                  <WallThickness>15</WallThickness>
+                </ChartThreeDProperties>
+                <Style>
+                  <Border>
+                    <Style>Solid</Style>
+                    <Width>0.75pt</Width>
+                  </Border>
+                  <BackgroundColor>White</BackgroundColor>
+                </Style>
+              </ChartArea>
+            </ChartAreas>
+            <ChartLegends>
+              <ChartLegend Name="Default">
+                <Style>
+                  <Border>
+                    <Style>Solid</Style>
+                    <Width>0.75pt</Width>
+                  </Border>
+                </Style>
+                <Position>BottomCenter</Position>
+                <Layout>Row</Layout>
+                <ChartLegendTitle>
+                  <Caption />
+                  <Style>
+                    <FontSize>8pt</FontSize>
+                    <FontWeight>Bold</FontWeight>
+                    <TextAlign>Center</TextAlign>
+                  </Style>
+                </ChartLegendTitle>
+                <AutoFitTextDisabled>true</AutoFitTextDisabled>
+              </ChartLegend>
+            </ChartLegends>
+            <ChartTitles>
+              <ChartTitle Name="Default">
+                <Caption>Pay Report Summary</Caption>
+                <Style>
+                  <FontSize>12pt</FontSize>
+                  <FontWeight>Bold</FontWeight>
+                </Style>
+              </ChartTitle>
+            </ChartTitles>
+            <Palette>SemiTransparent</Palette>
+            <ChartBorderSkin>
+              <Style>
+                <BackgroundColor>Gray</BackgroundColor>
+                <BackgroundGradientType>None</BackgroundGradientType>
+                <Color>White</Color>
+              </Style>
+            </ChartBorderSkin>
+            <ChartNoDataMessage Name="NoDataMessage">
+              <Caption>No Data Available</Caption>
+              <Style>
+                <BackgroundGradientType>None</BackgroundGradientType>
+                <TextAlign>General</TextAlign>
+                <VerticalAlign>Top</VerticalAlign>
+              </Style>
+            </ChartNoDataMessage>
+            <DataSetName>BRTradeReportSummary</DataSetName>
+            <Filters>
+              <Filter>
+                <FilterExpression>=Fields!GraphType.Value</FilterExpression>
+                <Operator>Equal</Operator>
+                <FilterValues>
+                  <FilterValue>=CInt(2)</FilterValue>
+                </FilterValues>
+              </Filter>
+            </Filters>
+            <Top>5.90278in</Top>
+            <Height>3.81597in</Height>
+            <Width>7.5in</Width>
+            <Visibility>
+              <Hidden>=IIF(Sum(Fields!Type2Count.Value, "BRTradeReportSummary") = 0, true, false)</Hidden>
+            </Visibility>
+            <CustomProperties>
+              <CustomProperty>
+                <Name>__Upgraded2005__</Name>
+                <Value>__Upgraded2005__</Value>
+              </CustomProperty>
+            </CustomProperties>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <Border>
+                <Style>Solid</Style>
+              </Border>
+              <BackgroundColor>LightSteelBlue</BackgroundColor>
+              <BackgroundGradientType>TopBottom</BackgroundGradientType>
+            </Style>
+          </Chart>
+          <Chart Name="chartIntegrity">
+            <ChartCategoryHierarchy>
+              <ChartMembers>
+                <ChartMember>
+                  <Group Name="chartIntegrity_CategoryGroup">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!RatingDescription.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=Fields!RatingDescription.Value</Value>
+                      <Direction>Descending</Direction>
+                    </SortExpression>
+                  </SortExpressions>
+                  <Label>=Fields!RatingDescription.Value &amp; Environment.NewLine &amp; Fields!RatingSubdescription.Value</Label>
+                </ChartMember>
+              </ChartMembers>
+            </ChartCategoryHierarchy>
+            <ChartSeriesHierarchy>
+              <ChartMembers>
+                <ChartMember>
+                  <Group Name="charIntegrity_SeriesGroup1">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!ReportYear.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <Label>=Fields!ReportYear.Value</Label>
+                  <DataElementOutput>Output</DataElementOutput>
+                </ChartMember>
+              </ChartMembers>
+            </ChartSeriesHierarchy>
+            <ChartData>
+              <ChartSeriesCollection>
+                <ChartSeries Name="Series1">
+                  <ChartDataPoints>
+                    <ChartDataPoint>
+                      <ChartDataPointValues>
+                        <Y>=Sum(Fields!Cnt.Value)</Y>
+                      </ChartDataPointValues>
+                      <ChartDataLabel>
+                        <Style>
+                          <Border>
+                            <Color>Silver</Color>
+                            <Style>Solid</Style>
+                          </Border>
+                          <BackgroundColor>WhiteSmoke</BackgroundColor>
+                          <FontSize>8pt</FontSize>
+                        </Style>
+                        <Label>=IIF(Fields!Cnt.Value = 0, "", IIF(Fields!YearRatingTotal.Value = 0, "0%", Format(Fields!Cnt.Value/Fields!YearRatingTotal.Value, "P0")))</Label>
+                        <Visible>true</Visible>
+                      </ChartDataLabel>
+                      <Style />
+                      <ChartMarker>
+                        <Style />
+                      </ChartMarker>
+                    </ChartDataPoint>
+                  </ChartDataPoints>
+                  <Style />
+                  <ChartEmptyPoints>
+                    <Style />
+                    <ChartMarker>
+                      <Style />
+                    </ChartMarker>
+                    <ChartDataLabel>
+                      <Style />
+                    </ChartDataLabel>
+                  </ChartEmptyPoints>
+                  <ValueAxisName>Primary</ValueAxisName>
+                  <CategoryAxisName>Primary</CategoryAxisName>
+                  <ChartSmartLabel>
+                    <CalloutLineColor>Black</CalloutLineColor>
+                    <MinMovingDistance>0pt</MinMovingDistance>
+                  </ChartSmartLabel>
+                </ChartSeries>
+              </ChartSeriesCollection>
+            </ChartData>
+            <ChartAreas>
+              <ChartArea Name="Default">
+                <ChartCategoryAxes>
+                  <ChartAxis Name="Primary">
+                    <Style>
+                      <Border>
+                        <Style>None</Style>
+                        <Width>0.75pt</Width>
+                      </Border>
+                    </Style>
+                    <ChartAxisTitle>
+                      <Caption>Trade Practices Values</Caption>
+                      <Style>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </ChartAxisTitle>
+                    <ChartMajorGridLines>
+                      <Enabled>False</Enabled>
+                      <Style>
+                        <Border>
+                          <Style>Solid</Style>
+                          <Width>0.75pt</Width>
+                        </Border>
+                      </Style>
+                      <Interval>NaN</Interval>
+                    </ChartMajorGridLines>
+                    <ChartMinorGridLines>
+                      <Enabled>False</Enabled>
+                      <Style>
+                        <Border>
+                          <Style>Solid</Style>
+                          <Width>0.75pt</Width>
+                        </Border>
+                      </Style>
+                      <Interval>NaN</Interval>
+                      <IntervalOffset>-1</IntervalOffset>
+                    </ChartMinorGridLines>
+                    <ChartMajorTickMarks>
+                      <Enabled>True</Enabled>
+                      <Style>
+                        <Border>
+                          <Style>Solid</Style>
+                          <Width>0.75pt</Width>
+                        </Border>
+                      </Style>
+                      <Interval>NaN</Interval>
+                    </ChartMajorTickMarks>
+                    <ChartMinorTickMarks>
+                      <Type>None</Type>
+                    </ChartMinorTickMarks>
+                    <Minimum>NaN</Minimum>
+                    <Maximum>NaN</Maximum>
+                    <PreventFontShrink>true</PreventFontShrink>
+                    <PreventFontGrow>true</PreventFontGrow>
+                    <IncludeZero>false</IncludeZero>
+                    <ChartAxisScaleBreak>
+                      <Style />
+                    </ChartAxisScaleBreak>
+                  </ChartAxis>
+                  <ChartAxis Name="Secondary">
+                    <Style>
+                      <FontSize>8pt</FontSize>
+                    </Style>
+                    <ChartAxisTitle>
+                      <Caption />
+                      <Style>
+                        <FontSize>8pt</FontSize>
+                      </Style>
+                    </ChartAxisTitle>
+                    <CrossAt>NaN</CrossAt>
+                    <Location>Opposite</Location>
+                    <Minimum>NaN</Minimum>
+                    <Maximum>NaN</Maximum>
+                    <ChartAxisScaleBreak>
+                      <Style />
+                    </ChartAxisScaleBreak>
+                  </ChartAxis>
+                </ChartCategoryAxes>
+                <ChartValueAxes>
+                  <ChartAxis Name="Primary">
+                    <Style>
+                      <Border>
+                        <Style>None</Style>
+                        <Width>0.75pt</Width>
+                      </Border>
+                    </Style>
+                    <ChartAxisTitle>
+                      <Caption>Number of Reports</Caption>
+                      <Style>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </ChartAxisTitle>
+                    <Margin>True</Margin>
+                    <Interval>=Ceiling(Max(Fields!Cnt.Value) / 4)</Interval>
+                    <IntervalType>Number</IntervalType>
+                    <ChartMajorGridLines>
+                      <Style>
+                        <Border>
+                          <Style>Solid</Style>
+                          <Width>0.75pt</Width>
+                        </Border>
+                      </Style>
+                      <Interval>NaN</Interval>
+                    </ChartMajorGridLines>
+                    <ChartMinorGridLines>
+                      <Enabled>False</Enabled>
+                      <Style>
+                        <Border>
+                          <Style>Solid</Style>
+                          <Width>0.75pt</Width>
+                        </Border>
+                      </Style>
+                      <Interval>NaN</Interval>
+                    </ChartMinorGridLines>
+                    <ChartMajorTickMarks>
+                      <Enabled>True</Enabled>
+                      <Style>
+                        <Border>
+                          <Style>Solid</Style>
+                          <Width>0.75pt</Width>
+                        </Border>
+                      </Style>
+                      <Interval>NaN</Interval>
+                    </ChartMajorTickMarks>
+                    <ChartMinorTickMarks>
+                      <Type>None</Type>
+                    </ChartMinorTickMarks>
+                    <Scalar>true</Scalar>
+                    <Minimum>0</Minimum>
+                    <PreventFontShrink>true</PreventFontShrink>
+                    <PreventFontGrow>true</PreventFontGrow>
+                    <IncludeZero>false</IncludeZero>
+                    <ChartAxisScaleBreak>
+                      <Style />
+                    </ChartAxisScaleBreak>
+                  </ChartAxis>
+                  <ChartAxis Name="Secondary">
+                    <Style>
+                      <FontSize>8pt</FontSize>
+                    </Style>
+                    <ChartAxisTitle>
+                      <Caption />
+                      <Style>
+                        <FontSize>8pt</FontSize>
+                      </Style>
+                    </ChartAxisTitle>
+                    <CrossAt>NaN</CrossAt>
+                    <Location>Opposite</Location>
+                    <Minimum>NaN</Minimum>
+                    <Maximum>NaN</Maximum>
+                    <ChartAxisScaleBreak>
+                      <Style />
+                    </ChartAxisScaleBreak>
+                  </ChartAxis>
+                </ChartValueAxes>
+                <ChartThreeDProperties>
+                  <ProjectionMode>Perspective</ProjectionMode>
+                  <Shading>Simple</Shading>
+                  <WallThickness>15</WallThickness>
+                </ChartThreeDProperties>
+                <Style>
+                  <Border>
+                    <Style>Solid</Style>
+                    <Width>0.75pt</Width>
+                  </Border>
+                  <BackgroundColor>White</BackgroundColor>
+                </Style>
+              </ChartArea>
+            </ChartAreas>
+            <ChartLegends>
+              <ChartLegend Name="Default">
+                <Style>
+                  <Border>
+                    <Style>Solid</Style>
+                    <Width>0.75pt</Width>
+                  </Border>
+                </Style>
+                <Position>BottomCenter</Position>
+                <Layout>Row</Layout>
+                <ChartLegendTitle>
+                  <Caption />
+                  <Style>
+                    <FontSize>8pt</FontSize>
+                    <FontWeight>Bold</FontWeight>
+                    <TextAlign>Center</TextAlign>
+                  </Style>
+                </ChartLegendTitle>
+                <AutoFitTextDisabled>true</AutoFitTextDisabled>
+              </ChartLegend>
+            </ChartLegends>
+            <ChartTitles>
+              <ChartTitle Name="Default">
+                <Caption>Trade Practices Reports</Caption>
+                <Style>
+                  <FontSize>12pt</FontSize>
+                  <FontWeight>Bold</FontWeight>
+                </Style>
+              </ChartTitle>
+            </ChartTitles>
+            <Palette>SemiTransparent</Palette>
+            <ChartBorderSkin>
+              <Style>
+                <BackgroundColor>Gray</BackgroundColor>
+                <BackgroundGradientType>None</BackgroundGradientType>
+                <Color>White</Color>
+              </Style>
+            </ChartBorderSkin>
+            <ChartNoDataMessage Name="NoDataMessage">
+              <Caption>No Data Available</Caption>
+              <Style>
+                <BackgroundGradientType>None</BackgroundGradientType>
+                <TextAlign>General</TextAlign>
+                <VerticalAlign>Top</VerticalAlign>
+              </Style>
+            </ChartNoDataMessage>
+            <DataSetName>BRTradeReportSummary</DataSetName>
+            <Filters>
+              <Filter>
+                <FilterExpression>=Fields!GraphType.Value</FilterExpression>
+                <Operator>Equal</Operator>
+                <FilterValues>
+                  <FilterValue>=CInt(1)</FilterValue>
+                </FilterValues>
+              </Filter>
+            </Filters>
+            <Top>2.33333in</Top>
+            <Height>3.5in</Height>
+            <Width>7.5in</Width>
+            <ZIndex>1</ZIndex>
+            <Visibility>
+              <Hidden>=IIF(Sum(Fields!Type1Count.Value, "BRTradeReportSummary") = 0, true, false)</Hidden>
+            </Visibility>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <Border>
+                <Style>Solid</Style>
+              </Border>
+              <BackgroundColor>LightSteelBlue</BackgroundColor>
+              <BackgroundGradientType>TopBottom</BackgroundGradientType>
+            </Style>
+          </Chart>
+          <Textbox Name="txtHeader">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>TRADE REPORT SUMMARY</Value>
+                    <Style>
+                      <FontFamily>Times New Roman</FontFamily>
+                      <FontSize>16pt</FontSize>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Center</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Height>0.3in</Height>
+            <Width>7.5in</Width>
+            <ZIndex>2</ZIndex>
+            <DocumentMapLabel>TRADE REPORT SUMMARY</DocumentMapLabel>
+            <Style>
+              <TopBorder>
+                <Style>Solid</Style>
+              </TopBorder>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtRule01">
+            <CanGrow>true</CanGrow>
+            <CanShrink>true</CanShrink>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>A trade reference list has not been provided by this firm. Additional requests for a trade reference list are routinely issued to this firm.  In the meantime, we are striving to develop a reliable trade reference list using the Blue Book's sophisticated database, which identifies cross-references with other produce, transportation, or supply organizations.</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>0.375in</Top>
+            <Left>0.125in</Left>
+            <Height>0.54167in</Height>
+            <Width>7.25in</Width>
+            <ZIndex>3</ZIndex>
+            <Visibility>
+              <Hidden>=IIF( First(Fields!ConnectionListDate.Value, "BRTradeReportSummaryRules") is nothing, IIF( Sum(Fields!TradeReportCount.Value, "BRTradeReportSummaryRules") = 0, false, true), true)</Hidden>
+            </Visibility>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtRule02">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>A trade reference list has not been provided by this firm. Additional requests for a trade reference list are routinely issued to this firm.  In the meantime, trade reports have been collected using the Blue Book's sophisticated database, which identifies cross-references with other produce, transportation, or supply organizations.</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>0.91667in</Top>
+            <Left>0.125in</Left>
+            <Height>0.5625in</Height>
+            <Width>7.25in</Width>
+            <ZIndex>4</ZIndex>
+            <Visibility>
+              <Hidden>=IIF( First(Fields!ConnectionListDate.Value, "BRTradeReportSummaryRules") is nothing, IIF( Sum(Fields!TradeReportCount.Value, "BRTradeReportSummaryRules") &gt; 0, false, true), true)</Hidden>
+            </Visibility>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtRule03">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>Although a trade reference list has been provided by this firm, thus far no reported trade experiences with the firm have been received.  We are actively attempting to collect reported trade experiences with this firm, both from the list of trade references the firm has provided and from the Blue Book's sophisticated database, which identifies cross-references with other produce, transportation, or supply organizations.</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>1.47917in</Top>
+            <Left>0.125in</Left>
+            <Height>0.69792in</Height>
+            <Width>7.25in</Width>
+            <ZIndex>5</ZIndex>
+            <Visibility>
+              <Hidden>=IIF( First(Fields!ConnectionListDate.Value, "BRTradeReportSummaryRules") is nothing, true,  IIF( Sum(Fields!TradeReportCount.Value, "BRTradeReportSummaryRules") = 0, false, true))</Hidden>
+            </Visibility>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+        </ReportItems>
+        <Height>9.71875in</Height>
+        <Style />
+      </Body>
+      <Width>7.5in</Width>
+      <Page>
+        <LeftMargin>1in</LeftMargin>
+        <RightMargin>1in</RightMargin>
+        <TopMargin>1in</TopMargin>
+        <BottomMargin>1in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="CompanyID">
+      <DataType>Integer</DataType>
+      <Prompt>CompanyID</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="YearsOld">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>3</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Years Old</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="MonthsOld">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>36</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>MonthsOld</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>2</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>CompanyID</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>YearsOld</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>MonthsOld</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <Language>en-US</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>29d9379a-a1ab-458d-8bed-773b74531c1a</rd:ReportID>
+</Report>

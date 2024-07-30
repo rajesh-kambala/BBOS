@@ -1,0 +1,1747 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns:am="http://schemas.microsoft.com/sqlserver/reporting/authoringmetadata">
+  <am:AuthoringMetadata>
+    <am:CreatedBy>
+      <am:Name>SSDTRS</am:Name>
+      <am:Version>17.10.35013.160</am:Version>
+    </am:CreatedBy>
+    <am:UpdatedBy>
+      <am:Name>SSDTRS</am:Name>
+      <am:Version>17.10.35013.160</am:Version>
+    </am:UpdatedBy>
+    <am:LastModifiedTimestamp>2024-07-08T12:51:37.9069145Z</am:LastModifiedTimestamp>
+  </am:AuthoringMetadata>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BBS">
+      <DataSourceReference>BBS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>ac8e115f-242d-4427-b0ee-d411fca1d809</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="dsSalesTerritories">
+      <SharedDataSet>
+        <SharedDataSetReference>dsSalesTerritories</SharedDataSetReference>
+      </SharedDataSet>
+      <Fields>
+        <Field Name="SalesTerritory">
+          <DataField>SalesTerritory</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsSalesUsers">
+      <SharedDataSet>
+        <SharedDataSetReference>dsSalesUsers</SharedDataSetReference>
+      </SharedDataSet>
+      <Fields>
+        <Field Name="user_logon">
+          <DataField>user_logon</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsServiceItems">
+      <SharedDataSet>
+        <SharedDataSetReference>dsServiceItems</SharedDataSetReference>
+      </SharedDataSet>
+      <Fields>
+        <Field Name="ItemCode">
+          <DataField>ItemCode</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ItemCodeDesc">
+          <DataField>ItemCodeDesc</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsCancelCodes">
+      <SharedDataSet>
+        <SharedDataSetReference>dsCancelCodes</SharedDataSetReference>
+      </SharedDataSet>
+      <Fields>
+        <Field Name="capt_code">
+          <DataField>capt_code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="capt_us">
+          <DataField>capt_us</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsSummary">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@EndDate">
+            <Value>=Parameters!EndDate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@StartDate">
+            <Value>=Parameters!StartDate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@SalesTerritory">
+            <Value>=Parameters!SalesTerritory.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ServiceCode">
+            <Value>=Parameters!ServiceCode.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@CancelCode">
+            <Value>=Parameters!CancelCode.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@SalesUser">
+            <Value>=Parameters!SalesUser.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@IndustryType">
+            <Value>=Parameters!IndustryType.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>DECLARE @ComputedEndDate datetime
+SET @ComputedEndDate = DATEADD(day, 1, @EndDate)
+
+SELECT prsoat_CancelReasonCode as [Cancel Code],
+       capt_US [Cancel Reason],
+       COUNT(1) as [Cancel Count]
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation WITH (NOLOCK) ON prci_CityID = comp_PRListingCityID
+	   INNER JOIN PRSalesOrderAuditTrail WITH (NOLOCK) ON comp_CompanyID = prsoat_SoldToCompany
+	   INNER JOIN MAS_PRC.dbo.CI_Item ON prsoat_ItemCode = ItemCode AND UseInSO = 'Y' AND Category2 = 'PRIMARY'
+	   LEFT OUTER JOIN Custom_Captions  ON prsoat_CancelReasonCode = capt_code AND  capt_family = 'MembershipCancelCode' 
+WHERE prsoat_ActionCode = 'C'
+   --AND comp_CompanyID NOT IN (SELECT prse_CompanyID FROM PRService WHERE prse_Primary = 'Y')
+   AND prsoat_CreatedDate BETWEEN @StartDate AND @ComputedEndDate
+   AND LEFT(prci_SalesTerritory, 2) IN (@SalesTerritory) 
+   AND prsoat_ItemCode IN (@ServiceCode) 
+   AND prsoat_CancelReasonCode  IN (@CancelCode)
+   AND prsoat_UserLogon IN (@SalesUser)
+   AND comp_PRIndustryType IN (@IndustryType)
+GROUP BY prsoat_CancelReasonCode, capt_US
+ORDER BY prsoat_CancelReasonCode</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Cancel_Code">
+          <DataField>Cancel Code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Cancel_Reason">
+          <DataField>Cancel Reason</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Cancel_Count">
+          <DataField>Cancel Count</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsMetrics">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@EndDate">
+            <Value>=Parameters!EndDate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@StartDate">
+            <Value>=Parameters!StartDate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@SalesTerritory">
+            <Value>=Parameters!SalesTerritory.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ServiceCode">
+            <Value>=Parameters!ServiceCode.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@CancelCode">
+            <Value>=Parameters!CancelCode.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@SalesUser">
+            <Value>=Parameters!SalesUser.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@IndustryType">
+            <Value>=Parameters!IndustryType.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>DECLARE @ComputedEndDate datetime
+SET @ComputedEndDate = DATEADD(day, 1, @EndDate)
+
+DECLARE @MyTable table (
+	Metric varchar(500),
+	Cnt int,
+	Sequence int
+)
+
+
+INSERT INTO @MyTable
+SELECT 'Cancels that don''t have a rating',
+       COUNT(1),
+	   1
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation WITH (NOLOCK) ON prci_CityID = comp_PRListingCityID
+	   INNER JOIN PRSalesOrderAuditTrail WITH (NOLOCK) ON comp_CompanyID = prsoat_SoldToCompany
+	   INNER JOIN MAS_PRC.dbo.CI_Item ON prsoat_ItemCode = ItemCode AND UseInSO = 'Y' AND Category2 = 'PRIMARY'
+	   LEFT OUTER JOIN vPRCurrentRating ON comp_CompanyID = prra_CompanyID
+WHERE prsoat_ActionCode = 'C'
+   AND comp_CompanyID NOT IN (SELECT prse_CompanyID FROM PRService WHERE prse_Primary = 'Y')
+   AND prsoat_CreatedDate BETWEEN @StartDate AND @ComputedEndDate
+   AND LEFT(prci_SalesTerritory, 2) IN (@SalesTerritory) 
+   AND prsoat_ItemCode IN (@ServiceCode) 
+   AND prsoat_CancelReasonCode  IN (@CancelCode)
+   AND prsoat_UserLogon IN (@SalesUser)
+   AND comp_PRIndustryType &lt;&gt; ('S')
+   AND prra_RatingID IS NULL
+   AND comp_PRIndustryType IN (@IndustryType)
+
+INSERT INTO @MyTable
+SELECT 'Cancels that don''t have a Connection List ',
+       COUNT(1),
+	   2
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation WITH (NOLOCK) ON prci_CityID = comp_PRListingCityID
+	   INNER JOIN PRSalesOrderAuditTrail WITH (NOLOCK) ON comp_CompanyID = prsoat_SoldToCompany
+	   INNER JOIN MAS_PRC.dbo.CI_Item ON prsoat_ItemCode = ItemCode AND UseInSO = 'Y' AND Category2 = 'PRIMARY'
+	   LEFT OUTER JOIN (SELECT prcr_LeftCompanyID, COUNT(1) as CLCount
+	                      FROM PRCompanyRelationship WITH (NOLOCK)
+						 WHERE prcr_Active = 'Y'
+						   AND prcr_Type IN ('09', '10', '11', '12', '13', '15')
+						GROUP BY prcr_LeftCompanyID) As CL ON comp_CompanyID = prcr_LeftCompanyID
+WHERE prsoat_ActionCode = 'C'
+   AND comp_CompanyID NOT IN (SELECT prse_CompanyID FROM PRService WHERE prse_Primary = 'Y')
+   AND prsoat_CreatedDate BETWEEN @StartDate AND @ComputedEndDate
+   AND LEFT(prci_SalesTerritory, 2) IN (@SalesTerritory) 
+   AND prsoat_ItemCode IN (@ServiceCode) 
+   AND prsoat_CancelReasonCode  IN (@CancelCode)
+   AND prsoat_UserLogon IN (@SalesUser)
+   AND comp_PRIndustryType &lt;&gt; ('S')
+   AND prcr_LeftCompanyID IS NULL
+   AND comp_PRIndustryType IN (@IndustryType)
+
+INSERT INTO @MyTable
+SELECT 'Cancellations that haven''t logged on at all',
+       COUNT(1),
+	   3
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation WITH (NOLOCK) ON prci_CityID = comp_PRListingCityID
+	   INNER JOIN PRSalesOrderAuditTrail WITH (NOLOCK) ON comp_CompanyID = prsoat_SoldToCompany
+	   INNER JOIN MAS_PRC.dbo.CI_Item ON prsoat_ItemCode = ItemCode AND UseInSO = 'Y' AND Category2 = 'PRIMARY'
+	   LEFT OUTER JOIN (SELECT prwu_BBID, COUNT(1) as UserLoginCount
+	                      FROM PRWebUser WITH (NOLOCK)
+						 WHERE prwu_LastLoginDateTime IS NOT NULL
+						GROUP BY prwu_BBID) As BBOS ON comp_CompanyID = prwu_BBID
+WHERE prsoat_ActionCode = 'C'
+   AND comp_CompanyID NOT IN (SELECT prse_CompanyID FROM PRService WHERE prse_Primary = 'Y')
+   AND prsoat_CreatedDate BETWEEN @StartDate AND @ComputedEndDate
+   AND LEFT(prci_SalesTerritory, 2) IN (@SalesTerritory) 
+   AND prsoat_ItemCode IN (@ServiceCode) 
+   AND prsoat_CancelReasonCode  IN (@CancelCode)
+   AND prsoat_UserLogon IN (@SalesUser)
+   AND prwu_BBID IS NULL
+   AND comp_PRIndustryType IN (@IndustryType)
+
+INSERT INTO @MyTable
+SELECT 'Cancellations that haven''t logged on in the last 6 months',
+       COUNT(1),
+	   4
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation WITH (NOLOCK) ON prci_CityID = comp_PRListingCityID
+	   INNER JOIN PRSalesOrderAuditTrail WITH (NOLOCK) ON comp_CompanyID = prsoat_SoldToCompany
+	   INNER JOIN MAS_PRC.dbo.CI_Item ON prsoat_ItemCode = ItemCode AND UseInSO = 'Y' AND Category2 = 'PRIMARY'
+	   LEFT OUTER JOIN (SELECT prwu_BBID, COUNT(1) as UserLoginCount
+	                      FROM PRWebUser WITH (NOLOCK)
+						 WHERE prwu_LastLoginDateTime &gt;= DATEADD(month, -6, @StartDate)
+						GROUP BY prwu_BBID) As BBOS ON comp_CompanyID = prwu_BBID
+WHERE prsoat_ActionCode = 'C'
+   AND comp_CompanyID NOT IN (SELECT prse_CompanyID FROM PRService WHERE prse_Primary = 'Y')
+   AND prsoat_CreatedDate BETWEEN @StartDate AND @ComputedEndDate
+   AND LEFT(prci_SalesTerritory, 2) IN (@SalesTerritory) 
+   AND prsoat_ItemCode IN (@ServiceCode) 
+   AND prsoat_CancelReasonCode  IN (@CancelCode)
+   AND prsoat_UserLogon IN (@SalesUser)
+   AND prwu_BBID IS NULL
+   AND comp_PRIndustryType IN (@IndustryType)
+
+
+INSERT INTO @MyTable
+SELECT 'Cancels that are Buyers',
+       COUNT(1),
+	   5
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation WITH (NOLOCK) ON prci_CityID = comp_PRListingCityID
+	   INNER JOIN PRSalesOrderAuditTrail WITH (NOLOCK) ON comp_CompanyID = prsoat_SoldToCompany
+	   INNER JOIN MAS_PRC.dbo.CI_Item ON prsoat_ItemCode = ItemCode AND UseInSO = 'Y' AND Category2 = 'PRIMARY'
+WHERE prsoat_ActionCode = 'C'
+   AND comp_CompanyID NOT IN (SELECT prse_CompanyID FROM PRService WHERE prse_Primary = 'Y')
+   AND prsoat_CreatedDate BETWEEN @StartDate AND @ComputedEndDate
+   AND LEFT(prci_SalesTerritory, 2) IN (@SalesTerritory) 
+   AND prsoat_ItemCode IN (@ServiceCode) 
+   AND prsoat_CancelReasonCode  IN (@CancelCode)
+   AND prsoat_UserLogon IN (@SalesUser)
+   AND CHARINDEX('1', dbo.ufn_GetLevel1Classifications(comp_CompanyID, 0)) &gt; 0
+   AND comp_PRIndustryType IN (@IndustryType)
+
+
+INSERT INTO @MyTable
+SELECT 'Cancels that are Sellers',
+       COUNT(1),
+	   6
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation WITH (NOLOCK) ON prci_CityID = comp_PRListingCityID
+	   INNER JOIN PRSalesOrderAuditTrail WITH (NOLOCK) ON comp_CompanyID = prsoat_SoldToCompany
+	   INNER JOIN MAS_PRC.dbo.CI_Item ON prsoat_ItemCode = ItemCode AND UseInSO = 'Y' AND Category2 = 'PRIMARY'
+WHERE prsoat_ActionCode = 'C'
+   AND comp_CompanyID NOT IN (SELECT prse_CompanyID FROM PRService WHERE prse_Primary = 'Y')
+   AND prsoat_CreatedDate BETWEEN @StartDate AND @ComputedEndDate
+   AND LEFT(prci_SalesTerritory, 2) IN (@SalesTerritory) 
+   AND prsoat_ItemCode IN (@ServiceCode) 
+   AND prsoat_CancelReasonCode  IN (@CancelCode)
+   AND prsoat_UserLogon IN (@SalesUser)
+   AND CHARINDEX('2', dbo.ufn_GetLevel1Classifications(comp_CompanyID, 0)) &gt; 0
+   AND comp_PRIndustryType IN (@IndustryType)
+
+INSERT INTO @MyTable
+SELECT 'Cancels that are Actively Trading',
+       COUNT(1),
+	   7
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation WITH (NOLOCK) ON prci_CityID = comp_PRListingCityID
+	   INNER JOIN PRSalesOrderAuditTrail WITH (NOLOCK) ON comp_CompanyID = prsoat_SoldToCompany
+	   INNER JOIN MAS_PRC.dbo.CI_Item ON prsoat_ItemCode = ItemCode AND UseInSO = 'Y' AND Category2 = 'PRIMARY'
+WHERE prsoat_ActionCode = 'C'
+   AND comp_CompanyID NOT IN (SELECT prse_CompanyID FROM PRService WHERE prse_Primary = 'Y')
+   AND prsoat_CreatedDate BETWEEN @StartDate AND @ComputedEndDate
+   AND LEFT(prci_SalesTerritory, 2) IN (@SalesTerritory) 
+   AND prsoat_ItemCode IN (@ServiceCode) 
+   AND prsoat_CancelReasonCode  IN (@CancelCode)
+   AND prsoat_UserLogon IN (@SalesUser)
+   AND prsoat_CancelReasonCode IN ('C02', 'C03', 'C04', 'C06', 'C07', 'C08', 'C09', 'C10', 'C27')
+   AND comp_PRIndustryType IN (@IndustryType)
+
+INSERT INTO @MyTable
+SELECT 'Cancels that are Not Actively Trading ',
+       COUNT(1),
+	   8
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation WITH (NOLOCK) ON prci_CityID = comp_PRListingCityID
+	   INNER JOIN PRSalesOrderAuditTrail WITH (NOLOCK) ON comp_CompanyID = prsoat_SoldToCompany
+	   INNER JOIN MAS_PRC.dbo.CI_Item ON prsoat_ItemCode = ItemCode AND UseInSO = 'Y' AND Category2 = 'PRIMARY'
+WHERE prsoat_ActionCode = 'C'
+   AND comp_CompanyID NOT IN (SELECT prse_CompanyID FROM PRService WHERE prse_Primary = 'Y')
+   AND prsoat_CreatedDate BETWEEN @StartDate AND @ComputedEndDate
+   AND LEFT(prci_SalesTerritory, 2) IN (@SalesTerritory) 
+   AND prsoat_ItemCode IN (@ServiceCode) 
+   AND prsoat_CancelReasonCode  IN (@CancelCode)
+   AND prsoat_UserLogon IN (@SalesUser)
+   AND prsoat_CancelReasonCode IN ('C01')
+   AND comp_PRIndustryType IN (@IndustryType)
+
+INSERT INTO @MyTable
+SELECT 'Cancels due to non payment ',
+       COUNT(1),
+	   9
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation WITH (NOLOCK) ON prci_CityID = comp_PRListingCityID
+	   INNER JOIN PRSalesOrderAuditTrail WITH (NOLOCK) ON comp_CompanyID = prsoat_SoldToCompany
+	   INNER JOIN MAS_PRC.dbo.CI_Item ON prsoat_ItemCode = ItemCode AND UseInSO = 'Y' AND Category2 = 'PRIMARY'
+WHERE prsoat_ActionCode = 'C'
+   AND comp_CompanyID NOT IN (SELECT prse_CompanyID FROM PRService WHERE prse_Primary = 'Y')
+   AND prsoat_CreatedDate BETWEEN @StartDate AND @ComputedEndDate
+   AND LEFT(prci_SalesTerritory, 2) IN (@SalesTerritory) 
+   AND prsoat_ItemCode IN (@ServiceCode) 
+   AND prsoat_CancelReasonCode  IN (@CancelCode)
+   AND prsoat_UserLogon IN (@SalesUser)
+   AND prsoat_CancelReasonCode IN ('C23')
+   AND comp_PRIndustryType IN (@IndustryType)
+
+INSERT INTO @MyTable
+SELECT 'Cancels due to Upgrade',
+       COUNT(1),
+	   10
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation WITH (NOLOCK) ON prci_CityID = comp_PRListingCityID
+	   INNER JOIN PRSalesOrderAuditTrail WITH (NOLOCK) ON comp_CompanyID = prsoat_SoldToCompany
+	   INNER JOIN MAS_PRC.dbo.CI_Item ON prsoat_ItemCode = ItemCode AND UseInSO = 'Y' AND Category2 = 'PRIMARY'
+WHERE prsoat_ActionCode = 'C'
+   AND comp_CompanyID NOT IN (SELECT prse_CompanyID FROM PRService WHERE prse_Primary = 'Y')
+   AND prsoat_CreatedDate BETWEEN @StartDate AND @ComputedEndDate
+   AND LEFT(prci_SalesTerritory, 2) IN (@SalesTerritory) 
+   AND prsoat_ItemCode IN (@ServiceCode) 
+   AND prsoat_CancelReasonCode  IN (@CancelCode)
+   AND prsoat_UserLogon IN (@SalesUser)
+   AND prsoat_CancelReasonCode IN ('C24')
+   AND comp_PRIndustryType IN (@IndustryType)
+
+
+INSERT INTO @MyTable
+SELECT 'Cancels due to Downgrade',
+       COUNT(1),
+	   11
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation WITH (NOLOCK) ON prci_CityID = comp_PRListingCityID
+	   INNER JOIN PRSalesOrderAuditTrail WITH (NOLOCK) ON comp_CompanyID = prsoat_SoldToCompany
+	   INNER JOIN MAS_PRC.dbo.CI_Item ON prsoat_ItemCode = ItemCode AND UseInSO = 'Y' AND Category2 = 'PRIMARY'
+WHERE prsoat_ActionCode = 'C'
+   AND comp_CompanyID NOT IN (SELECT prse_CompanyID FROM PRService WHERE prse_Primary = 'Y')
+   AND prsoat_CreatedDate BETWEEN @StartDate AND @ComputedEndDate
+   AND LEFT(prci_SalesTerritory, 2) IN (@SalesTerritory) 
+   AND prsoat_ItemCode IN (@ServiceCode) 
+   AND prsoat_CancelReasonCode  IN (@CancelCode)
+   AND prsoat_UserLogon IN (@SalesUser)
+   AND prsoat_CancelReasonCode IN ('C30')
+   AND comp_PRIndustryType IN (@IndustryType)
+
+DECLARE @TotalCount int
+
+SELECT @TotalCount = COUNT(1)
+  FROM Company WITH (NOLOCK)
+       INNER JOIN vPRLocation WITH (NOLOCK) ON prci_CityID = comp_PRListingCityID
+	   INNER JOIN PRSalesOrderAuditTrail WITH (NOLOCK) ON comp_CompanyID = prsoat_SoldToCompany
+	   INNER JOIN MAS_PRC.dbo.CI_Item ON prsoat_ItemCode = ItemCode AND UseInSO = 'Y' AND Category2 = 'PRIMARY'
+WHERE prsoat_ActionCode = 'C'
+   AND comp_CompanyID NOT IN (SELECT prse_CompanyID FROM PRService WHERE prse_Primary = 'Y')
+   AND prsoat_CreatedDate BETWEEN @StartDate AND @ComputedEndDate
+   AND LEFT(prci_SalesTerritory, 2) IN (@SalesTerritory) 
+   AND prsoat_ItemCode IN (@ServiceCode) 
+   AND prsoat_CancelReasonCode  IN (@CancelCode)
+   AND prsoat_UserLogon IN (@SalesUser)
+   AND comp_PRIndustryType IN (@IndustryType)
+
+
+SELECT *, CASE WHEN @TotalCount = 0 THEN 0 ELSE CAST(cnt as Decimal(8,3)) / CAST(@TotalCount as Decimal(8,3)) END as Pct
+ FROM @MyTable 
+ORDER BY Sequence;
+
+</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Metric">
+          <DataField>Metric</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Cnt">
+          <DataField>Cnt</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Sequence">
+          <DataField>Sequence</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Pct">
+          <DataField>Pct</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsIndustryType">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>SELECT capt_code, capt_US
+ FROM Custom_Captions
+WHERE capt_family = 'comp_PRIndustryType'
+ORDER BY capt_order, capt_us</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="capt_code">
+          <DataField>capt_code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="capt_US">
+          <DataField>capt_US</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsDefaultCodes">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>
+SELECT capt_code, capt_us
+  FROM Custom_Captions 
+ WHERE capt_family = 'MembershipCancelCode' 
+  AND capt_code IN ('C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C07', 'C08', 'C09', 'C10', 'C12', 'C23', 'C27', 'C33', 'C34')
+ORDER BY capt_order</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="capt_code">
+          <DataField>capt_code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="capt_us">
+          <DataField>capt_us</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="Tablix2">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>1in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.8125in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox4">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Cancel Code</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox4</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Cancel Reason</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox12">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Count</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox12</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox8">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Pct</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox8</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Cancel_Code1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Cancel_Code.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Cancel_Code1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Cancel_Reason">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Cancel_Reason.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Cancel_Reason</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Cancel_Count">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Cancel_Count.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Cancel_Count</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox10">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Cancel_Count.Value / SUM(Fields!Cancel_Count.Value, "Tablix2")</Value>
+                                  <Style>
+                                    <Format>0%</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox10</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox3">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>TOTAL:</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox3</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox14">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox14</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox6">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=SUM(Fields!Cancel_Count.Value)</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox6</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox11">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox11</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details1" />
+                  <TablixMembers>
+                    <TablixMember />
+                  </TablixMembers>
+                </TablixMember>
+                <TablixMember>
+                  <KeepWithGroup>Before</KeepWithGroup>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <RepeatColumnHeaders>true</RepeatColumnHeaders>
+            <DataSetName>dsSummary</DataSetName>
+            <Top>0.45833in</Top>
+            <Height>0.75in</Height>
+            <Width>5.8125in</Width>
+            <Style>
+              <Border>
+                <Style>Solid</Style>
+              </Border>
+              <TopBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </TopBorder>
+              <BottomBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </BottomBorder>
+              <LeftBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </LeftBorder>
+              <RightBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </RightBorder>
+            </Style>
+          </Tablix>
+          <Tablix Name="Tablix3">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>3.8125in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox5">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Metric</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox5</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox7">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Count</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox7</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox9">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Pct</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox9</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Metric">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Metric.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Metric</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Cnt">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Cnt.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Cnt</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <TopBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Pct">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Pct.Value</Value>
+                                  <Style>
+                                    <Format>0%</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Pct</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <RepeatColumnHeaders>true</RepeatColumnHeaders>
+            <DataSetName>dsMetrics</DataSetName>
+            <Top>1.36333in</Top>
+            <Height>0.5in</Height>
+            <Width>5.8125in</Width>
+            <ZIndex>1</ZIndex>
+            <Style>
+              <Border>
+                <Style>Solid</Style>
+              </Border>
+              <TopBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </TopBorder>
+              <BottomBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </BottomBorder>
+              <LeftBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </LeftBorder>
+              <RightBorder>
+                <Color>Black</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </RightBorder>
+            </Style>
+          </Tablix>
+          <Textbox Name="Textbox13">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>Cancelled Memberships Summary</Value>
+                    <Style>
+                      <FontSize>11pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <rd:DefaultName>Textbox13</rd:DefaultName>
+            <Height>0.25in</Height>
+            <Width>5.8125in</Width>
+            <ZIndex>2</ZIndex>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+        </ReportItems>
+        <Height>1.86333in</Height>
+        <Style />
+      </Body>
+      <Width>5.8125in</Width>
+      <Page>
+        <LeftMargin>1in</LeftMargin>
+        <RightMargin>1in</RightMargin>
+        <TopMargin>1in</TopMargin>
+        <BottomMargin>1in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="StartDate">
+      <DataType>DateTime</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>=DateAdd("M", -1,DateValue(CStr(Month(Now)) &amp; "/1/" &amp; CStr(Year(Now))))</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Start Date</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="SalesTerritory">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>dsSalesTerritories</DataSetName>
+          <ValueField>SalesTerritory</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Sales Territory</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>dsSalesTerritories</DataSetName>
+          <ValueField>SalesTerritory</ValueField>
+          <LabelField>SalesTerritory</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="EndDate">
+      <DataType>DateTime</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>=DateAdd("d", -1, DateValue(CStr(Month(Now)) &amp; "/1/" &amp; CStr(Year(Now))))</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>End Date</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ServiceCode">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>dsServiceItems</DataSetName>
+          <ValueField>ItemCode</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Service Code</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>dsServiceItems</DataSetName>
+          <ValueField>ItemCode</ValueField>
+          <LabelField>ItemCode</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="CancelCode">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>dsDefaultCodes</DataSetName>
+          <ValueField>capt_code</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Cancel Code</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>dsCancelCodes</DataSetName>
+          <ValueField>capt_code</ValueField>
+          <LabelField>capt_code</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="SalesUser">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>dsSalesUsers</DataSetName>
+          <ValueField>user_logon</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Sales User</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>dsSalesUsers</DataSetName>
+          <ValueField>user_logon</ValueField>
+          <LabelField>user_logon</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="IndustryType">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>dsIndustryType</DataSetName>
+          <ValueField>capt_code</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Industry Type</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>dsIndustryType</DataSetName>
+          <ValueField>capt_code</ValueField>
+          <LabelField>capt_US</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>4</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>StartDate</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>SalesTerritory</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>EndDate</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>ServiceCode</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>2</RowIndex>
+          <ParameterName>CancelCode</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>2</RowIndex>
+          <ParameterName>SalesUser</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>3</RowIndex>
+          <ParameterName>IndustryType</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>360f2852-520b-42de-a4c1-b37a618e61ad</rd:ReportID>
+</Report>

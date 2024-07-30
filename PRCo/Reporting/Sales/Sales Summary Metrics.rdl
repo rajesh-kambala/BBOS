@@ -1,0 +1,2733 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BBS">
+      <DataSourceReference>BBS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>cdbb822f-264f-46a0-b10c-de4548b50196</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="Results">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@DateCriteria">
+            <Value>=Parameters!DateCriteria.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Start">
+            <Value>=Parameters!Start.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@End">
+            <Value>=Parameters!End.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Status">
+            <Value>=Parameters!Status.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Stage">
+            <Value>=Parameters!Stage.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Trigger">
+            <Value>=Parameters!Trigger.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Pipeline">
+            <Value>=Parameters!Pipeline.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Subtype">
+            <Value>=Parameters!Subtype.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@AssignedTo">
+            <Value>=Parameters!AssignedTo.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@SalesTerritory">
+            <Value>=Parameters!SalesTerritory.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Type">
+            <Value>=Parameters!Type.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@MarketingWave">
+            <Value>=Parameters!MarketingWave.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@IndustryType">
+            <Value>=Parameters!IndustryType.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>Select * from 
+	(
+		Select
+		BBID = oppo_PrimaryCompanyID
+		,CompanyName = comp_Name
+		,ListingCity = prci_City
+		,ListingState = prst_State
+		,ListingCountry = prcn_Country
+                                ,[Ind] = isnull(comp_PRIndustryType,'P')
+		,SalesTerritory = isnull(left(prci_SalesTerritory,2),'OP')
+		,ListingStatus = case comp_PRListingStatus
+			when 'L' then 'Listed'
+			when 'H' then 'Listed'
+			when 'LUV' then 'Listed'
+			when 'N1' then 'Service Only'
+			else 'Not Listed' end
+		,CurrentRating = dbo.ufn_GetCurrentRatingLine(comp_CompanyID)
+		,[Type] = dbo.ufn_GetCapt_US ('Choices','Oppo_Type',Oppo_Type)
+		,AssignedTo = rtrim(user_Logon)
+		,Source = isnull(dbo.ufn_GetCapt_US ('choices','Oppo_Source',Oppo_Source), dbo.ufn_GetCapt_US ('choices','Oppo_SourceBP',Oppo_Source))
+
+		,DateOpened = CAST(FLOOR( CAST( Oppo_Opened AS FLOAT ) )AS DATETIME)
+		,DateClosed = CAST(FLOOR( CAST( Oppo_Closed AS FLOAT ) )AS DATETIME)
+		,DateCreated = CAST(FLOOR( CAST( Oppo_CreatedDate AS FLOAT ) )AS DATETIME)
+		,DateUpdated = CAST(FLOOR( CAST( Oppo_UpdatedDate AS FLOAT ) )AS DATETIME)
+		,DateLead = CAST(FLOOR( CAST( Oppo_PRLeadDateTime AS FLOAT ) )AS DATETIME)
+		,DateProspect = CAST(FLOOR( CAST( Oppo_PRProspectDateTime AS FLOAT ) )AS DATETIME)
+		,DateOpp = CAST(FLOOR( CAST( Oppo_PROpportunityDateTime AS FLOAT ) )AS DATETIME)
+
+		,[Status] = dbo.ufn_GetCapt_US ('Choices','Oppo_PRStatus',Oppo_Status)
+		,Stage = Oppo_Stage
+		,ForecastAmt = oppo_Forecast
+		,LostReason = dbo.ufn_GetCapt_US ('Choices','Oppo_PRLostReason',Oppo_PRLostReason)
+		,Subtype = isnull(dbo.ufn_GetCapt_US ('Choices','Oppo_PRType',Oppo_PRType),'')
+		,Pipeline = dbo.ufn_GetCapt_US ('Choices','Oppo_PRPipeline',Oppo_PRPipeline)
+		,[Trigger] = isnull(dbo.ufn_GetCapt_US ('Choices','Oppo_PRTrigger',Oppo_PRTrigger),'None')
+		,AdRenewal = oppo_PRAdRenewal
+		,TargetYear = oppo_PRTargetStartYear
+		,TargetMonth = dbo.ufn_GetCapt_US ('Choices','Oppo_PRTargetStartMonth',Oppo_PRTargetStartMonth)
+		,Certainty = oppo_PRCertainty
+		,Wave = isnull(rtrim(wait_Name),'')
+		,[Days to Close] = datediff(d,Oppo_Opened, Oppo_Closed)
+		,[Days to Prospect] = datediff(d,oppo_PRLeadDateTime, oppo_PRProspectDateTime)
+		,[Days to Opportunity] = datediff(d, isnull(oppo_PRProspectDateTime,oppo_PRLeadDateTime), oppo_PROpportunityDateTime)
+		,[Num Interactions] = (Select count(1) from communication with (nolock) where comm_OpportunityID = oppo_OpportunityID)
+                                ,[OpenMonth] = month(oppo_Opened)
+                                ,[ClosedMonth] = month(oppo_Closed)
+	from Opportunity with (nolock)
+	Left outer join company with (nolock) on comp_CompanyID = oppo_PrimaryCompanyID
+	Left Outer join vPRLocation with (nolock) on prci_CityID = comp_PRListingCityID
+	left outer join users with (nolock) on user_UserID = oppo_AssignedUserID
+	Left Outer Join WaveItems with (nolock) on wait_WaveItemID = oppo_WaveItemID
+	)TableA
+Where 
+	Case 
+		WHEN @DateCriteria = 'DateOpened' then DateOpened
+		WHEN @DateCriteria = 'DateClosed' then DateClosed
+		WHEN @DateCriteria = 'DateLead' then DateLead
+		WHEN @DateCriteria = 'DateProspect' then DateProspect
+		WHEN @DateCriteria = 'DateOpp' then DateOpp
+		else DateOpened 
+	end between @Start and @End
+	and [Status] in (@Status)
+	and [Stage] in (@Stage)
+                and [Trigger] in (@Trigger)
+                and [Pipeline] in (@Pipeline)
+                and [Subtype] in (@Subtype)
+                and [AssignedTo] in (@AssignedTo)
+                and [SalesTerritory] in (@SalesTerritory)
+                and [Type] in (@Type)
+                and wave in (@MarketingWave)
+                and Ind in (@IndustryType)</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="BBID">
+          <DataField>BBID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="CompanyName">
+          <DataField>CompanyName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ListingCity">
+          <DataField>ListingCity</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ListingState">
+          <DataField>ListingState</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ListingCountry">
+          <DataField>ListingCountry</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Ind">
+          <DataField>Ind</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="SalesTerritory">
+          <DataField>SalesTerritory</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ListingStatus">
+          <DataField>ListingStatus</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="CurrentRating">
+          <DataField>CurrentRating</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Type">
+          <DataField>Type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="AssignedTo">
+          <DataField>AssignedTo</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Source">
+          <DataField>Source</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="DateOpened">
+          <DataField>DateOpened</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="DateClosed">
+          <DataField>DateClosed</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="DateCreated">
+          <DataField>DateCreated</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="DateUpdated">
+          <DataField>DateUpdated</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="DateLead">
+          <DataField>DateLead</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="DateProspect">
+          <DataField>DateProspect</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="DateOpp">
+          <DataField>DateOpp</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Status">
+          <DataField>Status</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Stage">
+          <DataField>Stage</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ForecastAmt">
+          <DataField>ForecastAmt</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="LostReason">
+          <DataField>LostReason</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Subtype">
+          <DataField>Subtype</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Pipeline">
+          <DataField>Pipeline</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Trigger">
+          <DataField>Trigger</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="AdRenewal">
+          <DataField>AdRenewal</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="TargetYear">
+          <DataField>TargetYear</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="TargetMonth">
+          <DataField>TargetMonth</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Certainty">
+          <DataField>Certainty</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Wave">
+          <DataField>Wave</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Days_to_Close">
+          <DataField>Days to Close</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Days_to_Prospect">
+          <DataField>Days to Prospect</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Days_to_Opportunity">
+          <DataField>Days to Opportunity</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Num_Interactions">
+          <DataField>Num Interactions</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="OpenMonth">
+          <DataField>OpenMonth</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="ClosedMonth">
+          <DataField>ClosedMonth</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="Status">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>Select
+	[Name] = capt_US
+from Custom_Captions
+where capt_Family = 'oppo_PRStatus'
+order by capt_Order</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="Stage">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>Select
+	[Name] = capt_US
+from Custom_Captions
+where capt_Family = 'oppo_PRStage'
+order by capt_Order</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="Trigger">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>Select
+	[Name] = convert(nvarchar(500),capt_US)
+from Custom_Captions
+where capt_Family = 'oppo_PRTrigger'
+UNION
+Select 'None'</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="Type">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>Select
+	[Name] = capt_US
+from Custom_Captions
+where capt_Family = 'oppo_Type'
+order by capt_Order</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="Subtype">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>Select * from
+(Select distinct
+	[Name] = case when oppo_PRType is null then 'None' else convert(nvarchar(100),capt_US) end
+	,[Value] = case when oppo_PRType is null then '' else convert(nvarchar(100),capt_US) end
+	, capt_Order
+From Opportunity
+left outer join Custom_Captions on capt_Family = 'oppo_PRType' and capt_code = oppo_PRType) TableA
+where [Name] is not null
+order by capt_order</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Value">
+          <DataField>Value</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="capt_ORder">
+          <DataField>capt_Order</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="Pipeline">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>Select
+	[Name] = capt_US
+from Custom_Captions
+where capt_Family = 'oppo_PRPipeline'
+order by capt_Order</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="SalesTerritory">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>Select distinct 
+[Name] = left(prci_SalesTerritory,2) 
+from PRCity
+where prci_SalesTerritory is not null
+order by [Name]</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="AssignedTo">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>Select
+[Name] = rtrim(user_logon)
+from Users 
+where user_primarychannelid in (6,7)
+and user_Disabled is null
+order by user_PrimaryChannelID, user_logon</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="MarketingWave">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>Select * from
+(Select wait_WaveItemID, [Name] = rtrim(Wave_Name) + ' - ' + rtrim(Wait_Name), [Wave] = rtrim(wait_Name)
+from Waves
+inner join WaveItems on wait_WaveID = wave_WaveID
+where wave_status = 'Active'
+UNION
+Select '9999', ' None', '') TableA
+Order by Name</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="wait_WaveItemID">
+          <DataField>wait_WaveItemID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Wave">
+          <DataField>Wave</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="Parameters">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>Declare @Values Table (Name nvarchar(100), Value nvarchar(100))
+
+Insert into @Values Values ('Sales Territory', 'SalesTerritory')
+Insert into @Values Values ('Type', 'Type')
+Insert into @Values Values ('Assigned To', 'AssignedTo')
+Insert into @Values Values ('Source', 'Source')
+Insert into @Values Values ('Status', 'Status')
+Insert into @Values Values ('Stage', 'Stage')
+Insert into @Values Values ('Lost Reason', 'LostReason')
+Insert into @Values Values ('Subtype', 'Subtype')
+Insert into @Values Values ('Pipeline', 'Pipeline')
+Insert into @Values Values ('Trigger', 'Trigger')
+Insert into @Values Values ('Target Month', 'TargetMonth')
+Insert into @Values Values ('Target Year', 'TargetYear')
+Insert into @Values Values ('Certainty', 'Certainty')
+Insert into @Values Values ('Wave', 'Wave')
+Insert into @Values Values ('Days to Close', 'Days to Close')
+Insert into @Values Values ('Days to Prospect', 'Days to Prospect')
+Insert into @Values Values ('Days to Opportunity', 'Days to Opportunity')
+Insert into @Values Values ('Num Interactions', 'Num Interactions')
+Insert into @Values Values('Open Month', 'OpenMonth')
+Insert into @Values Values('Closed Month', 'ClosedMonth')
+Select * from @Values</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Value">
+          <DataField>Value</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="IndustryType">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>Select
+[Value] = rtrim(capt_Code),
+[Name] = capt_US
+from Custom_Captions
+where capt_Family = 'comp_PRIndustryType'
+order by capt_Order</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Value">
+          <DataField>Value</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="SummaryValues">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>Declare @Values Table (Name nvarchar(100), Value nvarchar(100))
+
+Insert into @Values Values ('Number of Records', 'NumRecords')
+Insert into @Values Values ('Percent of column based on number of records', 'PctColumnNumRecords')
+Insert into @Values Values ('Percent of row based on number of records', 'PctRowNumRecords')
+Insert into @Values Values ('Total Forecast Dollars', 'ForecastAmt')
+Insert into @Values Values ('Avg Forecast Dollars', 'AvgForecastAmt')
+Insert into @Values Values ('Percent of column based on forecasted dollars', 'PctColumnForecastAmt')
+Insert into @Values Values ('Percent of row based on forecasted dollars', 'PctRowForecastAmt')
+
+Select * from @Values</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Value">
+          <DataField>Value</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="matrix1">
+            <TablixCorner>
+              <TablixCornerRows>
+                <TablixCornerRow>
+                  <TablixCornerCell>
+                    <CellContents>
+                      <Textbox Name="textbox11">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value />
+                                <Style />
+                              </TextRun>
+                            </TextRuns>
+                            <Style />
+                          </Paragraph>
+                        </Paragraphs>
+                        <rd:DefaultName>textbox11</rd:DefaultName>
+                        <ZIndex>14</ZIndex>
+                        <Style>
+                          <Border>
+                            <Style>Solid</Style>
+                            <Width>0.5pt</Width>
+                          </Border>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>2pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                      <RowSpan>2</RowSpan>
+                    </CellContents>
+                  </TablixCornerCell>
+                  <TablixCornerCell />
+                </TablixCornerRow>
+                <TablixCornerRow>
+                  <TablixCornerCell />
+                  <TablixCornerCell />
+                </TablixCornerRow>
+              </TablixCornerRows>
+            </TablixCorner>
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>0.5in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>0.5in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>0.75in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>0.75in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>0.5in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>0.5in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>0.75in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>0.75in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="BBID">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Count(Fields!BBID.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <Format>n0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BBID</rd:DefaultName>
+                          <ZIndex>5</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <TopBorder>
+                              <Width>0.5pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Width>0.5pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Width>0.5pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="BBID_1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=count(Fields!BBID.Value)/count(Fields!BBID.Value,"ColumnValue")</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <Format>p0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BBID_1</rd:DefaultName>
+                          <ZIndex>4</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ForecastAmt">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ForecastAmt.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <Format>c0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ForecastAmt</rd:DefaultName>
+                          <ZIndex>3</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ForecastAmt_1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ForecastAmt.Value)/Sum(Fields!ForecastAmt.Value,"ColumnValue")</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <Format>p0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ForecastAmt_1</rd:DefaultName>
+                          <ZIndex>2</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <RightBorder>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox24">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Count(Fields!BBID.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>n0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BBID</rd:DefaultName>
+                          <ZIndex>5</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <TopBorder>
+                              <Width>0.5pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Width>0.5pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Width>0.5pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox27">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=count(Fields!BBID.Value)/count(Fields!BBID.Value,"matrix1")</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>p0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BBID_1</rd:DefaultName>
+                          <ZIndex>4</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox30">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ForecastAmt.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>c0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ForecastAmt</rd:DefaultName>
+                          <ZIndex>3</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox33">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ForecastAmt.Value)/Sum(Fields!ForecastAmt.Value,"matrix1")</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>p0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ForecastAmt_1</rd:DefaultName>
+                          <ZIndex>2</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <RightBorder>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox12">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Count(Fields!BBID.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>n0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BBID</rd:DefaultName>
+                          <ZIndex>5</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <TopBorder>
+                              <Width>0.5pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Width>0.5pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Width>0.5pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>LightBlue</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox13">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=count(Fields!BBID.Value)/count(Fields!BBID.Value,"ColumnValue")</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>p0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BBID_1</rd:DefaultName>
+                          <ZIndex>4</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <BackgroundColor>LightBlue</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox14">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ForecastAmt.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>c0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ForecastAmt</rd:DefaultName>
+                          <ZIndex>3</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <BackgroundColor>LightBlue</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox15">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ForecastAmt.Value)/Sum(Fields!ForecastAmt.Value,"ColumnValue")</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>p0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ForecastAmt_1</rd:DefaultName>
+                          <ZIndex>2</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <RightBorder>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>LightBlue</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox25">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Count(Fields!BBID.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>n0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BBID</rd:DefaultName>
+                          <ZIndex>5</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <TopBorder>
+                              <Width>0.5pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Width>0.5pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Width>0.5pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>LightBlue</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox28">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=count(Fields!BBID.Value)/count(Fields!BBID.Value,"matrix1")</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>p0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BBID_1</rd:DefaultName>
+                          <ZIndex>4</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <BackgroundColor>LightBlue</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox31">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ForecastAmt.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>c0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ForecastAmt</rd:DefaultName>
+                          <ZIndex>3</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <BackgroundColor>LightBlue</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox34">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ForecastAmt.Value)/Sum(Fields!ForecastAmt.Value,"matrix1")</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>p0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ForecastAmt_1</rd:DefaultName>
+                          <ZIndex>2</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <RightBorder>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>LightBlue</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox16">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Count(Fields!BBID.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>ExtraBold</FontWeight>
+                                    <Format>n0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BBID</rd:DefaultName>
+                          <ZIndex>5</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <TopBorder>
+                              <Width>0.5pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Width>0.5pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Width>0.5pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>PaleGreen</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox17">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=count(Fields!BBID.Value)/count(Fields!BBID.Value,"ColumnValue")</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>ExtraBold</FontWeight>
+                                    <Format>p0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BBID_1</rd:DefaultName>
+                          <ZIndex>4</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <BackgroundColor>PaleGreen</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox18">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ForecastAmt.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>ExtraBold</FontWeight>
+                                    <Format>c0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ForecastAmt</rd:DefaultName>
+                          <ZIndex>3</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <BackgroundColor>PaleGreen</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox19">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ForecastAmt.Value)/Sum(Fields!ForecastAmt.Value,"ColumnValue")</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>ExtraBold</FontWeight>
+                                    <Format>p0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ForecastAmt_1</rd:DefaultName>
+                          <ZIndex>2</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <RightBorder>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>PaleGreen</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox26">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Count(Fields!BBID.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>ExtraBold</FontWeight>
+                                    <Format>n0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BBID</rd:DefaultName>
+                          <ZIndex>5</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <TopBorder>
+                              <Width>0.5pt</Width>
+                            </TopBorder>
+                            <BottomBorder>
+                              <Width>0.5pt</Width>
+                            </BottomBorder>
+                            <LeftBorder>
+                              <Width>1pt</Width>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Width>0.5pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>PaleGreen</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox29">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=count(Fields!BBID.Value)/count(Fields!BBID.Value,"matrix1")</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>ExtraBold</FontWeight>
+                                    <Format>p0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BBID_1</rd:DefaultName>
+                          <ZIndex>4</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <BackgroundColor>PaleGreen</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox32">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ForecastAmt.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>ExtraBold</FontWeight>
+                                    <Format>c0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ForecastAmt</rd:DefaultName>
+                          <ZIndex>3</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <BackgroundColor>PaleGreen</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox35">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ForecastAmt.Value)/Sum(Fields!ForecastAmt.Value,"matrix1")</Value>
+                                  <Style>
+                                    <FontFamily>Calibri</FontFamily>
+                                    <FontWeight>ExtraBold</FontWeight>
+                                    <Format>p0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ForecastAmt_1</rd:DefaultName>
+                          <ZIndex>2</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                              <Width>0.5pt</Width>
+                            </Border>
+                            <RightBorder>
+                              <Width>1pt</Width>
+                            </RightBorder>
+                            <BackgroundColor>PaleGreen</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <Group Name="ColumnValue">
+                    <GroupExpressions>
+                      <GroupExpression>=fields(Parameters!Table1Column.Value).Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <TablixHeader>
+                    <Size>0.25in</Size>
+                    <CellContents>
+                      <Textbox Name="textbox5">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value>=fields(Parameters!Table1Column.Value).Value</Value>
+                                <Style>
+                                  <FontFamily>Calibri</FontFamily>
+                                  <FontWeight>Bold</FontWeight>
+                                  <Format>n0</Format>
+                                </Style>
+                              </TextRun>
+                            </TextRuns>
+                            <Style>
+                              <TextAlign>Center</TextAlign>
+                            </Style>
+                          </Paragraph>
+                        </Paragraphs>
+                        <rd:DefaultName>textbox5</rd:DefaultName>
+                        <ZIndex>13</ZIndex>
+                        <Style>
+                          <Border>
+                            <Style>Solid</Style>
+                            <Width>0.5pt</Width>
+                          </Border>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>2pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                    </CellContents>
+                  </TablixHeader>
+                  <TablixMembers>
+                    <TablixMember>
+                      <TablixHeader>
+                        <Size>0.25in</Size>
+                        <CellContents>
+                          <Textbox Name="textbox2">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>#</Value>
+                                    <Style>
+                                      <FontFamily>Calibri</FontFamily>
+                                      <Format>n0</Format>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style>
+                                  <TextAlign>Center</TextAlign>
+                                </Style>
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>textbox2</rd:DefaultName>
+                            <ZIndex>11</ZIndex>
+                            <Style>
+                              <Border>
+                                <Style>Solid</Style>
+                                <Width>0.5pt</Width>
+                              </Border>
+                              <BackgroundColor>LemonChiffon</BackgroundColor>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                      <KeepTogether>true</KeepTogether>
+                    </TablixMember>
+                    <TablixMember>
+                      <TablixHeader>
+                        <Size>0.25in</Size>
+                        <CellContents>
+                          <Textbox Name="textbox4">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>%</Value>
+                                    <Style>
+                                      <FontFamily>Calibri</FontFamily>
+                                      <Format>p2</Format>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style>
+                                  <TextAlign>Center</TextAlign>
+                                </Style>
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>textbox4</rd:DefaultName>
+                            <ZIndex>10</ZIndex>
+                            <Style>
+                              <Border>
+                                <Style>Solid</Style>
+                                <Width>0.5pt</Width>
+                              </Border>
+                              <BackgroundColor>LemonChiffon</BackgroundColor>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                      <KeepTogether>true</KeepTogether>
+                    </TablixMember>
+                    <TablixMember>
+                      <TablixHeader>
+                        <Size>0.25in</Size>
+                        <CellContents>
+                          <Textbox Name="textbox3">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>Forecast $</Value>
+                                    <Style>
+                                      <FontFamily>Calibri</FontFamily>
+                                      <Format>c0</Format>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style>
+                                  <TextAlign>Center</TextAlign>
+                                </Style>
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>textbox3</rd:DefaultName>
+                            <ZIndex>9</ZIndex>
+                            <Style>
+                              <Border>
+                                <Style>Solid</Style>
+                                <Width>0.5pt</Width>
+                              </Border>
+                              <BackgroundColor>LemonChiffon</BackgroundColor>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                      <KeepTogether>true</KeepTogether>
+                    </TablixMember>
+                    <TablixMember>
+                      <TablixHeader>
+                        <Size>0.25in</Size>
+                        <CellContents>
+                          <Textbox Name="textbox7">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>Forecast %</Value>
+                                    <Style>
+                                      <FontFamily>Calibri</FontFamily>
+                                      <Format>p0</Format>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style>
+                                  <TextAlign>Center</TextAlign>
+                                </Style>
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>textbox7</rd:DefaultName>
+                            <ZIndex>8</ZIndex>
+                            <Style>
+                              <Border>
+                                <Style>Solid</Style>
+                                <Width>0.5pt</Width>
+                              </Border>
+                              <BackgroundColor>LemonChiffon</BackgroundColor>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                      <KeepTogether>true</KeepTogether>
+                    </TablixMember>
+                  </TablixMembers>
+                  <DataElementOutput>Output</DataElementOutput>
+                  <KeepTogether>true</KeepTogether>
+                </TablixMember>
+                <TablixMember>
+                  <TablixHeader>
+                    <Size>0.25in</Size>
+                    <CellContents>
+                      <Textbox Name="textbox10">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value>Total</Value>
+                                <Style>
+                                  <FontFamily>Calibri</FontFamily>
+                                  <FontWeight>Bold</FontWeight>
+                                  <Format>n0</Format>
+                                </Style>
+                              </TextRun>
+                            </TextRuns>
+                            <Style>
+                              <TextAlign>Center</TextAlign>
+                            </Style>
+                          </Paragraph>
+                        </Paragraphs>
+                        <rd:DefaultName>textbox10</rd:DefaultName>
+                        <ZIndex>12</ZIndex>
+                        <Style>
+                          <Border>
+                            <Style>Solid</Style>
+                            <Width>0.5pt</Width>
+                          </Border>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>2pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                    </CellContents>
+                  </TablixHeader>
+                  <TablixMembers>
+                    <TablixMember>
+                      <TablixHeader>
+                        <Size>0.25in</Size>
+                        <CellContents>
+                          <Textbox Name="textbox20">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>#</Value>
+                                    <Style>
+                                      <FontFamily>Calibri</FontFamily>
+                                      <Format>n0</Format>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style>
+                                  <TextAlign>Center</TextAlign>
+                                </Style>
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>textbox2</rd:DefaultName>
+                            <ZIndex>11</ZIndex>
+                            <Style>
+                              <Border>
+                                <Style>Solid</Style>
+                                <Width>0.5pt</Width>
+                              </Border>
+                              <BackgroundColor>LemonChiffon</BackgroundColor>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                    </TablixMember>
+                    <TablixMember>
+                      <TablixHeader>
+                        <Size>0.25in</Size>
+                        <CellContents>
+                          <Textbox Name="textbox21">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>%</Value>
+                                    <Style>
+                                      <FontFamily>Calibri</FontFamily>
+                                      <Format>p2</Format>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style>
+                                  <TextAlign>Center</TextAlign>
+                                </Style>
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>textbox4</rd:DefaultName>
+                            <ZIndex>10</ZIndex>
+                            <Style>
+                              <Border>
+                                <Style>Solid</Style>
+                                <Width>0.5pt</Width>
+                              </Border>
+                              <BackgroundColor>LemonChiffon</BackgroundColor>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                    </TablixMember>
+                    <TablixMember>
+                      <TablixHeader>
+                        <Size>0.25in</Size>
+                        <CellContents>
+                          <Textbox Name="textbox22">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>Forecast $</Value>
+                                    <Style>
+                                      <FontFamily>Calibri</FontFamily>
+                                      <Format>c0</Format>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style>
+                                  <TextAlign>Center</TextAlign>
+                                </Style>
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>textbox3</rd:DefaultName>
+                            <ZIndex>9</ZIndex>
+                            <Style>
+                              <Border>
+                                <Style>Solid</Style>
+                                <Width>0.5pt</Width>
+                              </Border>
+                              <BackgroundColor>LemonChiffon</BackgroundColor>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                    </TablixMember>
+                    <TablixMember>
+                      <TablixHeader>
+                        <Size>0.25in</Size>
+                        <CellContents>
+                          <Textbox Name="textbox23">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>Forecast %</Value>
+                                    <Style>
+                                      <FontFamily>Calibri</FontFamily>
+                                      <Format>p0</Format>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style>
+                                  <TextAlign>Center</TextAlign>
+                                </Style>
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>textbox7</rd:DefaultName>
+                            <ZIndex>8</ZIndex>
+                            <Style>
+                              <Border>
+                                <Style>Solid</Style>
+                                <Width>0.5pt</Width>
+                              </Border>
+                              <BackgroundColor>LemonChiffon</BackgroundColor>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                    </TablixMember>
+                  </TablixMembers>
+                  <HideIfNoRows>true</HideIfNoRows>
+                  <DataElementOutput>NoOutput</DataElementOutput>
+                </TablixMember>
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <Group Name="ParentGroup">
+                    <GroupExpressions>
+                      <GroupExpression>=fields(Parameters!Table1Row2.Value).value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=fields(Parameters!Table1Row2.Value).value</Value>
+                    </SortExpression>
+                  </SortExpressions>
+                  <TablixHeader>
+                    <Size>1.5in</Size>
+                    <CellContents>
+                      <Textbox Name="textbox8">
+                        <CanGrow>true</CanGrow>
+                        <CanShrink>true</CanShrink>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value>=fields(Parameters!Table1Row2.Value).value</Value>
+                                <Style>
+                                  <FontFamily>Calibri</FontFamily>
+                                  <FontSize>11pt</FontSize>
+                                  <FontWeight>Bold</FontWeight>
+                                </Style>
+                              </TextRun>
+                            </TextRuns>
+                            <Style>
+                              <TextAlign>Center</TextAlign>
+                            </Style>
+                          </Paragraph>
+                        </Paragraphs>
+                        <rd:DefaultName>textbox8</rd:DefaultName>
+                        <ZIndex>7</ZIndex>
+                        <Style>
+                          <Border>
+                            <Style>Solid</Style>
+                            <Width>0.5pt</Width>
+                          </Border>
+                          <BackgroundColor>LemonChiffon</BackgroundColor>
+                          <VerticalAlign>Middle</VerticalAlign>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>2pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                    </CellContents>
+                  </TablixHeader>
+                  <TablixMembers>
+                    <TablixMember>
+                      <Group Name="RowValue">
+                        <GroupExpressions>
+                          <GroupExpression>=Fields(Parameters!Table1Row.Value).Value</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                      <SortExpressions>
+                        <SortExpression>
+                          <Value>=Fields(Parameters!Table1Row.Value).Value</Value>
+                        </SortExpression>
+                      </SortExpressions>
+                      <TablixHeader>
+                        <Size>1.5in</Size>
+                        <CellContents>
+                          <Textbox Name="AssignedTo">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>=Fields(Parameters!Table1Row.Value).Value</Value>
+                                    <Style>
+                                      <FontFamily>Calibri</FontFamily>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style>
+                                  <TextAlign>Center</TextAlign>
+                                </Style>
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>AssignedTo</rd:DefaultName>
+                            <ZIndex>6</ZIndex>
+                            <Style>
+                              <Border>
+                                <Style>Solid</Style>
+                                <Width>0.5pt</Width>
+                              </Border>
+                              <VerticalAlign>Bottom</VerticalAlign>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                      <DataElementOutput>Output</DataElementOutput>
+                      <KeepTogether>true</KeepTogether>
+                    </TablixMember>
+                    <TablixMember>
+                      <TablixHeader>
+                        <Size>1.5in</Size>
+                        <CellContents>
+                          <Textbox Name="textbox6">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>Total</Value>
+                                    <Style>
+                                      <FontFamily>Calibri</FontFamily>
+                                      <FontWeight>Bold</FontWeight>
+                                    </Style>
+                                  </TextRun>
+                                </TextRuns>
+                                <Style>
+                                  <TextAlign>Center</TextAlign>
+                                </Style>
+                              </Paragraph>
+                            </Paragraphs>
+                            <rd:DefaultName>textbox6</rd:DefaultName>
+                            <Style>
+                              <Border>
+                                <Style>Solid</Style>
+                                <Width>0.5pt</Width>
+                              </Border>
+                              <BackgroundColor>LightBlue</BackgroundColor>
+                              <VerticalAlign>Bottom</VerticalAlign>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                      <DataElementOutput>NoOutput</DataElementOutput>
+                    </TablixMember>
+                  </TablixMembers>
+                  <DataElementOutput>Output</DataElementOutput>
+                </TablixMember>
+                <TablixMember>
+                  <TablixHeader>
+                    <Size>3in</Size>
+                    <CellContents>
+                      <Textbox Name="textbox9">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value>Total</Value>
+                                <Style>
+                                  <FontFamily>Calibri</FontFamily>
+                                  <FontWeight>Bold</FontWeight>
+                                </Style>
+                              </TextRun>
+                            </TextRuns>
+                            <Style>
+                              <TextAlign>Center</TextAlign>
+                            </Style>
+                          </Paragraph>
+                        </Paragraphs>
+                        <rd:DefaultName>textbox9</rd:DefaultName>
+                        <ZIndex>1</ZIndex>
+                        <Style>
+                          <Border>
+                            <Style>Solid</Style>
+                            <Width>0.5pt</Width>
+                          </Border>
+                          <BackgroundColor>PaleGreen</BackgroundColor>
+                          <VerticalAlign>Bottom</VerticalAlign>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>2pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                    </CellContents>
+                  </TablixHeader>
+                  <HideIfNoRows>true</HideIfNoRows>
+                  <DataElementOutput>NoOutput</DataElementOutput>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <RepeatColumnHeaders>true</RepeatColumnHeaders>
+            <RepeatRowHeaders>true</RepeatRowHeaders>
+            <KeepTogether>true</KeepTogether>
+            <DataSetName>Results</DataSetName>
+            <Height>1.25in</Height>
+            <Width>8in</Width>
+            <Style />
+          </Tablix>
+          <Textbox Name="textbox1">
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=
+ Chr(10) &amp; Chr(10) &amp; Chr(10) &amp; Chr(10) &amp; Chr(10) &amp;
+                      "Date Criteria:  " &amp; Parameters!DateCriteria.Value
+ &amp; Chr(10) &amp; Chr(10) &amp; "Record Status:  " &amp; join(Parameters!Status.Value,", ")
+ &amp; Chr(10) &amp; Chr(10) &amp; "Date Range:  " &amp; cdate(Parameters!Start.Value) &amp; " to " &amp; cdate(Parameters!End.Value)
+ &amp; Chr(10) &amp; Chr(10) &amp; "Industry:  " &amp; join(Parameters!IndustryType.Label,", ")
+ &amp; Chr(10) &amp; chr(10) &amp; "Stage:  " &amp; join(Parameters!Stage.Value,", ")
+ &amp; Chr(10) &amp; chr(10) &amp; "Type:  " &amp; join(Parameters!Type.Value,", ")
+ &amp; Chr(10) &amp; chr(10) &amp; "Subtype:  " &amp; join(Parameters!Subtype.Label,", ")
+ &amp; Chr(10) &amp; chr(10) &amp; "Trigger:  " &amp; join(Parameters!Trigger.Value,", ")
+ &amp; Chr(10)&amp; chr(10) &amp; "Pipeline:  " &amp; join(Parameters!Pipeline.Value,", ")
+ &amp; Chr(10) &amp; chr(10) &amp; "Assigned To:  " &amp; join(Parameters!AssignedTo.Value,", ")
+ &amp; Chr(10) &amp; chr(10) &amp; "Sales Territory:  " &amp; join(Parameters!SalesTerritory.Value,", ")
+ &amp; Chr(10) &amp; chr(10) &amp; "Marketing Waves:  " &amp; Join(Parameters!MarketingWave.Label,", ")</Value>
+                    <Style>
+                      <FontFamily>Calibri</FontFamily>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <rd:DefaultName>textbox1</rd:DefaultName>
+            <Top>1in</Top>
+            <Height>11in</Height>
+            <Width>8in</Width>
+            <ZIndex>1</ZIndex>
+            <Visibility>
+              <Hidden>=iif(Parameters!IncludeParameters.Value = true,false,true)</Hidden>
+            </Visibility>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+        </ReportItems>
+        <Height>12in</Height>
+        <Style />
+      </Body>
+      <Width>8in</Width>
+      <Page>
+        <PageHeight>8in</PageHeight>
+        <PageWidth>14in</PageWidth>
+        <InteractiveHeight>11in</InteractiveHeight>
+        <InteractiveWidth>8.5in</InteractiveWidth>
+        <LeftMargin>0.5in</LeftMargin>
+        <RightMargin>0.5in</RightMargin>
+        <TopMargin>0.5in</TopMargin>
+        <BottomMargin>0.5in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="DateCriteria">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>DateOpened</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Date Criteria</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>DateOpened</Value>
+            <Label>Date Opened</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>DateClosed</Value>
+            <Label>Date Closed</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>DateLead</Value>
+            <Label>Lead Date</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>DateProspect</Value>
+            <Label>Prospect Date</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>DateOpp</Value>
+            <Label>Opportunity Date</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="Status">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>Status</DataSetName>
+          <ValueField>Name</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Status</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>Status</DataSetName>
+          <ValueField>Name</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="Start">
+      <DataType>DateTime</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>=DateAdd("M", -1,DateValue(CStr(Month(Now)) &amp; "/1/" &amp; CStr(Year(Now))))</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Start Date</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="End">
+      <DataType>DateTime</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>=DateAdd("d", -1, DateValue(CStr(Month(Now)) &amp; "/1/" &amp; CStr(Year(Now))))</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>End Date</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="IndustryType">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>IndustryType</DataSetName>
+          <ValueField>Value</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>IndustryType</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>IndustryType</DataSetName>
+          <ValueField>Value</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="Stage">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>Stage</DataSetName>
+          <ValueField>Name</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Stage</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>Stage</DataSetName>
+          <ValueField>Name</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="Type">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>Type</DataSetName>
+          <ValueField>Name</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Type</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>Type</DataSetName>
+          <ValueField>Name</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="Subtype">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>Subtype</DataSetName>
+          <ValueField>Value</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Subtype</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>Subtype</DataSetName>
+          <ValueField>Value</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="Trigger">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>Trigger</DataSetName>
+          <ValueField>Name</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Trigger</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>Trigger</DataSetName>
+          <ValueField>Name</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="Pipeline">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>Pipeline</DataSetName>
+          <ValueField>Name</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Pipeline</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>Pipeline</DataSetName>
+          <ValueField>Name</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="AssignedTo">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>AssignedTo</DataSetName>
+          <ValueField>Name</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>AssignedTo</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>AssignedTo</DataSetName>
+          <ValueField>Name</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="SalesTerritory">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>SalesTerritory</DataSetName>
+          <ValueField>Name</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>SalesTerritory</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>SalesTerritory</DataSetName>
+          <ValueField>Name</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="MarketingWave">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>MarketingWave</DataSetName>
+          <ValueField>Wave</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>MarketingWave</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>MarketingWave</DataSetName>
+          <ValueField>Wave</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="Table1Row2">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>Type</Value>
+        </Values>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Grouping Row</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>Parameters</DataSetName>
+          <ValueField>Value</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="Table1Row">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>Subtype</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Detail Row</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>Parameters</DataSetName>
+          <ValueField>Value</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="Table1Column">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>Status</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Column Value</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>Parameters</DataSetName>
+          <ValueField>Value</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="IncludeParameters">
+      <DataType>Boolean</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>True</Value>
+        </Values>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Include Parameter Text</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>9</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>DateCriteria</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Status</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>Start</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>End</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>2</RowIndex>
+          <ParameterName>IndustryType</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>2</RowIndex>
+          <ParameterName>Stage</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>3</RowIndex>
+          <ParameterName>Type</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>3</RowIndex>
+          <ParameterName>Subtype</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>4</RowIndex>
+          <ParameterName>Trigger</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>4</RowIndex>
+          <ParameterName>Pipeline</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>5</RowIndex>
+          <ParameterName>AssignedTo</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>5</RowIndex>
+          <ParameterName>SalesTerritory</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>6</RowIndex>
+          <ParameterName>MarketingWave</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>6</RowIndex>
+          <ParameterName>Table1Row2</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>7</RowIndex>
+          <ParameterName>Table1Row</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>7</RowIndex>
+          <ParameterName>Table1Column</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>8</RowIndex>
+          <ParameterName>IncludeParameters</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <Language>en-US</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>0703d1df-63f4-47a2-94c0-1e3fd9b362fe</rd:ReportID>
+</Report>

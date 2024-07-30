@@ -1,0 +1,50 @@
+<!-- #include file ="..\accpaccrm.js" -->
+
+<%
+
+var Now=new Date();
+if (eWare.Mode<Edit) eWare.Mode=Edit;
+
+record=eWare.CreateRecord("PRLicense");
+
+EntryGroup=eWare.GetBlock("PRLicenseNewEntry");
+EntryGroup.Title="License";
+
+context=Request.QueryString("context");
+if(!Defined(context) )
+  context=Request.QueryString("Key0");
+
+if( !false )
+  eWare.SetContext("New");
+
+if( context == iKey_CompanyId && true )
+{
+  CompId = eWare.GetContextInfo('Company','Comp_CompanyId');
+  if ((Defined(CompId)) && (CompId > 0))
+  {
+    Entry = EntryGroup.GetEntry("prli_CompanyId");
+    Entry.DefaultValue = CompId;
+  }
+}
+
+container=eWare.GetBlock("container");
+container.AddBlock(EntryGroup);
+
+container.AddButton(
+   eWare.Button("Cancel", "cancel.gif",
+      eWare.Url("PRCompany/PRCompanyLicense.asp")+"&T=find&E=PRLicense"));
+
+eWare.AddContent(container.Execute(record));
+
+if(eWare.Mode==Save)
+  Response.Redirect("PRLicenseSummary.asp?J=PRLicense/PRLicenseSummary.asp&E=PRLicense&prli_LicenseId=" + record("prli_LicenseId") + "&" + Request.QueryString);
+else
+{
+  RefreshTabs=Request.QueryString("RefreshTabs");
+  if( RefreshTabs = 'Y' )
+    Response.Write(eWare.GetPage('New'));
+  else
+    Response.Write(eWare.GetPage());
+}
+
+%>

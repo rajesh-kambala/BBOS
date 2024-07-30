@@ -1,0 +1,50 @@
+Dim parentPath as string
+
+Public Sub Main()
+
+    try
+    rs.Credentials = System.Net.CredentialCache.DefaultCredentials
+
+    parentPath = "/" + reportfolder
+
+
+    ' Create a reference to the reports directory.
+    Dim di As New DirectoryInfo(filePath)
+    
+    ' Create an array representing the files in the reports directory.
+    Dim fi As FileInfo() = di.GetFiles()
+
+    ' Iterate through the reports directory publishing all rdl files. 
+    Dim fiTemp As FileInfo
+    For Each fiTemp In fi
+        if (Path.GetExtension(fiTemp.Name) = ".rdl") then
+		SetItemDataSources(fiTemp.Name)
+	end if
+    Next fiTemp
+
+    Catch e As Exception
+        Console.WriteLine(e.Message)
+    End Try
+End Sub 
+
+Private Sub SetItemDataSources(ByVal reportName as String)
+   Try
+
+	Dim Report As String = parentPath + "/" + Path.GetFileNameWithoutExtension(reportName)
+
+	Console.WriteLine("Processing " + Report + "...")
+	Console.WriteLine("   - " + dsName)
+
+	Dim DataSources(0) As Microsoft.SqlServer.ReportingServices2005.DataSource
+	DataSources(0) = New Microsoft.SqlServer.ReportingServices2005.DataSource
+	DataSources(0).Name = RS.GetItemDataSources(Report)(0).Name
+	
+	Dim Item1 As Microsoft.SqlServer.ReportingServices2005.DataSourceReference = New Microsoft.SqlServer.ReportingServices2005.DataSourceReference
+	Item1.Reference = "/" + dsName
+	DataSources(0).Item = Item1
+
+	RS.SetItemDataSources(Report, DataSources)
+    Catch e As Exception
+        Console.WriteLine(e.Message)
+    End Try
+End Sub

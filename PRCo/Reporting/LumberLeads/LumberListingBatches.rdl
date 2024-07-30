@@ -1,0 +1,1267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="LumberLeads">
+      <DataSourceReference>LumberLeads</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>d7b84db0-24ff-432e-bc69-bb64c6770a38</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="dsBatches">
+      <Query>
+        <DataSourceName>LumberLeads</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Source">
+            <Value>=Parameters!Source.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Rating">
+            <Value>=Parameters!Rating.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Description">
+            <Value>=Parameters!Description.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ARDetailCountThreshold">
+            <Value>=Parameters!ARDetailCountThreshold.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@LastARDateThreshold">
+            <Value>=Parameters!LastARDateThreshold.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ARUniqueSubmitterThreshold">
+            <Value>=Parameters!ARUniqueSubmitterThreshold.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ExcludeExportedLeads">
+            <Value>=Parameters!ExcludeExportedLeads.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ExcludeHandledInternallyLeads">
+            <Value>=Parameters!ExcludeHandledInternallyLeads.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ExcludeBatchesWOPhone">
+            <Value>=Parameters!ExcludeBatchesWOPhone.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ExcludeClosedLeads">
+            <Value>=Parameters!ExcludeClosedLeads.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@MustHaveAnOpenLead">
+            <Value>=Parameters!MustHaveAnOpenLead.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@CompanyName">
+            <Value>=Parameters!CompanyName.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@PhoneNumber">
+            <Value>=Parameters!PhoneNumber.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@BatchCountThreshold">
+            <Value>=Parameters!BatchCountThreshold.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@BatchCountMaxThreshold">
+            <Value>=Parameters!BatchCountMaxThreshold.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>DECLARE @CLTable table (
+	BatchID int primary key
+)
+
+DECLARE @ARTable table (
+	BatchID int primary key
+)
+
+DECLARE @RBTable table (
+	BatchID int primary key
+)
+
+DECLARE @MyTable table (
+	BatchID int primary key
+)
+
+IF ('Connection List' IN (@Source)) BEGIN
+    INSERT INTO @CLTable
+	SELECT DISTINCT Match.BatchID
+	  FROM Lead
+		   INNER JOIN Match ON Lead.LeadID = Match.LeadID
+     WHERE Source = 'Connection List';
+END
+
+
+IF ('Redbook' IN (@Source)) BEGIN
+	Print 'RB'
+    INSERT INTO @RBTable
+	SELECT DISTINCT Match.BatchID
+	  FROM Lead
+	       INNER JOIN Match ON Lead.LeadID = Match.LeadID
+            LEFT OUTER JOIN RedbookDescription ON Lead.LeadID = RedbookDescription.LeadID
+	 WHERE Source = 'Redbook'
+           AND Rating IN (@Rating)
+           AND Description LIKE ISNULL(@Description, Description);
+END
+
+
+IF ('Unmatched AR' IN (@Source)) BEGIN
+	Print 'AR'
+    INSERT INTO @ARTable
+	SELECT DISTINCT Match.BatchID
+	  FROM Lead
+	       INNER JOIN Match ON Lead.LeadID = Match.LeadID
+	 WHERE Source = 'Unmatched AR'
+             AND ARDetailCount &gt;= @ARDetailCountThreshold
+            AND LastARDate &gt;= @LastARDateThreshold;
+
+
+	IF (@ARUniqueSubmitterThreshold &gt; 1) BEGIN
+
+	DELETE FROM @ARTable
+         WHERE BatchID NOT IN (
+			SELECT Match.BatchID
+			  FROM Lead
+				   INNER JOIN Match ON Lead.LeadID = Match.LeadID
+  			 WHERE Source = 'Unmatched AR'
+			GROUP BY Match.BatchID
+			HAVING COUNT(DISTINCT AssociatedCompanyID) &gt;= @ARUniqueSubmitterThreshold);
+	END
+END
+
+
+INSERT INTO @MyTable
+SELECT DISTINCT BatchID FROM
+(
+	SELECT BatchID FROM @CLTable
+    UNION
+	SELECT BatchID FROM @ARTable
+	UNION
+	SELECT BatchID FROM @RBTable
+) T1;
+
+IF (@ExcludeExportedLeads = 'True') BEGIN
+
+     DELETE FROM @MyTable
+     WHERE BatchID IN (
+         SELECT DISTINCT BatchID
+          FROM Lead
+	    INNER JOIN Match ON Lead.LeadID = Match.LeadID
+          WHERE Lead.ExportedForValidation = 'Y');
+
+END
+
+IF (@ExcludeHandledInternallyLeads = 'True') BEGIN
+
+     DELETE FROM @MyTable
+     WHERE BatchID IN (
+         SELECT DISTINCT BatchID
+          FROM Lead
+	    INNER JOIN Match ON Lead.LeadID = Match.LeadID
+          WHERE Lead.HandingInternally = 'Y');
+
+END
+
+IF (@ExcludeBatchesWOPhone = 'True') BEGIN
+
+    DELETE FROM @MyTable
+    WHERE BatchID NOT  IN (
+	SELECT DISTINCT BatchID 
+                  FROM Lead 
+                              INNER JOIN Match ON Lead.LeadID = Match.LeadID 
+                WHERE PhoneNumber IS NOT NULL 
+                     AND PhoneNumber NOT LIKE '%E+%'
+                     AND BatchID IS NOT NULL);
+
+END
+
+IF (@ExcludeClosedLeads = 'True') BEGIN
+
+     DELETE FROM @MyTable
+     WHERE BatchID IN (
+         SELECT DISTINCT BatchID
+          FROM Lead
+	    INNER JOIN Match ON Lead.LeadID = Match.LeadID
+          WHERE Lead.Status NOT IN ('Open', 'Reopened'));
+END 
+
+
+IF (@MustHaveAnOpenLead = 'True') BEGIN
+
+     DELETE FROM @MyTable
+     WHERE BatchID IN (	SELECT BatchID
+	  FROM (
+         SELECT BatchID, COUNT(1) LeadCount, COUNT(CASE WHEN Lead.Status IN ('Open', 'Reopened') THEN 'x' ELSE NULL END) As OpenCount
+          FROM Lead
+	           INNER JOIN Match ON Lead.LeadID = Match.LeadID
+		GROUP BY BatchID) T1
+	WHERE OpenCount = 0);
+
+END
+
+
+
+SELECT DISTINCT Match.BatchID, BatchCount, ISNULL(OpenCount, 0) OpenCount, CompanyName, dbo.ufn_GetBatchPhoneNumber(Match.BatchID) As PhoneNumber, dbo.ufn_GetBatchFaxNumber(Match.BatchID) As FaxNumber, dbo.ufn_GetCustomerNumber(Match.BatchID) As CustomerNumber,
+CASE WHEN CompanyName = @CompanyName THEN 'Y' ELSE 'N' END as ExactMatch
+  FROM Lead
+       INNER JOIN Match ON Lead.LeadID = Match.LeadID
+       INNER JOIN @MyTable mt ON Match.BatchID = mt.BatchID
+       INNER JOIN (SELECT BatchID, COUNT(1) As BatchCount FROM Match GROUP BY BatchID) T1 ON Match.BatchID = T1.BatchID
+      INNER JOIN (SELECT DISTINCT BatchID 
+                             FROM Lead  
+		        INNER JOIN Match ON Lead.LeadID = Match.LeadID
+WHERE CompanyNameMatch LIKE '%' +  CRM.dbo.ufn_GetLowerAlpha(LumberLeads.dbo.ufn_PrepareCompanyName(@CompanyName))  + '%' 
+  AND PhoneMatch LIKE '%' + CRM.dbo.ufn_GetLowerAlpha(@PhoneNumber) + '%'
+		) T2 ON Match.BatchID = T2.BatchID
+     LEFT OUTER JOIN (SELECT BatchID, COUNT(DISTINCT Match.LeadID) As OpenCount FROM Match INNER JOIN Lead ON Match.LeadID = Lead.LeadID WHERE Status IN ('Open', 'Reopened') GROUP BY BatchID) T3 ON Match.BatchID = T3.BatchID
+ WHERE MatchedLeadID IS NULL
+   AND BatchCount &gt;= @BatchCountThreshold
+   AND BatchCount &lt;= @BatchCountMaxThreshold
+ORDER BY CASE WHEN CompanyName = @CompanyName THEN 'Y' ELSE 'N' END DESC,  BatchCount DESC; </CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="BatchID">
+          <DataField>BatchID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="BatchCount">
+          <DataField>BatchCount</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="OpenCount">
+          <DataField>OpenCount</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="CompanyName">
+          <DataField>CompanyName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="PhoneNumber">
+          <DataField>PhoneNumber</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="FaxNumber">
+          <DataField>FaxNumber</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="CustomerNumber">
+          <DataField>CustomerNumber</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ExactMatch">
+          <DataField>ExactMatch</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsMatchType">
+      <Query>
+        <DataSourceName>LumberLeads</DataSourceName>
+        <CommandText>SELECT DISTINCT MatchType
+  FROM RedbookSkipped
+ORDER BY MatchType</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="MatchType">
+          <DataField>MatchType</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsSource">
+      <Query>
+        <DataSourceName>LumberLeads</DataSourceName>
+        <CommandText>SELECT DISTINCT Source
+ FROM Lead
+ORDER BY Source</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Source">
+          <DataField>Source</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsRating">
+      <Query>
+        <DataSourceName>LumberLeads</DataSourceName>
+        <CommandText>SELECT DISTINCT Rating, CASE WHEN LEN(Rating) = 0 THEN 'Not Rated' ELSE Rating END as label 
+  FROM Lead
+ORDER BY Rating</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="Rating">
+          <DataField>Rating</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="label">
+          <DataField>label</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsTest">
+      <Query>
+        <DataSourceName>LumberLeads</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@ExcludeExportedLeads">
+            <Value>=Parameters!ExcludeExportedLeads.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT @ExcludeExportedLeads</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="ID">
+          <DataField />
+          <rd:TypeName>System.Object</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="table1">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>0.75in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>0.75in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>0.75in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.375in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.375in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.25in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>0.75in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.375in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox2">
+                          <CanGrow>true</CanGrow>
+                          <UserSort>
+                            <SortExpression>=Fields!BatchID.Value</SortExpression>
+                          </UserSort>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Batch ID</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>textbox2</rd:DefaultName>
+                          <ZIndex>9</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox3">
+                          <CanGrow>true</CanGrow>
+                          <UserSort>
+                            <SortExpression>=Fields!BatchCount.Value</SortExpression>
+                          </UserSort>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Batch Count</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>textbox3</rd:DefaultName>
+                          <ZIndex>8</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox6">
+                          <CanGrow>true</CanGrow>
+                          <UserSort>
+                            <SortExpression>=Fields!OpenCount.Value</SortExpression>
+                          </UserSort>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Open Count</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox6</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox13">
+                          <CanGrow>true</CanGrow>
+                          <UserSort>
+                            <SortExpression>=Fields!CompanyName.Value</SortExpression>
+                          </UserSort>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Root Company Name</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>textbox13</rd:DefaultName>
+                          <ZIndex>7</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox16">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Root Phone Number</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>textbox16</rd:DefaultName>
+                          <ZIndex>6</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="textbox19">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Root Fax Number</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>textbox19</rd:DefaultName>
+                          <ZIndex>5</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Customer Number</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox8">
+                          <CanGrow>true</CanGrow>
+                          <UserSort>
+                            <SortExpression>=Fields!ExactMatch.Value</SortExpression>
+                          </UserSort>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Exact Match</Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox8</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>Gainsboro</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="BatchID">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!BatchID.Value</Value>
+                                  <Style>
+                                    <TextDecoration>Underline</TextDecoration>
+                                    <Color>Blue</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BatchID</rd:DefaultName>
+                          <ActionInfo>
+                            <Actions>
+                              <Action>
+                                <Drillthrough>
+                                  <ReportName>BatchDetails</ReportName>
+                                  <Parameters>
+                                    <Parameter Name="BatchID">
+                                      <Value>=Fields!BatchID.Value</Value>
+                                    </Parameter>
+                                  </Parameters>
+                                </Drillthrough>
+                              </Action>
+                            </Actions>
+                          </ActionInfo>
+                          <ZIndex>4</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= iif(RowNumber(Nothing) Mod 2, "White", "White Smoke")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="BatchCount">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!BatchCount.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>BatchCount</rd:DefaultName>
+                          <ZIndex>3</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= iif(RowNumber(Nothing) Mod 2, "White", "White Smoke")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="OpenCount">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!OpenCount.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>OpenCount</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= iif(RowNumber(Nothing) Mod 2, "White", "White Smoke")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CompanyName">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!CompanyName.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>CompanyName</rd:DefaultName>
+                          <ZIndex>2</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= iif(RowNumber(Nothing) Mod 2, "White", "White Smoke")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="PhoneNumber">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!PhoneNumber.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>PhoneNumber</rd:DefaultName>
+                          <ZIndex>1</ZIndex>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= iif(RowNumber(Nothing) Mod 2, "White", "White Smoke")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="FaxNumber">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!FaxNumber.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>FaxNumber</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= iif(RowNumber(Nothing) Mod 2, "White", "White Smoke")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CustomerNumber">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!CustomerNumber.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>CustomerNumber</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= iif(RowNumber(Nothing) Mod 2, "White", "White Smoke")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ExactMatch">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!ExactMatch.Value</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ExactMatch</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>Solid</Style>
+                            </Border>
+                            <BackgroundColor>= iif(RowNumber(Nothing) Mod 2, "White", "White Smoke")</BackgroundColor>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                  <RepeatOnNewPage>true</RepeatOnNewPage>
+                  <KeepTogether>true</KeepTogether>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="table1_Details_Group">
+                    <DataElementName>Detail</DataElementName>
+                  </Group>
+                  <TablixMembers>
+                    <TablixMember />
+                  </TablixMembers>
+                  <DataElementName>Detail_Collection</DataElementName>
+                  <DataElementOutput>Output</DataElementOutput>
+                  <KeepTogether>true</KeepTogether>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>dsBatches</DataSetName>
+            <Top>0.625in</Top>
+            <Height>0.625in</Height>
+            <Width>10in</Width>
+            <Style />
+          </Tablix>
+          <Textbox Name="textbox7">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>Lumber Listing Batches</Value>
+                    <Style>
+                      <FontFamily>Tahoma</FontFamily>
+                      <FontSize>16pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Center</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Height>0.25in</Height>
+            <Width>10in</Width>
+            <ZIndex>1</ZIndex>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="textbox5">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=Format(Count(Fields!BatchID.Value, "dsBatches"), "###,##0") &amp; " Lumber Listing Batches Found."</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>0.375in</Top>
+            <Height>0.25in</Height>
+            <Width>5.625in</Width>
+            <ZIndex>2</ZIndex>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+        </ReportItems>
+        <Height>1.25in</Height>
+        <Style />
+      </Body>
+      <Width>10in</Width>
+      <Page>
+        <PageHeight>8.5in</PageHeight>
+        <PageWidth>11in</PageWidth>
+        <InteractiveHeight>11in</InteractiveHeight>
+        <InteractiveWidth>8.5in</InteractiveWidth>
+        <LeftMargin>0.25in</LeftMargin>
+        <RightMargin>0.2in</RightMargin>
+        <TopMargin>1in</TopMargin>
+        <BottomMargin>1in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="BatchCountThreshold">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>1</Value>
+        </Values>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Batch Count Min Threshold</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="Source">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>dsSource</DataSetName>
+          <ValueField>Source</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Source</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>dsSource</DataSetName>
+          <ValueField>Source</ValueField>
+          <LabelField>Source</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="BatchCountMaxThreshold">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>100</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Batch Count Max Threshold</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ARUniqueSubmitterThreshold">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>1</Value>
+        </Values>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>AR Unique Submitter Threshold</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="Rating">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>dsRating</DataSetName>
+          <ValueField>Rating</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Redbook Rating</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>dsRating</DataSetName>
+          <ValueField>Rating</ValueField>
+          <LabelField>label</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="ARDetailCountThreshold">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>0</Value>
+        </Values>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>AR Detail Count Threshold</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="CompanyName">
+      <DataType>String</DataType>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>CompanyName</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="LastARDateThreshold">
+      <DataType>DateTime</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>1/1/2007 12:00:00 AM</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>AR Date Threshold</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="Description">
+      <DataType>String</DataType>
+      <Nullable>true</Nullable>
+      <DefaultValue>
+        <Values>
+          <Value xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true" />
+        </Values>
+      </DefaultValue>
+      <Prompt>Redbook Description</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="PhoneNumber">
+      <DataType>String</DataType>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Phone Number</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ExcludeExportedLeads">
+      <DataType>Boolean</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>false</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Exclude Exported Leads</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ExcludeHandledInternallyLeads">
+      <DataType>Boolean</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>false</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Exclude Leads Handled Internally</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ExcludeBatchesWOPhone">
+      <DataType>Boolean</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>false</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Exclude Batches w/o Phone</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ExcludeClosedLeads">
+      <DataType>Boolean</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>false</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Exclude Closed Leads</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="MustHaveAnOpenLead">
+      <DataType>Boolean</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>false</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Must Have An Open Lead</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>3</NumberOfColumns>
+      <NumberOfRows>5</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>BatchCountThreshold</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Source</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>BatchCountMaxThreshold</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>ARUniqueSubmitterThreshold</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>Rating</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>ARDetailCountThreshold</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>2</RowIndex>
+          <ParameterName>Description</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>2</RowIndex>
+          <ParameterName>LastARDateThreshold</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>2</RowIndex>
+          <ParameterName>CompanyName</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>3</RowIndex>
+          <ParameterName>PhoneNumber</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>3</RowIndex>
+          <ParameterName>ExcludeExportedLeads</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>3</RowIndex>
+          <ParameterName>ExcludeHandledInternallyLeads</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>4</RowIndex>
+          <ParameterName>ExcludeBatchesWOPhone</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>4</RowIndex>
+          <ParameterName>ExcludeClosedLeads</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>4</RowIndex>
+          <ParameterName>MustHaveAnOpenLead</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <Language>en-US</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>bb0904c9-dcc3-432d-8bf7-7fa168b7e1e9</rd:ReportID>
+</Report>

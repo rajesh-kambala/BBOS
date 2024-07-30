@@ -1,0 +1,804 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Description>Business Report - Financial Informatoin Subreport</Description>
+  <Author>Travant Solutions, Inc. - Christopher Walls</Author>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BBS">
+      <DataSourceReference>BBS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>985d0cb9-095f-4a65-ab51-dd508d23ac3a</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="BRFinancialInformation">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyID">
+            <Value>=Parameters!CompanyID.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ThresholdMonthsOld">
+            <Value>=Parameters!ThresholdMonthsOld.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ExcludeMonthsOld">
+            <Value>=Parameters!ExcludeMonthsOld.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ReportLevel">
+            <Value>=Parameters!ReportLevel.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>usp_BRFinancialInformation</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="StatementDate">
+          <DataField>StatementDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Type">
+          <DataField>Type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="InterimMonth">
+          <DataField>InterimMonth</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="PreparationMethod">
+          <DataField>PreparationMethod</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="DataType">
+          <DataField>DataType</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Property">
+          <DataField>Property</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Value">
+          <DataField>Value</DataField>
+          <rd:TypeName>System.Object</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="BRFinancialInformationFlags">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyID">
+            <Value>=Parameters!CompanyID.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ThresholdMonthsOld">
+            <Value>=Parameters!ThresholdMonthsOld.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ExcludeMonthsOld">
+            <Value>=Parameters!ExcludeMonthsOld.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>usp_BRFinancialInformationFlags</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="RecordCount">
+          <DataField>RecordCount</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="IsMostRecentOlderThreshold">
+          <DataField>IsMostRecentOlderThreshold</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="IsMostRecentOlderExclusionThreshold">
+          <DataField>IsMostRecentOlderExclusionThreshold</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="IsConfidential">
+          <DataField>IsConfidential</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="IsCreditWorth150">
+          <DataField>IsCreditWorth150</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="MostRecentDate">
+          <DataField>MostRecentDate</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="Type">
+          <DataField>Type</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="HowPrepared">
+          <DataField>HowPrepared</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="InterimMonth">
+          <DataField>InterimMonth</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Analysis">
+          <DataField>Analysis</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="IsForParentCompany">
+          <DataField>IsForParentCompany</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="dsReferenceLink">
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>SELECT dbo.ufn_ConcatURL(dbo.ufn_GetCustomCaptionValue('WebSite', 'URL', 'en-us'), dbo.ufn_GetCustomCaptionValue('ReferenceURL', 'RatioDefinitions', 'en-us')) As ReferenceLink</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+      <Fields>
+        <Field Name="ReferenceLink">
+          <DataField>ReferenceLink</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="matrixFinancialInformation">
+            <TablixCorner>
+              <TablixCornerRows>
+                <TablixCornerRow>
+                  <TablixCornerCell>
+                    <CellContents>
+                      <Textbox Name="textbox1">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value>HOW PREPARED</Value>
+                                <Style />
+                              </TextRun>
+                            </TextRuns>
+                            <Style>
+                              <TextAlign>Center</TextAlign>
+                            </Style>
+                          </Paragraph>
+                        </Paragraphs>
+                        <rd:DefaultName>textbox1</rd:DefaultName>
+                        <ZIndex>4</ZIndex>
+                        <Style>
+                          <Border>
+                            <Style>Solid</Style>
+                          </Border>
+                          <VerticalAlign>Bottom</VerticalAlign>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>2pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                      <RowSpan>2</RowSpan>
+                    </CellContents>
+                  </TablixCornerCell>
+                </TablixCornerRow>
+                <TablixCornerRow>
+                  <TablixCornerCell />
+                </TablixCornerRow>
+              </TablixCornerRows>
+            </TablixCorner>
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>1.25in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.20833in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="txtValue">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=IIF( Fields!DataType.Value = "F", "", 
+	IIF(Fields!DataType.Value = "C", Format(Fields!Value.Value, "###,###,##0"),
+		IIF(Fields!DataType.Value = "R", Format(Fields!Value.Value, "###,##0.00"), CStr(Fields!Value.Value))
+	)
+)</Value>
+                                  <Style />
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <LeftBorder>
+                              <Style>Solid</Style>
+                            </LeftBorder>
+                            <RightBorder>
+                              <Style>Solid</Style>
+                            </RightBorder>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>1pt</PaddingTop>
+                            <PaddingBottom>1pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <Group Name="matrix1_StatementDate">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!StatementDate.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <TablixHeader>
+                    <Size>0.25in</Size>
+                    <CellContents>
+                      <Textbox Name="txtStatementDateHeader">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value>= IIF(Fields!Type.Value = "Interim", Fields!InterimMonth.Value &amp; " ", "") &amp;  Fields!Type.Value &amp; " " &amp; Format(Fields!StatementDate.Value, "MM/dd/yyyy")</Value>
+                                <Style>
+                                  <FontWeight>Bold</FontWeight>
+                                </Style>
+                              </TextRun>
+                            </TextRuns>
+                            <Style>
+                              <TextAlign>Center</TextAlign>
+                            </Style>
+                          </Paragraph>
+                        </Paragraphs>
+                        <ZIndex>3</ZIndex>
+                        <Style>
+                          <Border>
+                            <Style>Solid</Style>
+                          </Border>
+                          <PaddingLeft>2pt</PaddingLeft>
+                          <PaddingRight>2pt</PaddingRight>
+                          <PaddingTop>2pt</PaddingTop>
+                          <PaddingBottom>2pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                    </CellContents>
+                  </TablixHeader>
+                  <TablixMembers>
+                    <TablixMember>
+                      <Group Name="matrix1_ColumnGroup2">
+                        <GroupExpressions>
+                          <GroupExpression>=Fields!PreparationMethod.Value</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                      <TablixHeader>
+                        <Size>0.25in</Size>
+                        <CellContents>
+                          <Textbox Name="txtPreparationMethod">
+                            <CanGrow>true</CanGrow>
+                            <KeepTogether>true</KeepTogether>
+                            <Paragraphs>
+                              <Paragraph>
+                                <TextRuns>
+                                  <TextRun>
+                                    <Value>= Fields!PreparationMethod.Value</Value>
+                                    <Style />
+                                  </TextRun>
+                                </TextRuns>
+                                <Style>
+                                  <TextAlign>Center</TextAlign>
+                                </Style>
+                              </Paragraph>
+                            </Paragraphs>
+                            <ZIndex>2</ZIndex>
+                            <Style>
+                              <Border>
+                                <Style>Solid</Style>
+                              </Border>
+                              <PaddingLeft>2pt</PaddingLeft>
+                              <PaddingRight>2pt</PaddingRight>
+                              <PaddingTop>2pt</PaddingTop>
+                              <PaddingBottom>2pt</PaddingBottom>
+                            </Style>
+                          </Textbox>
+                        </CellContents>
+                      </TablixHeader>
+                      <DataElementOutput>Output</DataElementOutput>
+                      <KeepTogether>true</KeepTogether>
+                    </TablixMember>
+                  </TablixMembers>
+                  <DataElementOutput>Output</DataElementOutput>
+                </TablixMember>
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <Group Name="matrix1_Property">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!Property.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <TablixHeader>
+                    <Size>2.375in</Size>
+                    <CellContents>
+                      <Textbox Name="txtProperty">
+                        <CanGrow>true</CanGrow>
+                        <KeepTogether>true</KeepTogether>
+                        <Paragraphs>
+                          <Paragraph>
+                            <TextRuns>
+                              <TextRun>
+                                <Value>=Fields!Property.Value</Value>
+                                <Style />
+                              </TextRun>
+                            </TextRuns>
+                            <Style />
+                          </Paragraph>
+                        </Paragraphs>
+                        <ZIndex>1</ZIndex>
+                        <Style>
+                          <LeftBorder>
+                            <Style>Solid</Style>
+                          </LeftBorder>
+                          <RightBorder>
+                            <Style>Solid</Style>
+                          </RightBorder>
+                          <PaddingLeft>10pt</PaddingLeft>
+                          <PaddingRight>2pt</PaddingRight>
+                          <PaddingTop>1pt</PaddingTop>
+                          <PaddingBottom>1pt</PaddingBottom>
+                        </Style>
+                      </Textbox>
+                    </CellContents>
+                  </TablixHeader>
+                  <DataElementOutput>Output</DataElementOutput>
+                  <KeepTogether>true</KeepTogether>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <RepeatColumnHeaders>true</RepeatColumnHeaders>
+            <RepeatRowHeaders>true</RepeatRowHeaders>
+            <DataSetName>BRFinancialInformation</DataSetName>
+            <Top>0.55in</Top>
+            <Height>0.70833in</Height>
+            <Width>3.625in</Width>
+            <Style>
+              <Border>
+                <Style>Solid</Style>
+              </Border>
+            </Style>
+          </Tablix>
+          <Textbox Name="txtHeader">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>FINANCIAL INFORMATION</Value>
+                    <Style>
+                      <FontFamily>Times New Roman</FontFamily>
+                      <FontSize>16pt</FontSize>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Center</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Height>0.3in</Height>
+            <Width>7.5in</Width>
+            <ZIndex>1</ZIndex>
+            <DocumentMapLabel>FINANCIAL INFORMATION</DocumentMapLabel>
+            <Style>
+              <TopBorder>
+                <Style>Solid</Style>
+              </TopBorder>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtDefintions1">
+            <CanGrow>true</CanGrow>
+            <CanShrink>true</CanShrink>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>Please review the following for a complete list of Financial Statement Ratio definitions:   </Value>
+                    <Style />
+                  </TextRun>
+                  <TextRun>
+                    <Value>Ratio Definitions</Value>
+                    <ActionInfo>
+                      <Actions>
+                        <Action>
+                          <Hyperlink>=First(Fields!ReferenceLink.Value, "dsReferenceLink")</Hyperlink>
+                        </Action>
+                      </Actions>
+                    </ActionInfo>
+                    <Style>
+                      <TextDecoration>Underline</TextDecoration>
+                      <Color>Blue</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>1.25833in</Top>
+            <Height>0.23958in</Height>
+            <Width>7.5in</Width>
+            <ZIndex>2</ZIndex>
+            <Visibility>
+              <Hidden>=IIF( Sum(Fields!RecordCount.Value, "BRFinancialInformationFlags") = 0, true, false)</Hidden>
+            </Visibility>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>4pt</PaddingTop>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtRule1">
+            <CanGrow>true</CanGrow>
+            <CanShrink>true</CanShrink>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=IIF(Parameters!IndustryType.Value = "P",
+"Thus far, we have not received a financial statement upon which a credit worth estimate can be reported, despite our having requested it when the firm was first listed. Additional requests for this information are routinely issued to this firm.",
+"Thus far, we have not received a financial statement upon which a credit worth estimate can be reported.  Additional requests for this information are routinely issued to this firm.")</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>1.52569in</Top>
+            <Height>0.19792in</Height>
+            <Width>7.5in</Width>
+            <ZIndex>3</ZIndex>
+            <Visibility>
+              <Hidden>=IIF( Sum(Fields!RecordCount.Value, "BRFinancialInformationFlags") is nothing, false, 
+IIF(Sum(Fields!RecordCount.Value, "BRFinancialInformationFlags") = 0, 
+ IIF(First(Fields!IsConfidential.Value, "BRFinancialInformationFlags") &lt;&gt; "2", 
+ IIF(First(Fields!IsMostRecentOlderExclusionThreshold.Value, "BRFinancialInformationFlags") = "N", 
+false, true), true), true))</Hidden>
+            </Visibility>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtRule2">
+            <CanGrow>true</CanGrow>
+            <CanShrink>true</CanShrink>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>The most recent financial statement submitted by this firm is outdated and no longer supports a Blue Book credit worth rating.  Requests for an updated financial statement are routinely issued to this firm.</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>1.72361in</Top>
+            <Height>0.26042in</Height>
+            <Width>7.5in</Width>
+            <ZIndex>4</ZIndex>
+            <Visibility>
+              <Hidden>=IIF( First(Fields!IsCreditWorth150.Value, "BRFinancialInformationFlags") = "Y", true, IIF( First(Fields!IsMostRecentOlderThreshold.Value, "BRFinancialInformationFlags") = "Y", false, true) )</Hidden>
+            </Visibility>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtRule3">
+            <CanGrow>true</CanGrow>
+            <CanShrink>true</CanShrink>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>The most recent financial statement submitted by this firm is over 4 years old and no longer supports a Blue Book Credit Worth Rating.  Requests for an updated financial statement are routinely issued to this firm.</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>1.98403in</Top>
+            <Height>0.20833in</Height>
+            <Width>7.5in</Width>
+            <ZIndex>5</ZIndex>
+            <Visibility>
+              <Hidden>=IIF( First(Fields!IsCreditWorth150.Value, "BRFinancialInformationFlags") = "Y", true, IIF( First(Fields!IsMostRecentOlderExclusionThreshold.Value, "BRFinancialInformationFlags") = "Y", false, true))</Hidden>
+            </Visibility>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtRule5">
+            <CanGrow>true</CanGrow>
+            <CanShrink>true</CanShrink>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>Financial statement this subsidiary not made available. Parent company provides consolidated figures including subsidiaries.</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>2.57778in</Top>
+            <Height>0.34375in</Height>
+            <Width>7.5in</Width>
+            <ZIndex>6</ZIndex>
+            <Visibility>
+              <Hidden>=IIF( First(Fields!IsCreditWorth150.Value, "BRFinancialInformationFlags") = "Y", false, true)</Hidden>
+            </Visibility>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtRule4a">
+            <CanGrow>true</CanGrow>
+            <CanShrink>true</CanShrink>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>= First(Fields!Analysis.Value, "BRFinancialInformationFlags")</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>2.41111in</Top>
+            <Height>0.16667in</Height>
+            <Width>7.5in</Width>
+            <ZIndex>7</ZIndex>
+            <Visibility>
+              <Hidden>=IIF( First(Fields!IsMostRecentOlderExclusionThreshold.Value, "BRFinancialInformationFlags") = "N", IIF( First(Fields!IsMostRecentOlderThreshold.Value, "BRFinancialInformationFlags") = "N", false, true), true)</Hidden>
+            </Visibility>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtRule4b">
+            <CanGrow>true</CanGrow>
+            <CanShrink>true</CanShrink>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>="Financial statements are submitted in confidence to be used for rating purposes only.  Specific figures are not quoted.  The most recent financial statement provided by the company is a " &amp; IIF(First(Fields!Type.Value, "BRFinancialInformationFlags") = "Interim",  First(Fields!InterimMonth.Value, "BRFinancialInformationFlags") &amp; " ", "") &amp;  First(Fields!Type.Value, "BRFinancialInformationFlags") &amp; " statement dated " &amp; Format( First(Fields!MostRecentDate.Value, "BRFinancialInformationFlags"), "MM/dd/yyyy")
+ &amp; ".  How prepared: " &amp; First(Fields!HowPrepared.Value, "BRFinancialInformationFlags") &amp; "."</Value>
+                    <Style />
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <Top>2.19236in</Top>
+            <Height>0.21875in</Height>
+            <Width>7.5in</Width>
+            <ZIndex>8</ZIndex>
+            <Visibility>
+              <Hidden>=IIF( First(Fields!IsConfidential.Value, "BRFinancialInformationFlags") = "2", IIF( First(Fields!IsMostRecentOlderExclusionThreshold.Value, "BRFinancialInformationFlags") = "N", IIF( First(Fields!IsMostRecentOlderThreshold.Value, "BRFinancialInformationFlags") = "N", IIF(First(Fields!MostRecentDate.Value, "BRFinancialInformationFlags") is nothing, true, false), true), true), true)</Hidden>
+            </Visibility>
+            <DataElementOutput>NoOutput</DataElementOutput>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="Textbox2">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>The following are derived from the parent company’s consolidated financial statement, which includes other subsidiaries. They are presented as a matter of information, and a credit worth rating is not assigned to this subsidiary.</Value>
+                    <Style>
+                      <FontStyle>Normal</FontStyle>
+                      <FontWeight>Normal</FontWeight>
+                      <TextDecoration>None</TextDecoration>
+                      <Color>#000000</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style />
+              </Paragraph>
+            </Paragraphs>
+            <rd:DefaultName>Textbox2</rd:DefaultName>
+            <Top>0.3in</Top>
+            <Height>0.25in</Height>
+            <Width>7.5in</Width>
+            <ZIndex>9</ZIndex>
+            <Visibility>
+              <Hidden>=IIF(First(Fields!IsForParentCompany.Value, "BRFinancialInformationFlags") = "Y", false, true)</Hidden>
+            </Visibility>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>2pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+              <PaddingBottom>2pt</PaddingBottom>
+            </Style>
+          </Textbox>
+        </ReportItems>
+        <Height>2.92153in</Height>
+        <Style />
+      </Body>
+      <Width>7.5in</Width>
+      <Page>
+        <LeftMargin>1in</LeftMargin>
+        <RightMargin>1in</RightMargin>
+        <TopMargin>1in</TopMargin>
+        <BottomMargin>1in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="CompanyID">
+      <DataType>Integer</DataType>
+      <Prompt>CompanyID</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ThresholdMonthsOld">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>24</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>ThresholdMonthsOld</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ExcludeMonthsOld">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>48</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>ExcludeMonthsOld</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ReportLevel">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>3</Value>
+        </Values>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Report Level</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>1</Value>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>2</Value>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>3</Value>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>4</Value>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="IndustryType">
+      <DataType>String</DataType>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Industry Type</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>3</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>CompanyID</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>ThresholdMonthsOld</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>ExcludeMonthsOld</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>ReportLevel</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>2</RowIndex>
+          <ParameterName>IndustryType</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <Language>en-US</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportServerUrl>http://qa.reports.bluebookservices.local/ReportServer</rd:ReportServerUrl>
+  <rd:ReportID>07bfcada-7671-4aeb-8001-63d2e8547cca</rd:ReportID>
+</Report>

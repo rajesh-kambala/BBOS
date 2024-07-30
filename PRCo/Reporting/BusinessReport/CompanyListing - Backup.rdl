@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2005/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <DataSources>
+    <DataSource Name="BBS">
+      <rd:DataSourceID>1c022b5e-c224-4e26-9200-48de7feac6c4</rd:DataSourceID>
+      <DataSourceReference>BBS</DataSourceReference>
+    </DataSource>
+  </DataSources>
+  <InteractiveHeight>11in</InteractiveHeight>
+  <ReportParameters>
+    <ReportParameter Name="CompanyId">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>102030</Value>
+        </Values>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Company ID</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="IncludeBranches">
+      <DataType>Boolean</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>false</Value>
+        </Values>
+      </DefaultValue>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Include Branches</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <rd:DrawGrid>true</rd:DrawGrid>
+  <InteractiveWidth>8.5in</InteractiveWidth>
+  <rd:SnapToGrid>true</rd:SnapToGrid>
+  <RightMargin>1in</RightMargin>
+  <LeftMargin>1in</LeftMargin>
+  <PageHeader>
+    <ReportItems>
+      <Textbox Name="txtPage2CityState">
+        <Top>0.57292in</Top>
+        <Width>2.625in</Width>
+        <Style>
+          <FontWeight>700</FontWeight>
+          <LineHeight>8pt</LineHeight>
+        </Style>
+        <ZIndex>3</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Left>0.04167in</Left>
+        <Value>=First(ReportItems!hdnCityState.Value)</Value>
+      </Textbox>
+      <Textbox Name="txtPage2CompanyName">
+        <Top>0.34375in</Top>
+        <Width>2.625in</Width>
+        <Style>
+          <FontWeight>700</FontWeight>
+        </Style>
+        <ZIndex>2</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Left>0.04167in</Left>
+        <Height>0.15625in</Height>
+        <Value>=First(ReportItems!hdnBookTradestyle.Value)</Value>
+      </Textbox>
+      <Line Name="lnPage2Header">
+        <Top>0.29167in</Top>
+        <Style>
+          <BorderStyle>
+            <Default>Solid</Default>
+          </BorderStyle>
+          <BorderWidth>
+            <Default>2pt</Default>
+          </BorderWidth>
+        </Style>
+        <ZIndex>1</ZIndex>
+        <Height>0in</Height>
+      </Line>
+      <Textbox Name="txtPage2Title">
+        <Top>0.001in</Top>
+        <Width>2.75in</Width>
+        <Style>
+          <FontFamily>Times New Roman</FontFamily>
+          <FontSize>18pt</FontSize>
+          <FontWeight>700</FontWeight>
+        </Style>
+        <CanGrow>true</CanGrow>
+        <Left>3.5in</Left>
+        <Height>0.249in</Height>
+        <Value>BLUE BOOK LISTING</Value>
+      </Textbox>
+    </ReportItems>
+    <Height>0.77292in</Height>
+    <PrintOnLastPage>true</PrintOnLastPage>
+  </PageHeader>
+  <BottomMargin>0.5in</BottomMargin>
+  <rd:ReportID>d65bf685-0ac3-4e3c-8850-3d406136ab98</rd:ReportID>
+  <DataSets>
+    <DataSet Name="dsGetListing">
+      <Fields>
+        <Field Name="results">
+          <DataField>results</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>select results = dbo.ufn_GetListingFromCompany(@CompanyId, 2, 1)</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyId">
+            <Value>=Parameters!CompanyId.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+    <DataSet Name="dsCompanyInfo">
+      <Fields>
+        <Field Name="comp_PRBookTradestyle">
+          <DataField>comp_PRBookTradestyle</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="CityState">
+          <DataField>CityState</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="IndustryTypeDesc">
+          <DataField>IndustryTypeDesc</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>select comp_PRBookTradestyle, CityState = prci_City + ', ' + prst_Abbreviation,  
+          IndustryTypeDesc = cast(ind.capt_US as varchar(500)) + ' Listing'  
+from company   
+inner join PRCity on comp_prlistingcityid = prci_CityId  
+inner join PRState on prci_StateId = prst_StateId  
+inner join Custom_Captions ind ON capt_family = 'comp_PRIndustryType' and capt_code = comp_PRIndustryType  
+where comp_CompanyId = @CompanyId</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyId">
+            <Value>=Parameters!CompanyId.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+    <DataSet Name="dsBranches">
+      <Fields>
+        <Field Name="comp_companyID">
+          <DataField>comp_companyID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>BBS</DataSourceName>
+        <CommandText>SELECT comp_companyID 
+FROM company 
+           INNER JOIN vPRLocation on comp_PRListingCityID = prci_CityID
+WHERE comp_PRHQID=@CompanyId 
+AND comp_PRType = 'B'
+AND comp_prlistingstatus='L' 
+ORDER BY CountryStAbbrCity</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@CompanyId">
+            <Value>=Parameters!CompanyId.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+  </DataSets>
+  <DataTransform>&lt;xsl:output method="text" encoding="utf-8" media-type="text/plain"/&gt;</DataTransform>
+  <Code />
+  <Width>6.5in</Width>
+  <Body>
+    <ReportItems>
+      <Rectangle Name="rectangle1">
+        <ZIndex>9</ZIndex>
+        <ReportItems>
+          <Textbox Name="txtHeaderURL">
+            <Top>0.875in</Top>
+            <Action>
+              <Hyperlink>http://www.bluebookservices.com</Hyperlink>
+            </Action>
+            <Style>
+              <Color>Blue</Color>
+              <FontSize>9pt</FontSize>
+              <TextDecoration>Underline</TextDecoration>
+              <PaddingLeft>2pt</PaddingLeft>
+            </Style>
+            <ZIndex>2</ZIndex>
+            <CanGrow>true</CanGrow>
+            <Value>www.bluebookservices.com</Value>
+          </Textbox>
+          <Textbox Name="txtHeaderEmail">
+            <Top>0.75in</Top>
+            <Action>
+              <Hyperlink>mailto:info@bluebookservices.com</Hyperlink>
+            </Action>
+            <Style>
+              <Color>Blue</Color>
+              <FontSize>9pt</FontSize>
+              <TextDecoration>Underline</TextDecoration>
+              <PaddingLeft>2pt</PaddingLeft>
+            </Style>
+            <ZIndex>1</ZIndex>
+            <CanGrow>true</CanGrow>
+            <Height>0.125in</Height>
+            <Value>info@bluebookservices.com</Value>
+          </Textbox>
+          <Textbox Name="txtHeaderPRCo">
+            <Style>
+              <FontSize>9pt</FontSize>
+              <PaddingLeft>2pt</PaddingLeft>
+              <PaddingRight>1pt</PaddingRight>
+              <PaddingTop>2pt</PaddingTop>
+            </Style>
+            <CanGrow>true</CanGrow>
+            <Height>0.75in</Height>
+            <Value>BLUE BOOK SERVICES
+845 E. GENEVA ROAD
+CAROL STREAM, IL  60188
+Phone 630 668-3500
+FAX 630 668-0303</Value>
+          </Textbox>
+        </ReportItems>
+        <Width>1.75in</Width>
+        <Height>1in</Height>
+      </Rectangle>
+      <List Name="lstMSBugWorkAround">
+        <ZIndex>8</ZIndex>
+        <DataSetName>dsCompanyInfo</DataSetName>
+        <ReportItems>
+          <Subreport Name="Listing">
+            <Parameters>
+              <Parameter Name="CompanyId">
+                <Value>=Parameters!CompanyId.Value</Value>
+              </Parameter>
+            </Parameters>
+            <Top>0.125in</Top>
+            <ReportName>CompanyListingSubReport</ReportName>
+            <Height>0.125in</Height>
+          </Subreport>
+        </ReportItems>
+        <Top>1.375in</Top>
+        <Height>0.375in</Height>
+      </List>
+      <List Name="listBranches">
+        <ZIndex>7</ZIndex>
+        <DataSetName>dsBranches</DataSetName>
+        <Visibility>
+          <Hidden>=IIF(Parameters!IncludeBranches.Value, false, true)</Hidden>
+        </Visibility>
+        <ReportItems>
+          <Subreport Name="srBranch">
+            <Parameters>
+              <Parameter Name="CompanyId">
+                <Value>=Fields!comp_companyID.Value</Value>
+              </Parameter>
+            </Parameters>
+            <Top>0.125in</Top>
+            <ReportName>CompanyListingSubReport</ReportName>
+          </Subreport>
+        </ReportItems>
+        <Top>1.875in</Top>
+      </List>
+      <Textbox Name="txtReportDate">
+        <Top>0.375in</Top>
+        <Width>0.96875in</Width>
+        <Style>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+        <ZIndex>6</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Left>3.10417in</Left>
+        <Height>0.2in</Height>
+        <Value>=Format(Globals.ExecutionTime, "d")</Value>
+      </Textbox>
+      <Textbox Name="txtReportDateLabel">
+        <Top>0.375in</Top>
+        <Width>0.96875in</Width>
+        <Style>
+          <FontWeight>700</FontWeight>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+        <ZIndex>5</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Left>2.125in</Left>
+        <Height>0.2in</Height>
+        <Value>Report Date:</Value>
+      </Textbox>
+      <Textbox Name="hdnCityState">
+        <Visibility>
+          <Hidden>true</Hidden>
+        </Visibility>
+        <CanShrink>true</CanShrink>
+        <Top>0.875in</Top>
+        <Width>2.5in</Width>
+        <Style>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+        <ZIndex>4</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Left>2in</Left>
+        <Height>0.125in</Height>
+        <Value>=First(Fields!CityState.Value, "dsCompanyInfo")</Value>
+      </Textbox>
+      <Textbox Name="hdnBookTradestyle">
+        <Visibility>
+          <Hidden>true</Hidden>
+        </Visibility>
+        <CanShrink>true</CanShrink>
+        <Top>0.75in</Top>
+        <Width>2.51042in</Width>
+        <Style>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+        <ZIndex>3</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Left>2in</Left>
+        <Height>0.125in</Height>
+        <Value>=First(Fields!comp_PRBookTradestyle.Value, "dsCompanyInfo")</Value>
+      </Textbox>
+      <Line Name="line1">
+        <Top>1.25in</Top>
+        <Style>
+          <BorderStyle>
+            <Default>Solid</Default>
+          </BorderStyle>
+          <BorderWidth>
+            <Default>2pt</Default>
+          </BorderWidth>
+        </Style>
+        <ZIndex>2</ZIndex>
+        <Height>0in</Height>
+      </Line>
+      <Textbox Name="txtPage1BlueBookListing">
+        <Width>3in</Width>
+        <Style>
+          <FontFamily>Times New Roman</FontFamily>
+          <FontSize>18pt</FontSize>
+          <FontWeight>700</FontWeight>
+          <TextAlign>Center</TextAlign>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+          <PaddingBottom>2pt</PaddingBottom>
+        </Style>
+        <ZIndex>1</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Left>1.75in</Left>
+        <Height>0.29167in</Height>
+        <Value>BLUE BOOK LISTING</Value>
+      </Textbox>
+      <Image Name="image1">
+        <Sizing>Fit</Sizing>
+        <MIMEType />
+        <Source>External</Source>
+        <Style />
+        <Left>5.25in</Left>
+        <Height>1.125in</Height>
+        <Value>PRCoLogo.jpg</Value>
+      </Image>
+    </ReportItems>
+    <Height>2.125in</Height>
+  </Body>
+  <Language>en-US</Language>
+  <PageFooter>
+    <PrintOnFirstPage>true</PrintOnFirstPage>
+    <ReportItems>
+      <Textbox Name="txtFooterPRCo">
+        <Width>2.125in</Width>
+        <Style>
+          <BorderStyle>
+            <Top>Solid</Top>
+          </BorderStyle>
+          <FontFamily>Arial Narrow</FontFamily>
+          <FontSize>9pt</FontSize>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+        </Style>
+        <ZIndex>2</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Value>(c) Blue Book Services, Inc.</Value>
+      </Textbox>
+      <Textbox Name="txtFooterPageNbr">
+        <Width>2.375in</Width>
+        <Style>
+          <BorderStyle>
+            <Top>Solid</Top>
+          </BorderStyle>
+          <FontFamily>Arial Narrow</FontFamily>
+          <FontSize>9pt</FontSize>
+          <TextAlign>Center</TextAlign>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+        </Style>
+        <ZIndex>1</ZIndex>
+        <CanGrow>true</CanGrow>
+        <Left>2.125in</Left>
+        <Value>= Globals!PageNumber &amp; " of " &amp;  Globals!TotalPages</Value>
+      </Textbox>
+      <Textbox Name="txtFooterExecutionDate">
+        <Style>
+          <BorderStyle>
+            <Top>Solid</Top>
+          </BorderStyle>
+          <FontFamily>Arial Narrow</FontFamily>
+          <FontSize>9pt</FontSize>
+          <Format>g</Format>
+          <TextAlign>Right</TextAlign>
+          <PaddingLeft>2pt</PaddingLeft>
+          <PaddingRight>2pt</PaddingRight>
+          <PaddingTop>2pt</PaddingTop>
+        </Style>
+        <CanGrow>true</CanGrow>
+        <Left>4.5in</Left>
+        <Value>= Globals!ExecutionTime</Value>
+      </Textbox>
+    </ReportItems>
+    <Height>0.25in</Height>
+    <PrintOnLastPage>true</PrintOnLastPage>
+  </PageFooter>
+  <TopMargin>0.5in</TopMargin>
+</Report>
