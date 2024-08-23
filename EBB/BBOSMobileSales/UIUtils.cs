@@ -83,6 +83,16 @@ namespace PRCo.BBOS.UI.Web
         }
 
         /// <summary>
+        /// Returns the virtual path to the current
+        /// application
+        /// </summary>
+        /// <returns></returns>
+        public static string GetVirtualPathLocal()
+        {
+            return Utilities.GetConfigValue("VirtualPathLocal");
+        }
+
+        /// <summary>
         /// Returns the localized URL for the specified path.  Uses the
         /// current thread's CurrentUICulture to determine localization.
         /// </summary>
@@ -94,13 +104,24 @@ namespace PRCo.BBOS.UI.Web
         }
 
         /// <summary>
+        /// Returns the localized URL for the specified path.  Uses the
+        /// current thread's CurrentUICulture to determine localization.
+        /// </summary>
+        /// <param name="szPath"></param>
+        /// <returns></returns>
+        public static string GetLocalizedURLLocal(string szPath)
+        {
+            return GetVirtualPathLocal() + Thread.CurrentThread.CurrentUICulture.Name.ToLower() + szPath;
+        }
+
+        /// <summary>
         /// Returns the localized URL for the specified image.
         /// </summary>
         /// <param name="szFileName"></param>
         /// <returns></returns>
         public static string GetImageURL(string szFileName)
         {
-            return GetLocalizedURL(IMAGE_DIR + szFileName);
+            return GetLocalizedURLLocal(IMAGE_DIR + szFileName);
         }
 
         /// <summary>
@@ -113,7 +134,7 @@ namespace PRCo.BBOS.UI.Web
         {
             HtmlGenericControl JSLink = new HtmlGenericControl("script");
             JSLink.Attributes.Add("type", "text/javascript");
-            JSLink.Attributes.Add("src", GetLocalizedURL(JS_DIR + szFileName));
+            JSLink.Attributes.Add("src", GetLocalizedURLLocal(JS_DIR + szFileName));
             return JSLink;
         }
 

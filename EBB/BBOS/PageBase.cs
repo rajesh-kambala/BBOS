@@ -4479,7 +4479,7 @@ namespace PRCo.BBOS.UI.Web
         /// <returns></returns>
         virtual protected bool PageRequiresSecureConnection()
         {
-            return Utilities.GetBoolConfigValue("SSLRequired", true);
+            return Utilities.GetBoolConfigValue("SSLRequired", false);
         }
 
         virtual protected string GetURLProtocol()

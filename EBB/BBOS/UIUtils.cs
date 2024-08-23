@@ -27,6 +27,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Web;
+using System.Web.Hosting;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
@@ -103,6 +104,10 @@ namespace PRCo.BBOS.UI.Web {
             return Utilities.GetConfigValue("VirtualPath");
         }
 
+        public static string GetVirtualLocalPah()
+        {
+            return Utilities.GetConfigValue("VirtualPathLocal");
+        }
         /// <summary>
         /// Returns the localized URL for the specified path.  Uses the
         /// current thread's CurrentUICulture to determine localization.
@@ -111,6 +116,11 @@ namespace PRCo.BBOS.UI.Web {
         /// <returns></returns>
         public static string GetLocalizedURL(string szPath) {
             return GetVirtualPath() + Thread.CurrentThread.CurrentUICulture.Name.ToLower() + szPath;
+        }
+
+        public static string GetLocalizedURLLocal(string szPath)
+        {
+            return GetVirtualLocalPah() + Thread.CurrentThread.CurrentUICulture.Name.ToLower() + szPath;
         }
 
 
@@ -143,7 +153,7 @@ namespace PRCo.BBOS.UI.Web {
         /// <param name="szFileName"></param>
         /// <returns></returns>
         public static string GetJavaScriptURL(string szFileName) {
-            return GetLocalizedURL(JS_DIR + szFileName);
+            return GetLocalizedURLLocal(JS_DIR + szFileName);
         }
 
 
@@ -181,7 +191,7 @@ namespace PRCo.BBOS.UI.Web {
         /// <param name="szFileName">image file</param>
         /// <returns>Formatted Image Link</returns>
         public static string GetImageTag(string szFileName) {
-            return GetLocalizedURL(GetImageURL(szFileName));
+            return GetLocalizedURLLocal(GetImageURL(szFileName));
         }
 
         /// <summary>
@@ -190,7 +200,7 @@ namespace PRCo.BBOS.UI.Web {
         /// <param name="szFileName"></param>
         /// <returns></returns>
         public static string GetImageURL(string szFileName) {
-            return GetLocalizedURL(IMAGE_DIR + szFileName);
+            return GetLocalizedURLLocal(IMAGE_DIR + szFileName);
         }
 
         /// <summary>
@@ -199,7 +209,7 @@ namespace PRCo.BBOS.UI.Web {
         /// <param name="szFileName"></param>
         /// <returns></returns>
         public static string GetTemplateURL(string szFileName) {
-            return GetLocalizedURL(TEMPLATE_DIR + szFileName);
+            return GetLocalizedURLLocal(TEMPLATE_DIR + szFileName);
         }
 
         /// <summary>
@@ -211,7 +221,7 @@ namespace PRCo.BBOS.UI.Web {
         public static HtmlGenericControl GetJavaScriptControl(string szFileName) {
             HtmlGenericControl JSLink = new HtmlGenericControl("script");
             JSLink.Attributes.Add("type", "text/javascript");
-            JSLink.Attributes.Add("src", GetLocalizedURL(JS_DIR + szFileName));
+            JSLink.Attributes.Add("src", GetLocalizedURLLocal(JS_DIR + szFileName));
             return JSLink;
         }
 
