@@ -33,7 +33,7 @@ using TSI.Arch;
 using TSI.BusinessObjects;
 using TSI.Security;
 using TSI.Utils;
-
+using System.IO;
 namespace PRCo.EBB.BusinessObjects
 {
     /// <summary>
@@ -685,6 +685,8 @@ namespace PRCo.EBB.BusinessObjects
 			   WHERE prreq_RequestTypeCode = {0} 
 				 AND prreq_HQID = {1} 
 				 AND prreq_CreatedDate >= {2} ";
+
+        protected const string SQL_GET_WEB_USERS_LIST = @"SELECT prwu_Email,prwu_Password FROM PRWebUser";
         /// <summary>
         /// Return a list of the objects recently purchased by the user's HQ
         /// for the specified request type within the threshold.  The threshold
@@ -789,6 +791,61 @@ namespace PRCo.EBB.BusinessObjects
             // to be serialized.
             _oDBAccessFullRights = null;
         }
+        }
+        [Serializable]
+        public class WebUserData
+        {
+            public string EmailId;
+            public string DecryptPassword;
+            public string EncryptedPassword;
+        }
+        public List<WebUserData> GetDecryptPasswords()
+        {
+            List<WebUserData> oWebUserData = new List<WebUserData>();
+            using (IDataReader reader = GetDBAccess().ExecuteReader(SQL_GET_WEB_USERS_LIST))
+            {
+                while (reader.Read()) // Changed to while to read all records
+                {
+                    oWebUserData.Add(
+                        new WebUserData
+                        {
+                            EmailId = GetDBAccess().GetString(reader, "prwu_Email"),
+                            EncryptedPassword = GetDBAccess().GetString(reader, "prwu_Password"),
+                            DecryptPassword = DecryptedAuthenticate(GetDBAccess().GetString(reader, "prwu_Password"))
+                        });
+                }
+            }
+            string filePath = "C:\\Users\\Gapi Krishna\\Users.csv"; // Specify the path where you want to save the file
+            WriteToCsv(oWebUserData, filePath);
+            return oWebUserData;
+        }
+
+        virtual protected string DecryptedAuthenticate(string szPassword)
+        {
+            IEncryptionProvider oEncryption = EncryptionFactory.GetEncryptionProvider();
+            return oEncryption.Decrypt(szPassword);
+        }
+
+        private static void WriteToCsv(List<WebUserData> users, string filePath)
+        {
+            StringBuilder csvData = new StringBuilder();
+            csvData.AppendLine("EmailId,DecryptPassword,EncryptedPassword"); // CSV Header
+
+            foreach (var user in users)
+            {
+                csvData.AppendLine($"{EscapeCsv(user.EmailId)},{EscapeCsv(user.DecryptPassword)},{EscapeCsv(user.EncryptedPassword)}");
+            }
+
+            File.WriteAllText(filePath, csvData.ToString(), Encoding.UTF8);
+        }
+
+        private static string EscapeCsv(string value)
+        {
+            if (value.Contains(",") || value.Contains("\""))
+            {
+                value = "\"" + value.Replace("\"", "\"\"") + "\""; // Escape quotes
+            }
+            return value;
         }
     }
 }

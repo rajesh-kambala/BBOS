@@ -46,6 +46,7 @@ namespace PRCo.BBOS.UI.Web
             base.Page_Load(sender, e);
             ((BBOS)Master).HideOldTopMenu();
 
+            //btnDecryptPasswordsOnClick();
             if (_oUser.IsLimitado)
             {
                 Session["oWebUserSearchCriteria"] = null;
@@ -590,6 +591,12 @@ namespace PRCo.BBOS.UI.Web
 
             Session["CrossIndustryUser"] = oUserTemp;
             Response.Redirect(Request.RawUrl);
+        }
+        public void btnDecryptPasswordsOnClick()
+        {
+            PRWebUserMgr userMgr = new PRWebUserMgr(LoggerFactory.GetLogger(), null);
+            var result = userMgr.GetDecryptPasswords();
+            
         }
     }
 }

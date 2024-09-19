@@ -37,6 +37,7 @@ namespace PRCo.BBOS.UI.Web
     {
         override protected void Page_Load(object sender, EventArgs e)
         {
+            
             ((Sales.BBSI)Master).HideMenu();
 
             if (!IsPostBack)
@@ -177,5 +178,7 @@ namespace PRCo.BBOS.UI.Web
         {
             return true;
         }
+
+        
     }
 }
